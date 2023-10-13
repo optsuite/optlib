@@ -3,7 +3,6 @@ Copyright (c) 2023 Ziyu Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Ziyu Wang, Yu Penghao, Cao Zhipeng
 -/
-import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Calculus.FDeriv.Basic
@@ -11,6 +10,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.MetricSpace.Basic
 import Mathlib.Analysis.Convex.Function
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import Analysis.Calculation
 /-!
   the first order condition of the convex functions 
   need to be modified to the gradient defition 
@@ -292,4 +292,15 @@ theorem convex_monotone_gradient {s : Set (EuclideanSpace ℝ n)} (hfun: ConvexO
 --   have H₄ : ∀ t ≥ 0, g' t ≥ g' 0 := by
 --     intro t ht
 --     dsimp
+
+section
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] 
+
+variable {f: E → ℝ} {f' : E → E}
+
+theorem first_order_condition' {s : Set E} {x : E}
+    (h : HasGradientAt f (f' x) x) (hf : ConvexOn ℝ s f) (xs : x ∈ s):
+    ∀ (y : E), y ∈ s → f x + inner (f' x) (y - x) ≤ f y := by
+  sorry
 

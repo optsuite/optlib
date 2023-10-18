@@ -6,9 +6,6 @@ Authors: Chenyi Li, Ziyu Wang
 import Analysis.Lsmooth
 import Analysis.First_Order
 import Analysis.Calculation
-import Mathlib.LinearAlgebra.FiniteDimensional
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.InnerProductSpace.Dual
 /-!
   the convergence of the gradient method for the convex function
 -/
@@ -22,6 +19,7 @@ variable {f: E → ℝ} {f' : E → E}
 
 variable {l a: ℝ} {xm x₀: E} {point : ℕ → E}
 
+-- equivalent description of the convexity of a smooth function
 lemma convex_function (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
 (hfun: ConvexOn ℝ Set.univ f) : ∀ (x y : E), f x ≤ f y + inner (f' x) (x - y) := by
   intro x y
@@ -30,6 +28,7 @@ lemma convex_function (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
   rw [← neg_sub, inner_neg_right] at this
   linarith
 
+-- the bound for one step of the gradient method using the Lipschitz continuity of the gradient
 lemma convex_lipschitz (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
     (h₂ : l > 0) (step₁: l ≤ (1 / a)) (step₂ : a > 0) (h₃ : LipschitzOn f' l) :
     ∀ x : E, f (x - a • (f' x)) ≤ f x - a / 2 * ‖(f' x)‖ ^ 2 := by
@@ -58,6 +57,7 @@ lemma convex_lipschitz (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
       · exact sq_nonneg ‖(f' x)‖
     _ = f x - a/2*  ‖(f' x)‖ ^2 := by ring_nf
 
+-- using the point version for the certain iteration of the gradient method
 lemma point_descent_for_convex (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁)
     (hfun : ConvexOn ℝ Set.univ f) (h₂ : l > 0) (h₃ : LipschitzOn f' l) 
     (step₁: l ≤ (1 / a)) (step₂ : a > 0) 
@@ -98,6 +98,7 @@ lemma point_descent_for_convex (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x�
   rw [update k]
   exact descent
 
+-- by monotonity of the sequence, we can get the bound for the sum of the sequence
 lemma mono_sum_prop_primal (mono : ∀ k: ℕ, f (point (k + 1)) ≤ f (point k)):
     ∀ n : ℕ , (Finset.range (n + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) ≥ 
       (n + (1 : ℝ)) * f (point (n + 2)) := by
@@ -114,6 +115,7 @@ lemma mono_sum_prop_primal (mono : ∀ k: ℕ, f (point (k + 1)) ≤ f (point k)
           _ ≥ (q + 2) * (f (point (q + 3))) := by simp; exact mul_le_mul_of_nonneg_left mono jtt
           _ = ((q.succ) + 1) * f (point (q.succ + 2)) := by simp; left; ring_nf
 
+-- for a certain iteration, we can get the bound by the sum of the sequence
 lemma mono_sum_prop_primal' (mono : ∀ k : ℕ, f (point (k + 1)) ≤ f (point k)):
     ∀ j : ℕ, (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) / (j.succ + 1) 
       ≥ f (point (j + 2)) := by
@@ -146,6 +148,7 @@ lemma mono_sum_prop_primal' (mono : ∀ k : ℕ, f (point (k + 1)) ≤ f (point 
     _ = f (point (j + 2)) * ((j.succ + 1) / (j.succ + 1)) := by ring_nf
     _ = f (point (j + 2)) := by simp; rw [div_self jneq]; ring_nf
 
+-- the sumation property of the gradient method
 lemma mono_sum_prop (mono : ∀ k: ℕ, f (point (k + 1)) ≤ f (point k)):
     ∀ n : ℕ ,  (f (point (n + 1)) -  f xm) ≤ (Finset.range (n + 1)).sum 
     (fun (k : ℕ) ↦ f (point (k + 1)) - f xm) / (n + 1) := by
@@ -173,7 +176,7 @@ lemma mono_sum_prop (mono : ∀ k: ℕ, f (point (k + 1)) ≤ f (point k)):
             - (j + 1 + 1) * f xm) / (j + 1+1)+ f xm := by
               simp; rw [← one_add_one_eq_two, ← add_assoc, mul_div, mul_comm, ← sub_div]
 
-
+-- the O(1/t) descent property of the gradient method
 lemma gradient_method (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
     (hfun: ConvexOn ℝ Set.univ f) (h₂: l > 0) (h₃ : LipschitzOn f' l) (step₁: l ≤ (1/a)) 
     (step₂ : a > 0) (initial : point 0 = x₀)

@@ -3,13 +3,10 @@ Copyright (c) 2023 Ziyu Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Ziyu Wang, Yu Penghao, Cao Zhipeng
 -/
-import Mathlib.LinearAlgebra.FiniteDimensional
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.InnerProductSpace.Dual
-import Mathlib.Topology.MetricSpace.Basic
 import Mathlib.Analysis.Convex.Function
-import Mathlib.Analysis.Calculus.Deriv.Comp
 import Analysis.Calculation
 /-!
   the first order condition of the convex functions 
@@ -18,19 +15,11 @@ import Analysis.Calculation
 open InnerProductSpace
 noncomputable section
 
-variable {n : Type _} [Fintype n]
-variable {f: (EuclideanSpace ℝ n) → ℝ} {f': ((EuclideanSpace ℝ n)) → ((EuclideanSpace ℝ n) →L[ℝ] ℝ)}
-variable {x y: (EuclideanSpace ℝ n)}
-
-def grad : ((EuclideanSpace ℝ n) →L[ℝ] ℝ) → (EuclideanSpace ℝ n)
-  | g => ((toDual ℝ (EuclideanSpace ℝ n)).symm g)
-
-theorem grad_equiv :
-  ∀ x y :EuclideanSpace ℝ  n, inner (grad (f' x)) y = f' x y := by
-    intro x y; apply toDual_symm_apply
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] 
+variable {f: E → ℝ} {f': E → (E →L[ℝ] ℝ)} {x y: E}
 
 theorem HasFDeriv_Convergence (h: HasFDerivAt f (f' x) x) :
-  ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : (EuclideanSpace ℝ n)), ‖ x - x'‖ ≤ δ
+  ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖ x - x'‖ ≤ δ
     → ‖f x' - f x - (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
   rw [HasFDerivAt, HasFDerivAtFilter, Asymptotics.isLittleO_iff] at h
   intro ε epos
@@ -51,7 +40,7 @@ theorem HasFDeriv_Convergence (h: HasFDerivAt f (f' x) x) :
   rw [norm_sub_rev x]
   exact h₃
 
-theorem Convergence_HasFDeriv (h : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : (EuclideanSpace ℝ n)),
+theorem Convergence_HasFDeriv (h : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E),
     ‖x - x'‖ ≤ δ → ‖f x' - f x - (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖) :
       HasFDerivAt f (f' x) x := by
   rw [HasFDerivAt, HasFDerivAtFilter, Asymptotics.isLittleO_iff]
@@ -70,15 +59,15 @@ theorem Convergence_HasFDeriv (h : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (
   rw[Set.mem_setOf, norm_sub_rev x']
   apply h
 
-theorem HasFDeriv_iff_Convergence_Point {f'x : ((EuclideanSpace ℝ n) →L[ℝ] ℝ)}:
-  HasFDerivAt f (f'x) x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : (EuclideanSpace ℝ n)),
+theorem HasFDeriv_iff_Convergence_Point {f'x : (E →L[ℝ] ℝ)}:
+  HasFDerivAt f (f'x) x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E),
      ‖x - x'‖ ≤ δ → ‖f x' - f x - (f'x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
   constructor
   apply HasFDeriv_Convergence
   apply Convergence_HasFDeriv
 
 theorem HasFDeriv_iff_Convergence :
-  HasFDerivAt f (f' x) x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : (EuclideanSpace ℝ n)),
+  HasFDerivAt f (f' x) x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E),
      ‖x - x'‖ ≤ δ → ‖f x' - f x - (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
   constructor
   apply HasFDeriv_Convergence
@@ -94,10 +83,11 @@ lemma point_proportion {a b: ℝ} (anonneg: 0 ≤ a) (bnonneg: 0 ≤ b) (sumab: 
       _ = b • x - b • y:= by rw [← sumab]; ring_nf
       _ = b • (x - y):= Eq.symm (smul_sub b x y)
 
-theorem first_order_condition {s : Set (EuclideanSpace ℝ n)}
+theorem first_order_condition {s : Set E}
   (h : HasFDerivAt f (f' x) x) (hf : ConvexOn ℝ s f) (xs : x ∈ s):
-  ∀ (y : (EuclideanSpace ℝ n)), y ∈ s → f x + f' x (y - x) ≤ f y := by
-  have h₁ : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : (EuclideanSpace ℝ n)), ‖x - x'‖ ≤ δ → ‖ f x' -f x- (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖:= by
+  ∀ (y : E), y ∈ s → f x + f' x (y - x) ≤ f y := by
+  have h₁ : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ
+       → ‖ f x' -f x- (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖:= by
     apply HasFDeriv_Convergence h
   intro y ys
   by_cases h₂: y = x
@@ -137,7 +127,8 @@ theorem first_order_condition {s : Set (EuclideanSpace ℝ n)}
   specialize cxf a_nonneg b_nonneg sum_a_b
   let x' := a • x + b • y
   have x'rfl : x' = a • x + b • y := rfl
-  have h1 : ‖x - x'‖ = ‖b • (x - y)‖ := by congr; apply point_proportion a_nonneg b_nonneg sum_a_b x'rfl
+  have h1 : ‖x - x'‖ = ‖b • (x - y)‖ := by 
+    congr; apply point_proportion a_nonneg b_nonneg sum_a_b x'rfl
   have h2 : ‖b • (x - y)‖ = b * ‖x - y‖ := by
     rw[norm_smul]
     rw[Real.norm_of_nonneg]
@@ -197,9 +188,9 @@ theorem first_order_condition {s : Set (EuclideanSpace ℝ n)}
   have H11: ε ≤ 0:= nonpos_of_mul_nonpos_left H10 blt
   rw [← H9] at H8; linarith
 
-theorem first_order_condition_inverse {f: (EuclideanSpace ℝ n) → ℝ} {f' : ((EuclideanSpace ℝ n)) → ((EuclideanSpace ℝ n) →L[ℝ] ℝ)}
-  {s : Set (EuclideanSpace ℝ n)} (h:∀ (x: (EuclideanSpace ℝ n)), HasFDerivAt f (f' x) x)(h₁: Convex ℝ s)
-  (h₂: ∀ (x : (EuclideanSpace ℝ n)), x ∈ s→ ∀ (y : (EuclideanSpace ℝ n)), y ∈ s → f x + f' x (y - x) ≤ f y): ConvexOn ℝ s f:= by
+theorem first_order_condition_inverse {f: E → ℝ} {f' : E → (E →L[ℝ] ℝ)}
+  {s : Set E} (h:∀ (x: E), HasFDerivAt f (f' x) x)(h₁: Convex ℝ s)
+  (h₂: ∀ (x : E), x ∈ s→ ∀ (y : E), y ∈ s → f x + f' x (y - x) ≤ f y): ConvexOn ℝ s f:= by
   rw [ConvexOn]; constructor
   apply h₁; intro x xs y ys a b anonneg bnonneg sumab
   let x' := a • x + b • y
@@ -217,8 +208,10 @@ theorem first_order_condition_inverse {f: (EuclideanSpace ℝ n) → ℝ} {f' : 
   have lnmp: ∀ c: ℝ , f' x' (c • (y - x))= c * (f' x' (y - x)) := by
     intro c; rw [map_smul]; rfl
   have H: a • (f x' + (f' x') (x - x')) + b • (f x' + (f' x') (y - x')) = f x' := by
-    have l1: a • (f x' + (f' x') (x - x')) + b • (f x' + (f' x') (y - x')) = (a + b) • f x' + a • (f' x') (x - x')+ b • (f' x') (y - x'):= by
-      rw [smul_add, smul_add, ← add_assoc, add_assoc (a • f x'), add_comm (a • (f' x') (x - x')), ← add_assoc, add_smul]
+    have l1: a • (f x' + (f' x') (x - x')) + b • (f x' + (f' x') (y - x')) 
+        = (a + b) • f x' + a • (f' x') (x - x')+ b • (f' x') (y - x'):= by
+      rw [smul_add, smul_add, ← add_assoc, add_assoc (a • f x'),
+        add_comm (a • (f' x') (x - x')), ← add_assoc, add_smul]
     have l2: b • (f' x') (y - x') = (a * b) * (f' x') (y - x):= by
       rw [point_proportion bnonneg anonneg sumba x'rfl_comm, lnmp a]
       calc
@@ -248,14 +241,14 @@ theorem first_order_condition_inverse {f: (EuclideanSpace ℝ n) → ℝ} {f' : 
   rw [H] at H3
   apply H3
 
-theorem first_order_condition_iff {s : Set (EuclideanSpace ℝ n)} (h₁: Convex ℝ s)
-  (h : ∀ (x: (EuclideanSpace ℝ n)), HasFDerivAt f (f' x) x) :
-    ConvexOn ℝ s f ↔ ∀ (x: (EuclideanSpace ℝ n)),
-      x ∈ s → ∀ (y: (EuclideanSpace ℝ n)), y ∈ s → f x + f' x (y - x) ≤ f y:= 
+theorem first_order_condition_iff {s : Set E} (h₁: Convex ℝ s)
+  (h : ∀ (x: E), HasFDerivAt f (f' x) x) :
+    ConvexOn ℝ s f ↔ ∀ (x: E),
+      x ∈ s → ∀ (y: E), y ∈ s → f x + f' x (y - x) ≤ f y:= 
         ⟨ fun h₂ x xs ↦ first_order_condition (h x) h₂ xs, first_order_condition_inverse h h₁ ⟩
 
-theorem convex_monotone_gradient {s : Set (EuclideanSpace ℝ n)} (hfun: ConvexOn ℝ s f)
-(h : ∀ (x: (EuclideanSpace ℝ n)), HasFDerivAt f (f' x) x) :
+theorem convex_monotone_gradient {s : Set E} (hfun: ConvexOn ℝ s f)
+(h : ∀ (x: E), HasFDerivAt f (f' x) x) :
 ∀ x ∈ s, ∀ y ∈ s,  (f' x - f' y) (x - y) ≥ 0 := by
   intro x hx y hy
   have h₁ : f x + f' x (y - x) ≤ f y := first_order_condition (h x) hfun hx y hy 
@@ -267,40 +260,56 @@ theorem convex_monotone_gradient {s : Set (EuclideanSpace ℝ n)} (hfun: ConvexO
   simp only [map_sub, ContinuousLinearMap.coe_sub', Pi.sub_apply]
   linarith
 
--- theorem monotone_gradient_convex {s : Set (EuclideanSpace ℝ n)} (h₁: Convex ℝ s)
--- (hf : ∀ (x: (EuclideanSpace ℝ n)), HasFDerivAt f (f' x) x)
--- (mono: ∀ x ∈ s, ∀ y ∈ s,  (f' x - f' y) (x - y) ≥ 0) : ConvexOn ℝ s f := by
---   rw [first_order_condition_iff h₁ hf]
---   intro x hx y hy 
---   let g := fun t : ℝ ↦ f (x + t • (y - x))
---   let h := fun t : ℝ ↦ x + t • (y - x)
---   have h_deriv : ∀ t : ℝ,  HasDerivAt h (y - x) t := by
---     intro t
---     rw [hasDerivAt_iff_isLittleO_nhds_zero]
---     have :(fun h => (t + h) • (y - x) - t • (y - x) - h • (y - x)) = (fun h => 0) := by
---       ext h
---       rw [add_smul, add_comm, ← add_sub, sub_self, add_zero, sub_self]
---     simp [this]
---   have H₂: ∀ t₀ : ℝ , HasDerivAt (f ∘ h) (f' (x + t₀ • (y - x)) (y - x)) t₀ := by
---     intro t₀
---     apply HasFDerivAt.comp_hasDerivAt
---     · apply hf (x + t₀ • (y - x))
---     · apply h_deriv t₀
---   let g' := fun t : ℝ ↦ (f' (x + t • (y - x)) (y - x))
---   have H₃ : ∀ t₀ : ℝ , HasDerivAt  g (g' t₀) t₀ :=
---     fun t₀ ↦ H₂ t₀
---   have H₄ : ∀ t ≥ 0, g' t ≥ g' 0 := by
---     intro t ht
---     dsimp
+theorem monotone_gradient_convex {s : Set E} (h₁: Convex ℝ s)
+(hf : ∀ (x: E), HasFDerivAt f (f' x) x)
+(mono: ∀ x ∈ s, ∀ y ∈ s,  (f' x - f' y) (x - y) ≥ 0) : ConvexOn ℝ s f := by
+  sorry
 
 section
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] 
+variable {f : E → ℝ} {f' : E → E} {x x' y: E} {s : Set E}
 
-variable {f: E → ℝ} {f' : E → E}
+theorem HasGradient_Convergence (h : HasGradientAt f (f' x) x) :
+    ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E, ‖x - x'‖ ≤ δ
+    → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
+  sorry
 
-theorem first_order_condition' {s : Set E} {x : E}
-    (h : HasGradientAt f (f' x) x) (hf : ConvexOn ℝ s f) (xs : x ∈ s):
+theorem Convergence_HasGradient (h : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
+      ‖x - x'‖ ≤ δ → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖) :
+      HasGradientAt f (f' x) x := by
+  sorry
+
+theorem HasGradient_iff_Convergence_Point {f'x : E}:
+      HasGradientAt f f'x x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
+     ‖x - x'‖ ≤ δ → ‖f x' - f x - inner (f'x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
+  constructor
+  apply HasGradient_Convergence
+  apply Convergence_HasGradient
+
+theorem HasGradient_iff_Convergence :
+      HasGradientAt f (f' x) x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
+      ‖x - x'‖ ≤ δ → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
+  constructor
+  apply HasGradient_Convergence
+  apply Convergence_HasGradient
+
+theorem first_order_condition' (h : HasGradientAt f (f' x) x) (hf : ConvexOn ℝ s f) (xs : x ∈ s):
     ∀ (y : E), y ∈ s → f x + inner (f' x) (y - x) ≤ f y := by
   sorry
 
+theorem first_order_condition_inverse'  (h : ∀ x : E, HasGradientAt f (f' x) x) (h₁ : Convex ℝ s)
+    (h₂ : ∀ x : E, x ∈ s → ∀ y : E, y ∈ s → f x + inner (f' x) (y - x) ≤ f y): ConvexOn ℝ s f := by
+  sorry
+
+theorem first_order_condition_iff' (h₁ : Convex ℝ s) (h : ∀ x : E, HasGradientAt f (f' x) x) :
+    ConvexOn ℝ s f ↔ ∀ x : E,
+    x ∈ s → ∀ y: E, y ∈ s → f x + inner (f' x) (y - x) ≤ f y := 
+  ⟨ fun h₂ x xs ↦ first_order_condition' (h x) h₂ xs, first_order_condition_inverse' h h₁ ⟩
+
+theorem convex_monotone_gradient' (hfun: ConvexOn ℝ s f) (h : ∀ x : E, HasGradientAt f (f' x) x) :
+    ∀ x ∈ s, ∀ y ∈ s, inner (f' x) (x - y) ≥ (0 : ℝ) := by
+  sorry
+
+theorem monotone_gradient_convex' (h₁: Convex ℝ s) (hf : ∀ x, HasGradientAt f (f' x) x)
+    (mono: ∀ x ∈ s, ∀ y ∈ s, inner (f' x - f' y) (x - y) ≥ (0 : ℝ)) : ConvexOn ℝ s f := by
+  sorry

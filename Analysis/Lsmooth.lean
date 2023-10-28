@@ -14,10 +14,10 @@ import Analysis.Calculation
 noncomputable section
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] 
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
-def LipschitzOn (f : E → F) (l : ℝ) : Prop := 
-  ∀ x y : E, ‖f x - f y‖ ≤ l * ‖x - y‖ 
+def LipschitzOn (f : E → F) (l : ℝ) : Prop :=
+  ∀ x y : E, ‖f x - f y‖ ≤ l * ‖x - y‖
 
 section
 
@@ -25,8 +25,8 @@ open InnerProductSpace
 
 variable {f : E → ℝ} {l a : ℝ} {f': E → (E →L[ℝ] ℝ)}
 
-theorem deriv_function_comp_segment (x y : E) (h₁ : ∀ x₁ : E, HasFDerivAt f (f' x₁) x₁) : 
-    ∀ t₀ : ℝ , HasDerivAt (fun t : ℝ ↦ f (x + t • (y - x))) 
+theorem deriv_function_comp_segment (x y : E) (h₁ : ∀ x₁ : E, HasFDerivAt f (f' x₁) x₁) :
+    ∀ t₀ : ℝ , HasDerivAt (fun t : ℝ ↦ f (x + t • (y - x)))
     ((fun t : ℝ ↦ (f' (x + t • (y - x)) (y - x))) t₀) t₀ := by
   let h := fun t : ℝ ↦ x + t • (y - x)
   have h_deriv : ∀ t : ℝ,  HasDerivAt h (y - x) t := by
@@ -44,9 +44,9 @@ theorem deriv_function_comp_segment (x y : E) (h₁ : ∀ x₁ : E, HasFDerivAt 
   intro t₀
   apply H₂ t₀
 
-theorem lipschitz_continuos_upper_bound (h₁ : ∀ x₁ : E, HasFDerivAt f (f' x₁) x₁)
-(h₂ : LipschitzOn f' l):
- ∀(x y : E), f y ≤ f x + (f' x) (y - x) + l / 2 * ‖y - x‖ ^ 2 := by
+theorem lipschitz_continuos_upper_bound
+    (h₁ : ∀ x₁ : E, HasFDerivAt f (f' x₁) x₁) (h₂ : LipschitzOn f' l) :
+  ∀ (x y : E), f y ≤ f x + (f' x) (y - x) + l / 2 * ‖y - x‖ ^ 2 := by
   intro x y
   let g := fun t : ℝ ↦ f (x + t • (y - x))
   let g' := fun t : ℝ ↦ (f' (x + t • (y - x)) (y - x))
@@ -59,7 +59,7 @@ theorem lipschitz_continuos_upper_bound (h₁ : ∀ x₁ : E, HasFDerivAt f (f' 
     have : x + u • (y - x) - (x + v • (y - x)) = (u - v) • (y - x) := by
       rw [← sub_sub, add_sub_right_comm, sub_self, zero_add, ← sub_smul]
     calc ‖g' u - g' v‖ = ‖(f' (x + u • (y - x))) (y - x) - (f' (x + v • (y - x))) (y - x)‖ := by rfl
-      _ = ‖(f' (x + u • (y - x)) - f' (x + v•(y - x))) (y - x)‖ := by congr
+      _ = ‖(f' (x + u • (y - x)) - f' (x + v • (y - x))) (y - x)‖ := by congr
       _ ≤ ‖f' (x + u • (y - x)) - f' (x + v • (y - x))‖ * ‖y - x‖ :=
          ContinuousLinearMap.le_op_norm (f' (x + u • (y - x)) - f' (x + v • (y - x))) (y - x)
       _ ≤ l * ‖x + u • (y - x) - (x + v • (y - x))‖ * ‖y - x‖ :=
@@ -115,13 +115,18 @@ theorem lipschitz_continuos_upper_bound (h₁ : ∀ x₁ : E, HasFDerivAt f (f' 
   have H₆ : g 0 = f x := by simp only [zero_smul, add_zero]
   have H₇ : upperf 1 = g 0 + g' 0 + LL / 2 := by simp
   have T₁ : g' 0 = f' x (y - x) := by simp only [map_sub, zero_smul, add_zero]
-  rw [H₆,T₁] at H₇; rw [H₇,H₅,L₁] at H₄; linarith
+  rw [H₆, T₁] at H₇; rw [H₇, H₅, L₁] at H₄; linarith
 
 end
 
-section 
+section
 
 variable {f : E → ℝ} {l a : ℝ} {f': E → E} {xm : E}
+
+theorem lipschitz_continuos_upper_bound'
+    (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (h₂ : LipschitzOn f' l) :
+    ∀ (x y : E), f y ≤ f x + inner (f' x) (y - x) + l / 2 * ‖y - x‖ ^ 2 := by
+  sorry
 
 theorem lipschitz_minima (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' l)
     (min: IsMinOn f Set.univ xm):
@@ -130,7 +135,7 @@ theorem lipschitz_minima (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : Li
 
 end
 
-section 
+section
 
 variable {f : E → ℝ} {l a : ℝ} {f': E → E} {xm : E} (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
 variable (hfun: ConvexOn ℝ Set.univ f)
@@ -152,5 +157,3 @@ theorem convex_to_lower (h₂ : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖
   sorry
 
 end
-
-

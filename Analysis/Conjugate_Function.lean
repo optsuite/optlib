@@ -20,7 +20,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 variable {f : E → ℝ} {x y : E}
 
 /-
-  the definition of the conjugate function 
+  the definition of the conjugate function
 -/
 def cg (f : E → ℝ) (y : E) : EReal :=
   sSup {(inner y x : ℝ) - f x | x : E}
@@ -32,7 +32,7 @@ def cg_dom (f : E → ℝ) : Set E :=
   {x : E | (sSup {(inner x y : ℝ) - f x | y : E} : EReal) ≠ ⊤}
 
 /-
-  the strict conjugate function where the image set is ℝ 
+  the strict conjugate function where the image set is ℝ
 -/
 def strict_cg (f : E → ℝ) (y : E) : ℝ :=
   sSup {inner y x - f x | x : E}
@@ -40,13 +40,25 @@ def strict_cg (f : E → ℝ) (y : E) : ℝ :=
 section
 
 /- Fenchel inequality -/
-theorem Fenchel (f : E → ℝ) (y x: E) : cg f y ≥ ((inner y x) : ℝ) - f x:= by
+theorem Fenchel (f : E → ℝ) (y x : E) : cg f y ≥ ((inner y x) : ℝ) - f x:= by
   rw [cg]
   apply le_sSup
   use x
 
-theorem convex_cg (f : E → ℝ) (y : E) : ConvexOn ℝ (cg_dom f) (fun x => strict_cg f x) := by
+theorem convex_cg_dom (f : E → ℝ) : Convex ℝ (cg_dom f) := by
   sorry
+
+theorem convex_cg_fun (f : E → ℝ) (x y : E) (a b: ℝ) (ha : 0 ≤ a) (hb: 0 ≤ b) (hab : a + b = 1):
+    strict_cg f (a • x + b • y) ≤ a • strict_cg f x + b • strict_cg f y := by
+  sorry
+
+theorem convex_cg (f : E → ℝ) : ConvexOn ℝ (cg_dom f) (fun x => strict_cg f x) := by
+  constructor
+  · exact convex_cg_dom f
+  · intros x hx y hy a b ha hb hab
+    calc (fun x => strict_cg f x) (a • x + b • y) = strict_cg f (a • x + b • y) := by rfl
+    _ ≤ a • strict_cg f x + b • strict_cg f y := by exact convex_cg_fun f x y a b ha hb hab
+    _ = a • (fun x => strict_cg f x) x + b • (fun x => strict_cg f x) y := by rfl
 
 lemma quadratic_cg {b : E} {c : ℝ} :
     strict_cg (fun x ↦ 1 / 2 * inner x x + inner b x + c) y = (inner (y - b) (y - b) / 2 - c) := by

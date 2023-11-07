@@ -9,7 +9,7 @@ Author: Zuokai Wen,Mingquan Zhang
   and linear fractional transformation.
   Perspective transformation: f: ℝ ^ (n+1) → ℝ:P(x, t) = x/t,
   domf = {(x, t)| t > 0}.
-  Linear fractional transformation:g:ℝⁿ → ℝᵐ:g(x)= (Ax+b)/(cᵀx+d),
+  Linear fractional transformation: g : ℝⁿ → ℝᵐ， g(x)= (Ax+b)/(cᵀx+d),
   domg = {x | cᵀx+d > 0}.
 -/
 

@@ -3,7 +3,7 @@ Copyright (c) 2023 Wanyi He. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wanyi He
 -/
-import Analysis.Closed_Function
+import Function.ClosedFunction
 import Mathlib.Order.Bounds.Basic
 import Mathlib.Analysis.Convex.Basic
 import Mathlib.Topology.SubsetProperties

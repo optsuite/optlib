@@ -62,17 +62,17 @@ theorem prox_iff_grad (f : E → ℝ) {f' : E → E} (hfun : ConvexOn ℝ univ f
     ∀ u : E, prox_prop f x u ↔ f' u = x - u :=
   sorry
 
-theorem prox_iff_grad' (f : E → ℝ) {f' : E → E} (t : ℝ)(hfun : ConvexOn ℝ univ f)
+theorem prox_iff_grad_smul (f : E → ℝ) {f' : E → E} (t : ℝ)(hfun : ConvexOn ℝ univ f)
     (hc : LowerSemicontinuousOn f univ) (hdiff : ∀ x, HasGradientAt f (f' x) x) :
     ∀ u : E, prox_prop (t • f) x u ↔ t • f' u = x - u :=
   sorry
 
-theorem prox_iff_grad'' (f : E → ℝ) {f' : E → E} (hfun : ConvexOn ℝ univ f)
+theorem prox_iff_grad' (f : E → ℝ) {f' : E → E} (hfun : ConvexOn ℝ univ f)
     (hc : LowerSemicontinuousOn f univ) (hdiff : ∀ x, HasGradientAt f (f' x) x) :
     ∀ u : E, u = prox_point_c f x hfun hc ↔ f' u = x - u :=
   sorry
 
-theorem prox_iff_grad''' (f : E → ℝ) {f' : E → E} (hfun : ConvexOn ℝ univ f)
+theorem prox_iff_grad'' (f : E → ℝ) {f' : E → E} (hfun : ConvexOn ℝ univ f)
     (hc : LowerSemicontinuousOn f univ) (hdiff : ∀ x, HasGradientAt f (f' x) x) :
     ∀ u : E, u = prox_point f x (prox_well_define f hfun hc x) ↔ f' u = x - u :=
   sorry

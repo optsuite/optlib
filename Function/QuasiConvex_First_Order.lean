@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors:
 -/
 import Mathlib.Analysis.Convex.Quasiconvex
-import Analysis.First_Order
+import Function.First_Order
 open InnerProductSpace
 
 noncomputable section
@@ -12,12 +12,12 @@ noncomputable section
   the first order condition for quasiconvex function
 -/
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] 
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 variable {f : E → ℝ} {f' : E → (E →L[ℝ] ℝ)} {s : Set E}{x: E}
 
 theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs : x ∈ s)
     (hf: QuasiconvexOn ℝ s f) : ∀ y ∈ s, f y ≤ f x  → f' x (y - x) ≤ 0 := by
-  have h₁: ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ → 
+  have h₁: ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ →
       ‖f x' - f x - (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
     apply HasFDeriv_Convergence h
   intro y ys fxy
@@ -71,7 +71,7 @@ theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs
     rw [h1, h2]
     have h3: b * ‖x - y‖ ≤ b1 * ‖x - y‖:= by
       rw [mul_le_mul_right]
-      apply min_le_left 
+      apply min_le_left
       exact h₃
     have h4: b1 * ‖x - y‖= δ := by
       rw[div_mul_cancel]

@@ -3,15 +3,15 @@ Copyright (c) 2023 Chenyi Li. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Ziyu Wang
 -/
-import Analysis.Lsmooth
-import Analysis.First_Order
+import Function.Lsmooth
+import Function.First_Order
 import Analysis.Calculation
 /-!
   the convergence of the gradient method for the convex function
 -/
 noncomputable section
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] 
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
 open InnerProductSpace
 
@@ -59,40 +59,40 @@ lemma convex_lipschitz (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
 
 -- using the point version for the certain iteration of the gradient method
 lemma point_descent_for_convex (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁)
-    (hfun : ConvexOn ℝ Set.univ f) (h₂ : l > 0) (h₃ : LipschitzOn f' l) 
-    (step₁: l ≤ (1 / a)) (step₂ : a > 0) 
+    (hfun : ConvexOn ℝ Set.univ f) (h₂ : l > 0) (h₃ : LipschitzOn f' l)
+    (step₁: l ≤ (1 / a)) (step₂ : a > 0)
     (update : ∀ k : ℕ, point (k + 1) = point k - a • (f' (point k))) :
-    ∀ k : ℕ, f (point (k + 1)) ≤ f xm + 1 / ((2 : ℝ) * a) 
+    ∀ k : ℕ, f (point (k + 1)) ≤ f xm + 1 / ((2 : ℝ) * a)
       * (‖point k - xm‖ ^ 2 - ‖point (k + 1) - xm‖ ^ 2) := by
   intro k
-  have descent: ∀ x : E, f (x- a • (f' x)) ≤ 
+  have descent: ∀ x : E, f (x- a • (f' x)) ≤
       f xm + 1 / ((2 : ℝ) * a) * (‖x - xm‖ ^ 2 - ‖x - a • (f' x) - xm‖ ^ 2) := by
     intro x
     have tt : 1 / ((2 : ℝ) * a) * ((2 : ℝ) * a) = 1 := by
       simp; ring_nf; exact mul_inv_cancel (by linarith)
-    have t4 : inner (f' x) (x - xm) - a / 2 * ‖f' x‖ ^ 2 = 
+    have t4 : inner (f' x) (x - xm) - a / 2 * ‖f' x‖ ^ 2 =
         1 / ((2 : ℝ) * a) * (‖x - xm‖ ^ 2 - ‖x - a • (f' x) - xm‖ ^ 2) := by
       symm
-      have t4₁ : ‖x - a • (f' x) - xm‖ ^ 2 = 
+      have t4₁ : ‖x - a • (f' x) - xm‖ ^ 2 =
           ‖x - xm‖ ^ 2 - ((2 : ℝ) * a) * inner  (f' x) (x - xm) + ‖a • (f' x)‖ ^ 2 := by
         rw [sub_right_comm]; simp [norm_sub_sq_real (x - xm) _]
         ring_nf; rw [real_inner_smul_right, real_inner_comm];
-      calc 1 / ((2 : ℝ) * a) * (‖x - xm‖ ^ 2 - ‖x - a • (f' x) - xm‖ ^ 2) 
-            = 1 / (2 * a) * (‖x - xm‖ ^ 2 - ‖x - xm‖ ^ 2 + 
+      calc 1 / ((2 : ℝ) * a) * (‖x - xm‖ ^ 2 - ‖x - a • (f' x) - xm‖ ^ 2)
+            = 1 / (2 * a) * (‖x - xm‖ ^ 2 - ‖x - xm‖ ^ 2 +
               (2 * a) * inner (f' x) (x - xm) - ‖a • (f' x)‖ ^ 2) := by rw [t4₁]; ring_nf
-          _ = 1 / ((2 : ℝ) * a) * ((2 : ℝ) * a) * (inner (f' x) (x - xm)) 
+          _ = 1 / ((2 : ℝ) * a) * ((2 : ℝ) * a) * (inner (f' x) (x - xm))
               + 1 / ((2 : ℝ) * a) * (- ‖a • (f' x)‖ ^ 2) := by rw [sub_self,zero_add]; ring_nf
-          _ = inner (f' x) (x - xm) + 1 / ((2 : ℝ) * a) 
+          _ = inner (f' x) (x - xm) + 1 / ((2 : ℝ) * a)
               * (- ‖a • (f' x)‖ ^ 2) := by rw [tt,one_mul]
           _ = inner (f' x) (x - xm) - 1 / ((2 : ℝ) * a) * (a * a) * (‖f' x‖ ^ 2) := by
               rw [norm_smul _ _]; simp; rw [abs_of_pos step₂]; ring_nf
-          _ = inner (f' x) (x - xm) - a / (2 : ℝ) 
+          _ = inner (f' x) (x - xm) - a / (2 : ℝ)
               * ‖f' x‖ ^ 2 := by ring_nf; simp; left; rw [pow_two,mul_self_mul_inv a]
-    calc f (x - a • (f' x)) ≤ f x - a / 2 * ‖f' x‖ ^ 2 := by 
+    calc f (x - a • (f' x)) ≤ f x - a / 2 * ‖f' x‖ ^ 2 := by
               exact convex_lipschitz h₁ h₂ step₁ step₂ h₃ x
-            _   ≤ f xm + inner (f' x) (x - xm) - a / 2 * ‖f' x‖ ^ 2 := by 
+            _   ≤ f xm + inner (f' x) (x - xm) - a / 2 * ‖f' x‖ ^ 2 := by
               linarith [convex_function h₁ hfun x xm]
-            _   = f xm + 1 / ((2 : ℝ) * a) * (‖x - xm‖ ^ 2 - ‖x - a • (f' x) - xm‖ ^ 2) := by 
+            _   = f xm + 1 / ((2 : ℝ) * a) * (‖x - xm‖ ^ 2 - ‖x - a • (f' x) - xm‖ ^ 2) := by
               rw [add_sub_assoc, t4]
   specialize descent (point k)
   rw [update k]
@@ -100,15 +100,15 @@ lemma point_descent_for_convex (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x�
 
 -- by monotonity of the sequence, we can get the bound for the sum of the sequence
 lemma mono_sum_prop_primal (mono : ∀ k: ℕ, f (point (k + 1)) ≤ f (point k)):
-    ∀ n : ℕ , (Finset.range (n + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) ≥ 
+    ∀ n : ℕ , (Finset.range (n + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) ≥
       (n + (1 : ℝ)) * f (point (n + 2)) := by
   intros n
   induction' n with q IH1
   · simp; apply mono 1
   · have jtt : 0 ≤ q + (2 : ℝ) := by exact add_nonneg (Nat.cast_nonneg q) zero_le_two
     specialize mono (q + 2)
-    calc (Finset.range (q.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) 
-            = (Finset.range (q + 1)).sum (fun (k : ℕ)↦ f (point (k + 1)))+f (point (q + 2)) := by 
+    calc (Finset.range (q.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)))
+            = (Finset.range (q + 1)).sum (fun (k : ℕ)↦ f (point (k + 1)))+f (point (q + 2)) := by
               rw [Finset.sum_range_succ (fun (k : ℕ) ↦ f (point (k + 1))) q.succ]
           _ ≥ (q + (1 : ℝ)) * (f (point (q + 2))) + f (point (q + 2)) := by linarith
           _ = (q + 2) * (f (point (q + 2))) := by ring_nf
@@ -117,7 +117,7 @@ lemma mono_sum_prop_primal (mono : ∀ k: ℕ, f (point (k + 1)) ≤ f (point k)
 
 -- for a certain iteration, we can get the bound by the sum of the sequence
 lemma mono_sum_prop_primal' (mono : ∀ k : ℕ, f (point (k + 1)) ≤ f (point k)):
-    ∀ j : ℕ, (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) / (j.succ + 1) 
+    ∀ j : ℕ, (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) / (j.succ + 1)
       ≥ f (point (j + 2)) := by
   intros j
   have jneq : j + (1 : ℝ) + 1 ≠ 0 := by
@@ -127,19 +127,19 @@ lemma mono_sum_prop_primal' (mono : ∀ k : ℕ, f (point (k + 1)) ≤ f (point 
   have thh : j + (1 : ℝ) + 1 ≥ 0 := by
     rw [add_assoc, one_add_one_eq_two]
     exact add_nonneg (Nat.cast_nonneg j) (by norm_num)
-  have t5: (j + 1) * f (point (j.succ + 1)) / (↑j + 1 + 1) 
+  have t5: (j + 1) * f (point (j.succ + 1)) / (↑j + 1 + 1)
         ≤ (Finset.range j.succ).sum (fun (k : ℕ) ↦ f (point (k + 1))) / (↑j + 1 + 1):= by
-    have t6 : (j + 1) * f (point (j.succ +1)) ≤ 
-        (Finset.range (j.succ )).sum (fun (k : ℕ) ↦ f (point (k + 1))) := by 
+    have t6 : (j + 1) * f (point (j.succ +1)) ≤
+        (Finset.range (j.succ )).sum (fun (k : ℕ) ↦ f (point (k + 1))) := by
       exact mono_sum_prop_primal mono (j.succ-1)
     exact div_le_div_of_le thh t6
   calc (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) / (j.succ + 1) =
-          ((Finset.range (j.succ)).sum (fun (k : ℕ) ↦ f (point (k + 1))) 
+          ((Finset.range (j.succ)).sum (fun (k : ℕ) ↦ f (point (k + 1)))
             + f (point (j.succ + 1))) / (j.succ + 1)
         := by rw [Finset.sum_range_succ (fun (k : ℕ) ↦ f (point (k + 1))) j.succ]
-    _ = ((Finset.range (j.succ)).sum (fun (k : ℕ) ↦ f (point (k + 1)))) 
+    _ = ((Finset.range (j.succ)).sum (fun (k : ℕ) ↦ f (point (k + 1))))
         / (j.succ + 1) + f (point (j.succ + 1)) / (j.succ + 1) := by rw [add_div]
-    _ ≥ j.succ * f (point (j.succ + 1)) / (j.succ + 1) 
+    _ ≥ j.succ * f (point (j.succ + 1)) / (j.succ + 1)
         + f (point (j.succ + 1)) / (j.succ + 1) := by simp; exact t5
     _ = f (point (j + 2)) * (j.succ + 1) / (j.succ + 1) := by
       rw [← add_div]; simp
@@ -150,7 +150,7 @@ lemma mono_sum_prop_primal' (mono : ∀ k : ℕ, f (point (k + 1)) ≤ f (point 
 
 -- the sumation property of the gradient method
 lemma mono_sum_prop (mono : ∀ k: ℕ, f (point (k + 1)) ≤ f (point k)):
-    ∀ n : ℕ ,  (f (point (n + 1)) -  f xm) ≤ (Finset.range (n + 1)).sum 
+    ∀ n : ℕ ,  (f (point (n + 1)) -  f xm) ≤ (Finset.range (n + 1)).sum
     (fun (k : ℕ) ↦ f (point (k + 1)) - f xm) / (n + 1) := by
   intro n
   induction' n with j _
@@ -163,22 +163,24 @@ lemma mono_sum_prop (mono : ∀ k: ℕ, f (point (k + 1)) ≤ f (point k)):
       have n1: (j + (2 : ℝ)) / (j + (2 : ℝ)) = (1 : ℝ) := by rw [div_self hs]
       have n2: (1 : ℝ) =(j + 2) / (j + 2) ∨ f xm = 0 := by simp [n1]
       exact mul_eq_mul_left_iff.mpr n2
-    calc f (point (j + 2)) ≤ (Finset.range (j.succ + 1)).sum 
-          (fun (k : ℕ) ↦ f (point (k + 1))) / (j.succ + 1) := by 
+    calc f (point (j + 2)) ≤ (Finset.range (j.succ + 1)).sum
+          (fun (k : ℕ) ↦ f (point (k + 1))) / (j.succ + 1) := by
             linarith [mono_sum_prop_primal' mono j]
-      _ = (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) 
+      _ = (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)))
             / (j + 2) - f xm*1+ f xm := by
               rw [Nat.succ_eq_add_one j]; simp
               ring_nf; rw [add_assoc, one_add_one_eq_two]
-      _ = (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) / (j + 2) 
+      _ = (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) / (j + 2)
             - f xm * ((j + 2) / (j + 2)) + f xm := by rw [h11]
-      _ = ((Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1))) 
+      _ = ((Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)))
             - (j + 1 + 1) * f xm) / (j + 1+1)+ f xm := by
               simp; rw [← one_add_one_eq_two, ← add_assoc, mul_div, mul_comm, ← sub_div]
 
 -- the O(1/t) descent property of the gradient method
+variable {f: E → ℝ} {f' : E → E} {l a: ℝ} {xm x₀: E} {point : ℕ → E}
+
 lemma gradient_method (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
-    (hfun: ConvexOn ℝ Set.univ f) (h₂: l > 0) (h₃ : LipschitzOn f' l) (step₁: l ≤ (1/a)) 
+    (hfun: ConvexOn ℝ Set.univ f) (h₂: l > 0) (h₃ : LipschitzOn f' l) (step₁: l ≤ (1/a))
     (step₂ : a > 0) (initial : point 0 = x₀)
     (update: ∀ (k : ℕ), point (k + 1) = point k - a • (f' (point k))):
     ∀ k : ℕ  , f (point (k + 1)) - f xm ≤ 1 / (2 * (k + 1) * a) * ‖x₀ - xm‖ ^ 2 := by
@@ -191,7 +193,7 @@ lemma gradient_method (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
         exact Nat.cast_add_one_pos k
       exact mul_pos t₀₁ step₂
     exact one_div_pos.mpr t₀
-  have pointdescent : ∀ k : ℕ , f (point (k + 1)) ≤ f xm + 1 / ((2 : ℝ) * a) * 
+  have pointdescent : ∀ k : ℕ , f (point (k + 1)) ≤ f xm + 1 / ((2 : ℝ) * a) *
       (‖point k - xm‖ ^ 2 - ‖point (k + 1) - xm‖ ^ 2):= by
     exact point_descent_for_convex h₁ hfun h₂ h₃ step₁ step₂ update
   have mono : ∀ k : ℕ, f (point (k + 1)) ≤ f (point k) := by
@@ -203,7 +205,7 @@ lemma gradient_method (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
           simp
           apply mul_nonneg tα _
           · exact sq_nonneg ‖f' (point k)‖
-  have sum_prop : ∀ n : ℕ ,  (Finset.range (n + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)) - f xm) 
+  have sum_prop : ∀ n : ℕ ,  (Finset.range (n + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)) - f xm)
       ≤ 1 / (2 * a) * (‖x₀ - xm‖ ^ 2 - ‖point (n + 1) - xm‖ ^ 2) := by
     intro n
     induction' n with j IH
@@ -214,20 +216,20 @@ lemma gradient_method (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
         _ = a⁻¹ * 2⁻¹ * (‖x₀ - xm‖^ 2 - ‖point 1 - xm‖ ^ 2) + f xm := by rw [initial]; simp; ring_nf
       simp
     · specialize pointdescent (j + 1)
-      calc (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)) - f xm) 
-            = (Finset.range (j + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)) - f xm) 
+      calc (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)) - f xm)
+            = (Finset.range (j + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)) - f xm)
               + f (point (j + 2)) - f xm := by
                 rw [Finset.sum_range_succ (fun (k : ℕ)↦ f (point (k+1))-f (xm)) j.succ]
                 rw [Nat.succ_eq_add_one j]; ring_nf; rw [add_sub]
-            _ ≤ 1 / (2 * a) * (‖x₀ - xm‖ ^ 2 - ‖point (j + 1) - xm‖ ^ 2) 
+            _ ≤ 1 / (2 * a) * (‖x₀ - xm‖ ^ 2 - ‖point (j + 1) - xm‖ ^ 2)
               + f (point (j + 2)) - f xm := by linarith
-            _ = 1 / (2 * a) * (‖x₀ - xm‖ ^ 2 - ‖point (j + 1) - xm‖ ^ 2) 
+            _ = 1 / (2 * a) * (‖x₀ - xm‖ ^ 2 - ‖point (j + 1) - xm‖ ^ 2)
               - f xm + f (point (j + 2)) :=  by rw [add_sub_right_comm]
-            _ ≤ 1 / (2 * a) * (‖x₀ - xm‖ ^ 2 - ‖point (j + 1) - xm‖ ^ 2) 
+            _ ≤ 1 / (2 * a) * (‖x₀ - xm‖ ^ 2 - ‖point (j + 1) - xm‖ ^ 2)
               + 1 / (2 * a) * (‖point (j + 1) - xm‖ ^ 2 - ‖point (j + 2) - xm‖ ^ 2) := by linarith
-            _ = 1 / (2 * a) * (‖x₀ - xm‖ ^ 2 - ‖point (j.succ + 1) - xm‖ ^ 2)  := by 
+            _ = 1 / (2 * a) * (‖x₀ - xm‖ ^ 2 - ‖point (j.succ + 1) - xm‖ ^ 2)  := by
               ring_nf; simp; left; rw [Nat.succ_eq_add_one j]; ring_nf
-  have sum_prop_1 : ∀ n : ℕ ,  (f (point (n + 1)) - f xm) ≤ 
+  have sum_prop_1 : ∀ n : ℕ ,  (f (point (n + 1)) - f xm) ≤
     (Finset.range (n + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)) - f xm) / (n + 1) := by
     exact mono_sum_prop mono
   specialize sum_prop_1 k

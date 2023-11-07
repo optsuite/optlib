@@ -40,7 +40,7 @@ def strict_cg (f : E → ℝ) (y : E) : ℝ :=
 section
 
 /- Fenchel inequality -/
-theorem Fenchel (f : E → ℝ) (y x : E) : cg f y ≥ ((inner y x) : ℝ) - f x:= by
+theorem Fenchel (f : E → ℝ) (y x : E) : cg f y ≥ ((inner y x) : ℝ) - f x := by
   rw [cg]
   apply le_sSup
   use x

@@ -21,12 +21,12 @@ We introduce 2 definitions related to closed function:
 We prove the equivalance of semi-continuity, closed functions and closedness of sublevel set.
 * `closed_iff_IsClosed_sublevel`: a function is closed if and only if all its sublevel sets are closed.
 * `closed_iff_LowerSemicontinuous`: a function is closed if and only if it is lower semi-continuous.
-* `lowerSemicontinuous_iff_IsClosed_sublevel`: 
+* `lowerSemicontinuous_iff_IsClosed_sublevel`:
   a function is lower semi-continuous if and only if all its sublevel sets are closed.
 
 ## Implementation details
 
-Although Mathlib4 already has a definition of semi-continuity, this file uses a more natural 
+Although Mathlib4 already has a definition of semi-continuity, this file uses a more natural
 definition in mathematics when proving the equivalence of semi-continuity and closed functions.
 
 ## References
@@ -46,23 +46,23 @@ variable {s t : Set E} {f : E → EReal}
 
 variable [TopologicalSpace E] [FirstCountableTopology E]
 
-/-- A function `f : E → EReal` is said to be closed on a set `s` if its epigraph 
+/-- A function `f : E → EReal` is said to be closed on a set `s` if its epigraph
 `{p : E × EReal | p.1 ∈ s ∧ f p.1 ≤ p.2}` is closed on `s`. -/
 def ClosedOn (f : E → EReal) (s : Set E) : Prop :=
   IsClosed {p : E × EReal | p.1 ∈ s ∧ f p.1 ≤ p.2}
 
-/-- A function `f : E → EReal` is said to be closed if its epigraph 
+/-- A function `f : E → EReal` is said to be closed if its epigraph
 `{p : E × EReal | f p.1 ≤ p.2}` is closed. -/
-def Closed (f : E → EReal) : Prop := 
+def Closed (f : E → EReal) : Prop :=
   IsClosed {p : E × EReal | f p.1 ≤ p.2}
 
-theorem ClosedOn.closed_epigraph (hf : ClosedOn f s) : 
+theorem ClosedOn.closed_epigraph (hf : ClosedOn f s) :
   IsClosed {p : E × EReal | p.1 ∈ s ∧ f p.1 ≤ p.2} := hf
 
 theorem Closed.closed_epigraph (hf : Closed f) :
   IsClosed {p : E × EReal | f p.1 ≤ p.2} := hf
 
-theorem closed_univ_iff : ClosedOn f univ ↔ Closed f := by 
+theorem closed_univ_iff : ClosedOn f univ ↔ Closed f := by
   simp [ClosedOn, Closed]
 
 /-!
@@ -181,12 +181,12 @@ theorem closedOn_iff_LowerSemicontinuousOn {f : E → EReal} {s : Set E} (hs : I
   ⟨fun H => lowerSemicontinuousOn_of_isClosed_sublevel fun _ => ClosedOn.isClosed_sublevel H _,
     fun h => LowerSemicontinuousOn.ClosedOn hs h⟩
 
-theorem lowerSemicontinuousOn_iff_IsClosed_sublevel {f : E → EReal} {s : Set E} (hs : IsClosed s) : 
+theorem lowerSemicontinuousOn_iff_IsClosed_sublevel {f : E → EReal} {s : Set E} (hs : IsClosed s) :
     (∀ x ∈ s, f x ≤ (liminf f <| 𝓝[s] x)) ↔ ∀ (r : EReal), IsClosed {x | x ∈ s ∧ f x ≤ r} :=
   ⟨fun H => ClosedOn.isClosed_sublevel (LowerSemicontinuousOn.ClosedOn hs H),
     fun a _ => lowerSemicontinuousOn_of_isClosed_sublevel a _⟩
 
-/-- If `f : E → EReal` is continuous and `s` is closed, then `f` is closed on `s`. -/ 
+/-- If `f : E → EReal` is continuous and `s` is closed, then `f` is closed on `s`. -/
 theorem ContinuousOn.isClosedFun {f : E → EReal} {s : Set E}
     (hs : IsClosed s) (hf : ContinuousOn f s) :
   ClosedOn f s := IsClosed.epigraph hs hf

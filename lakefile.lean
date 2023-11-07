@@ -12,3 +12,15 @@ require mathlib from git
 lean_lib «Analysis» {
   -- add any library configuration options here
 }
+
+lean_lib «Algorithm» {
+  -- add any library configuration options here
+}
+
+lean_lib «Function» {
+  -- add any library configuration options here
+}
+
+lean_lib «Matrix» {
+  -- add any library configuration options here
+}

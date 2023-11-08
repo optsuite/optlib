@@ -48,8 +48,8 @@ lemma one_iter (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (hfun: Conv
         _ = f x' + inner (l • (y k - x k)) (x k - x') + l / 2 * ‖x k - y k‖ ^ 2 := by rw [this]
         _ = f x' + l * inner (x k - y k) (x' - x k) + l / 2 * ‖x k - y k‖ ^ 2 := by
           rw [real_inner_smul_left, ← inner_neg_neg, neg_sub, neg_sub]
-  have h3 : ∀ (k : ℕ+), f (x k) - f xm - (1 - γ k) * (f (x (k - 1)) - f xm) ≤ l * (inner (x k - y k)
-        ((1 - γ k) • (x (k - 1)) + ((γ k) • xm)- x k)) + l / 2 * ‖x k - y k‖ ^ 2 := by
+  have h3 : ∀ (k : ℕ+), f (x k) - f xm - (1 - γ k) * (f (x (k - 1)) - f xm) ≤ l * (inner
+      (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm)- x k)) + l / 2 * ‖x k - y k‖ ^ 2 := by
     intro k
     have : f (x k) - f xm - (1 - γ k) * (f (x (k - 1)) - f xm) =
       γ k * (f (x k) - f xm) + (1 - γ k) * (f (x k) - f (x (k - 1))) := by ring_nf
@@ -107,33 +107,46 @@ lemma one_iter (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (hfun: Conv
                 ‖x k - (1 - γ k) • x (k - 1) - γ k • xm‖ ^ 2) := by
             rw [smul_add, smul_smul]; simp
             left; rw [mul_inv_cancel (by linarith), one_smul, sub_smul, one_smul, add_comm, sub_add]
-  have this2 : l / 2 * (‖y k - (1 - γ k) • (x (k - 1)) - γ k • xm‖ ^ 2 - ‖x k - (1 - γ k) • x (k - 1) - γ k • xm‖ ^ 2) = l * (inner (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm)- x k)) + l / 2 * ‖x k - y k‖ ^ 2 := by
-      simp only [Real.rpow_two]
-      rw [sub_sub, sub_sub, norm_sub_sq_real (y k), norm_sub_sq_real (x k), norm_sub_sq_real (x k)]
-      rw [← Real.rpow_two, ← Real.rpow_two, ← Real.rpow_two]
-      calc l / 2 * (‖y k‖ ^ 2 - 2 * inner (y k) ((1 - γ k) • x (↑k - 1) + γ k • xm) + ‖(1 - γ k) • x (k - 1) + γ k • xm‖ ^ 2 - (‖x k‖ ^ 2 - 2 * inner (x ↑k) ((1 - γ k) • x (↑k - 1) + γ k • xm) + ‖(1 - γ k) • x (k - 1) + γ k • xm‖ ^ 2))
-            = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l / 2 * 2 * (inner (x k) ((1 - γ k) • x (↑k - 1) + γ k • xm) - inner (y k) ((1 - γ k) • x (↑k - 1) + γ k • xm)) := by ring_nf
-            _ = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l * inner (x k - y k) ((1 - γ k) • x (↑k - 1) + γ k • xm)  := by rw [← inner_sub_left]; ring_nf
-            _ = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l * inner (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm) - x k + x k) := by rw [sub_add, sub_self, sub_zero]
-            _ = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l * inner (x k - y k) (x k) + l * (inner (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm) - x k)) := by rw [inner_add_right, mul_add]; ring_nf
-            _ = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l * ‖x k‖ ^ 2 - l * inner (x k) (y k) + l * (inner (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm) - x k)) := by rw [inner_sub_left, mul_sub, mul_sub, real_inner_self_eq_norm_sq, real_inner_comm, add_sub]; simp
-            _ = l * (inner (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm) - x k)) + l / 2 * (‖x k‖ ^ 2 - 2 * inner (x k) (y k) + ‖y k‖ ^ 2) := by ring_nf
+  have this2 : l / 2 * (‖y k - (1 - γ k) • (x (k - 1)) - γ k • xm‖ ^ 2 -
+      ‖x k - (1 - γ k) • x (k - 1) - γ k • xm‖ ^ 2) = l * (inner (x k - y k) ((1 - γ k) •
+      (x (k - 1)) + ((γ k) • xm)- x k)) + l / 2 * ‖x k - y k‖ ^ 2 := by
+    simp only [Real.rpow_two]
+    rw [sub_sub, sub_sub, norm_sub_sq_real (y k), norm_sub_sq_real (x k), norm_sub_sq_real (x k)]
+    rw [← Real.rpow_two, ← Real.rpow_two, ← Real.rpow_two]
+    calc l / 2 * (‖y k‖ ^ 2 - 2 * inner (y k) ((1 - γ k) • x (↑k - 1) + γ k • xm) +
+          ‖(1 - γ k) • x (k - 1) + γ k • xm‖ ^ 2 - (‖x k‖ ^ 2 - 2 * inner (x ↑k)
+          ((1 - γ k) • x (↑k - 1) + γ k • xm) + ‖(1 - γ k) • x (k - 1) + γ k • xm‖ ^ 2))
+            = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l / 2 * 2 * (inner (x k) ((1 - γ k) • x (↑k - 1) +
+              γ k • xm) - inner (y k) ((1 - γ k) • x (↑k - 1) + γ k • xm)) := by ring_nf
+            _ = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l * inner (x k - y k)
+                  ((1 - γ k) • x (↑k - 1) + γ k • xm)  := by rw [← inner_sub_left]; ring_nf
+            _ = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l * inner (x k - y k) ((1 - γ k) •
+                  (x (k - 1)) + ((γ k) • xm) - x k + x k) := by rw [sub_add, sub_self, sub_zero]
+            _ = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l * inner (x k - y k) (x k) + l *
+                  (inner (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm) - x k)) := by
+              rw [inner_add_right, mul_add]; ring_nf
+            _ = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l * ‖x k‖ ^ 2 - l * inner (x k) (y k) +
+                  l * (inner (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm) - x k)) := by
+              rw [inner_sub_left, mul_sub, mul_sub, real_inner_self_eq_norm_sq]
+              rw [real_inner_comm, add_sub]; simp
+            _ = l * (inner (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm) - x k))
+                  + l / 2 * (‖x k‖ ^ 2 - 2 * inner (x k) (y k) + ‖y k‖ ^ 2) := by ring_nf
   rw [this1, this2]
   exact (h3 k)
 
-theorem nesterov_algorithm (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁)
-(hfun: ConvexOn ℝ Set.univ f)(h₂: l > 0)(hg : ∀ (k : ℕ+), γ k = 2 / (k + 1))
-(h₃ : ∀ x y : E, ‖f' x - f' y‖ ≤ l *‖x - y‖)
-(min : IsMinOn f Set.univ xm)
-(initial1 : γ 1 = (1 : ℝ))(initial2 : v 0 = x₀)
-(update1 : ∀ (k : ℕ+), y k = (1 - γ k) • x (k - 1) + γ k • v (k - 1))
-(update2 : ∀ (k : ℕ+), x k = y k - (1 / l) • (f' (y k)))
-(update3 : ∀ (k : ℕ+), v k = x (k - 1) + (1 / (γ k)) • (x k - x (k - 1)))
-(con : ∀ k : ℕ+ , (1 - γ k) / (γ k) ^ 2 ≤ 1 / (γ (k - 1)) ^ 2):
-∀ k : ℕ+  , f (x k) - f xm ≤  2 * l / ((k + 1) ^ 2) * ‖x₀ - xm‖ ^ 2 := by
-  have h4 : ∀ (k : ℕ+), f (x k) - f xm - (1 - γ k) * (f (x (k - 1)) - f xm) ≤ l * (γ k) ^ 2 / 2 * (‖v (k-1) - xm‖ ^ 2 - ‖v k -xm‖ ^ 2) := by
+theorem nesterov_algorithm (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁) (hfun: ConvexOn ℝ Set.univ f)
+    (h₂: l > 0) (hg : ∀ (k : ℕ+), γ k = 2 / (k + 1)) (h₃ : LipschitzOn f' l)
+    (min : IsMinOn f Set.univ xm) (initial1 : γ 1 = (1 : ℝ)) (initial2 : v 0 = x₀)
+    (update1 : ∀ (k : ℕ+), y k = (1 - γ k) • x (k - 1) + γ k • v (k - 1))
+    (update2 : ∀ (k : ℕ+), x k = y k - (1 / l) • (f' (y k)))
+    (update3 : ∀ (k : ℕ+), v k = x (k - 1) + (1 / (γ k)) • (x k - x (k - 1)))
+    (con : ∀ k : ℕ+ , (1 - γ k) / (γ k) ^ 2 ≤ 1 / (γ (k - 1)) ^ 2):
+    ∀ k : ℕ+  , f (x k) - f xm ≤  2 * l / ((k + 1) ^ 2) * ‖x₀ - xm‖ ^ 2 := by
+  have h4 : ∀ (k : ℕ+), f (x k) - f xm - (1 - γ k) * (f (x (k - 1)) - f xm) ≤
+      l * (γ k) ^ 2 / 2 * (‖v (k-1) - xm‖ ^ 2 - ‖v k -xm‖ ^ 2) := by
     exact one_iter h₁ hfun h₂ hg h₃ update1 update2 update3
-  have h5 : ∀ (k : ℕ+), 1 / (γ k) ^ 2 * (f (x k) - f xm) + l / 2 * ‖v k - xm‖ ^ 2 ≤ 1 / (γ (k - 1)) ^ 2 * (f (x (k - 1)) - f xm) + l / 2 * ‖v (k - 1) - xm‖ ^ 2 := by
+  have h5 : ∀ (k : ℕ+), 1 / (γ k) ^ 2 * (f (x k) - f xm) + l / 2 * ‖v k - xm‖ ^ 2
+      ≤ 1 / (γ (k - 1)) ^ 2 * (f (x (k - 1)) - f xm) + l / 2 * ‖v (k - 1) - xm‖ ^ 2 := by
     intro k
     specialize h4 k
     specialize con k
@@ -154,7 +167,8 @@ theorem nesterov_algorithm (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁)
     apply mul_le_mul_of_nonneg_right _ (by linarith)
     simp only [Real.rpow_two] at con
     exact con
-  have h6 : ∀ (k : ℕ+), 1 / (γ k) ^ 2 * (f (x k) - f xm) + l / 2 * ‖v k - xm‖ ^ 2 ≤ 1 / (γ 1) ^ 2 * (f (x 1) - f xm) + l / 2 * ‖v 1 - xm‖ ^ 2 := by
+  have h6 : ∀ (k : ℕ+), 1 / (γ k) ^ 2 * (f (x k) - f xm) + l / 2 * ‖v k - xm‖ ^ 2
+      ≤ 1 / (γ 1) ^ 2 * (f (x 1) - f xm) + l / 2 * ‖v 1 - xm‖ ^ 2 := by
     intro k
     induction' k using PNat.caseStrongInductionOn with j IH
     · simp
@@ -165,7 +179,8 @@ theorem nesterov_algorithm (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁)
       apply le_trans h5 _
       rw [y1, y2]
       exact IH
-  have h7 : 1 / (γ 1) ^ 2 * (f (x 1) - f xm) + l / 2 * ‖v 1 - xm‖ ^ 2 ≤ (1 - γ 1) / ((γ 1) ^ 2 ) * (f (x 0) - f xm) + l / 2 * ‖v 0 - xm‖ ^ 2 := by
+  have h7 : 1 / (γ 1) ^ 2 * (f (x 1) - f xm) + l / 2 * ‖v 1 - xm‖ ^ 2
+      ≤ (1 - γ 1) / ((γ 1) ^ 2 ) * (f (x 0) - f xm) + l / 2 * ‖v 0 - xm‖ ^ 2 := by
     specialize h4 1
     rw [initial1, sub_self, zero_mul, sub_zero] at h4
     rw [initial1, sub_self, zero_div, zero_mul, zero_add]
@@ -173,7 +188,8 @@ theorem nesterov_algorithm (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁)
     simp only [PNat.one_coe, Real.rpow_two, one_pow, mul_one, le_refl, tsub_eq_zero_of_le] at h4
     rw [← le_sub_iff_add_le, ← mul_sub]
     exact h4
-  have h8 : ∀ (k : ℕ+), 1 / (γ k) ^ 2 * (f (x k) - f xm) + l / 2 * ‖v k - xm‖ ^ 2 ≤ l / 2 * ‖x₀ - xm‖ ^ 2 := by
+  have h8 : ∀ (k : ℕ+), 1 / (γ k) ^ 2 * (f (x k) - f xm) + l / 2
+      * ‖v k - xm‖ ^ 2 ≤ l / 2 * ‖x₀ - xm‖ ^ 2 := by
     rw [initial1] at h6
     rw [initial1, sub_self, zero_div, zero_mul, zero_add, initial2] at h7
     intro k
@@ -184,7 +200,8 @@ theorem nesterov_algorithm (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁)
     apply le_of_add_le_of_nonneg_left h8 _
     apply mul_nonneg (by linarith) _
     simp only [Real.rpow_two, sq_nonneg]
-  have h10 : l / (2 : ℝ) * ‖x₀ - xm‖ ^ 2 / ((1 :ℝ) / (2 / (k + 1)) ^ 2) = 2 * l / ((k + 1) ^ 2) * ‖x₀ - xm‖ ^ 2 := by
+  have h10 : l / (2 : ℝ) * ‖x₀ - xm‖ ^ 2 / ((1 :ℝ) / (2 / (k + 1)) ^ 2)
+      = 2 * l / ((k + 1) ^ 2) * ‖x₀ - xm‖ ^ 2 := by
     simp [Nat.cast_add_one_ne_zero ↑k]
     rw [← div_mul]
     ring_nf

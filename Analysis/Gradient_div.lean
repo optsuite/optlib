@@ -2,6 +2,7 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Analysis.Basic
+import Function.First_Order
 
 /- Cao Zhipeng, HUST ; Yu Penghao, PKU-/
 
@@ -11,19 +12,18 @@ import Analysis.Basic
 ## Main results
 
 This file contains the division parts of gradient, which can't be found in `fderiv`.
-As the functions discussed in this file are restricted to `(EuclideanSpace ℝ n) → ℝ `
+As the functions discussed in this file are restricted to `E → ℝ `
 Two main theorems are formalized in this file
-* `HasGradnAt.one_div`, shows the gradient at `x` of `1 / f x` where `f x ≠ 0`.
-* `HasGradnAt.div`, shows the gradient at `x` of `f x / g x` where `g x ≠ 0`.\
+* `HasGradientAt.one_div`, shows the gradient at `x` of `1 / f x` where `f x ≠ 0`.
+* `HasGradientAt.div`, shows the gradient at `x` of `f x / g x` where `g x ≠ 0`.\
 need to update and modify
 -/
 
 variable (a b c d : ℝ)
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-variable {f: E → ℝ} {f': E → (E →L[ℝ] ℝ)} {x y : E} {s : Set E}
-variable {x y gradient : E} {gradient' : E →L[ℝ] ℝ}
+variable {f : E → ℝ} {f' : E → E} {x y : E} {s : Set E}
+variable {x y grad x': E} {gradient' : E}
 local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
-local notation "∇*" gradient  => (toDualMap ℝ _) gradient
 
 lemma Vert_abs : ‖|a| - |b|‖ ≤ ‖a - b‖ := by
   have h₁ : ‖|a| - |b|‖ = abs (|a| - |b|) := rfl
@@ -87,37 +87,71 @@ lemma div_div_mul (h₁ : a / b ≤ c) (h₂ : 0 < a) (h₃ : 0 < b) (h₄ : 0 <
   rw [one_mul]
   apply this
 
-theorem Continuous_abs_Continous (h : ContinuousAt f x) : ContinuousAt |f| x := by
-  refine Iff.mpr ContinuousAt_iff_Convergence ?_
-  have absle : ∀ (x' : E), ‖|f x'| - |f x|‖ ≤ ‖f x' - f x‖ := fun x' => Vert_abs (f x') (f x)
-  intro ε εpos
-  rcases (ContinuousAt_Convergence h) ε εpos with ⟨δ,h⟩
-  use δ; constructor
-  apply h.left
-  intro x' h'
-  have sep : ∀ (x' : E), ‖x - x'‖ ≤ δ → ‖f x' - f x‖ ≤ ε := h.right
-  specialize sep x' h'
-  exact le_trans (absle x') sep
+theorem ContinuousAt_Convergence (h : ContinuousAt f x) : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ),
+    ∀ (x' : E), ‖x - x'‖ ≤ δ → ‖f x' - f x‖ ≤ ε:= by
+  rw [continuousAt_def] at h
+  intro ε epos
+  let A := Metric.ball (f x) ε
+  specialize h A (Metric.ball_mem_nhds (f x) epos)
+  rw [Metric.mem_nhds_iff] at h
+  rcases h with ⟨δ, dpos, h⟩
+  use (δ /2); constructor
+  exact half_pos dpos
+  intro x' x1le
+  have H1: x' ∈ Metric.ball x δ := by
+    rw [Metric.ball, Set.mem_setOf, dist_comm, dist_eq_norm_sub]
+    apply lt_of_le_of_lt x1le
+    exact half_lt_self dpos
+  exact LT.lt.le (h H1)
 
-theorem HasGradnAt.one_div (hf : HasGradnAt f gradf x)(h₁: ¬ f x = (0 : ℝ)):
-    HasGradnAt (fun y => (1 : ℝ) / (f y)) (- ((1 : ℝ) / (f x) ^ (2 : ℕ)) • gradf) x := by
+theorem Convergence_ContinuousAt (h: ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E),
+    ‖x - x'‖ ≤ δ → ‖f x' - f x‖ ≤ ε) :
+  ContinuousAt f x := by
+  rw [continuousAt_def]
+  intro A amem
+  rw [Metric.mem_nhds_iff] at amem
+  rcases amem with ⟨ε, epos, bmem⟩
+  specialize h (ε / 2) (half_pos epos)
+  rcases h with ⟨δ , dpos, h⟩
+  rw [Metric.mem_nhds_iff]
+  use δ; constructor
+  exact dpos
+  rw [Set.subset_def]
+  intro x' x1mem
+  have : ‖x - x'‖ ≤ δ := by
+    rw [Metric.ball, Set.mem_setOf, dist_comm, dist_eq_norm_sub] at x1mem
+    exact LT.lt.le x1mem
+  specialize h x' this
+  have H1: f x' ∈  Metric.ball (f x) ε := by
+    rw [Metric.ball, Set.mem_setOf, dist_eq_norm_sub]
+    apply lt_of_le_of_lt h (half_lt_self epos)
+  exact bmem H1
+
+theorem ContinuousAt_iff_Convergence: ContinuousAt f x ↔ ∀ ε > (0 : ℝ),
+    ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ → ‖f x' - f x‖ ≤ ε:= by
+  constructor
+  apply ContinuousAt_Convergence
+  apply Convergence_ContinuousAt
+
+theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : ℝ)):
+    HasGradientAt (fun y => (1 : ℝ) / (f y)) (- ((1 : ℝ) / (f x) ^ (2 : ℕ)) • grad) x := by
+  rw [HasGradient_iff_Convergence_Point]
   intro ε εpos
-  rcases (ContinuousAt_Convergence (Continuous_abs_Continous (HasGradnAt.continuousAt hf))) ε εpos with ⟨δ', _ , _⟩
+  rcases (ContinuousAt_Convergence (ContinuousAt.abs (HasGradientAt.continuousAt hf))) ε εpos with ⟨δ', _ , _⟩
   have ε1pos : 0 < ε * ‖f x‖ * ‖f x‖ / 4 := by
     apply div_pos
     repeat apply mul_pos
     apply εpos
     repeat apply Iff.mpr norm_pos_iff h₁
     norm_num
-  
   have h₀ : ∃ δ₀ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ₀ → ‖f x‖ / 2 ≤ ‖f x'‖ := by
     have absh : ∃ δ₀ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ₀ →
         ‖|f x'| - |f x|‖ ≤ ‖f x‖ / 2 := by
-      apply (ContinuousAt_Convergence (Continuous_abs_Continous (HasGradnAt.continuousAt hf)))
+      apply (ContinuousAt_Convergence (ContinuousAt.abs (HasGradientAt.continuousAt hf)))
       apply div_pos
       apply Iff.mpr norm_pos_iff h₁
       norm_num
-    have absh' : ∃ δ₀ > (0 : ℝ), ∀ (x' : (EuclideanSpace ℝ n)),
+    have absh' : ∃ δ₀ > (0 : ℝ), ∀ (x' : E),
         ‖x - x'‖ ≤ δ₀ → |f x| - ‖f x‖/2 ≤ ‖f x'‖ := by
       rcases absh with ⟨δ₀, δ₀pos, so⟩
       use δ₀
@@ -131,31 +165,29 @@ theorem HasGradnAt.one_div (hf : HasGradnAt f gradf x)(h₁: ¬ f x = (0 : ℝ))
     rw [equal] at absh'
     apply absh'
   rcases h₀ with ⟨δ₀, δ₀pos, hδ₀⟩
+  rw [HasGradient_iff_Convergence_Point] at hf
   rcases hf (ε * ‖f x‖ * ‖f x‖ /4) ε1pos with ⟨δ'',δ''pos,hm2⟩
-  have h₂ : ∃ δ₂ > (0 : ℝ ), ∀ (x' : (EuclideanSpace ℝ n)), ‖x - x'‖ ≤ δ₂ →
-    ‖f x - f x' + ⟪gradf, (x' - x)⟫‖ ≤ ε * ‖f x‖ * ‖f x‖/4 * ‖x - x'‖ := by
+  have h₂ : ∃ δ₂ > (0 : ℝ ), ∀ (x' : E), ‖x - x'‖ ≤ δ₂ →
+    ‖f x - f x' + ⟪grad, (x' - x)⟫‖ ≤ ε * ‖f x‖ * ‖f x‖/4 * ‖x - x'‖ := by
     use δ''
     constructor
     apply δ''pos
     intro x' h'
-    have sep2 : ∀ (x' : EuclideanSpace ℝ n),
-    ‖x - x'‖ ≤ δ'' →
-      ‖f x - f x' + ⟪gradf, (x' - x)⟫‖ ≤ ε * ‖f x‖ * ‖f x‖/4 * ‖x - x'‖ := by
+    have sep2 : ∀ (x' : E), ‖x - x'‖ ≤ δ'' →
+      ‖f x - f x' + ⟪grad, (x' - x)⟫‖ ≤ ε * ‖f x‖ * ‖f x‖/4 * ‖x - x'‖ := by
         intro x1 hp1
         specialize hm2 x1 hp1
-        have hp' : ‖f x - f x1 + ⟪gradf, (x1 - x)⟫‖ = ‖f x1 - f x - ⟪gradf, (x1 - x)⟫‖ := by
-          have h'' : f x - f x1 + ⟪gradf, (x1 - x)⟫ = - (f x1 - f x - ⟪gradf, (x1 - x)⟫) := by
+        have hp' : ‖f x - f x1 + ⟪grad, (x1 - x)⟫‖ = ‖f x1 - f x - ⟪grad, (x1 - x)⟫‖ := by
+          have h'' : f x - f x1 + ⟪grad, (x1 - x)⟫ = - (f x1 - f x - ⟪grad, (x1 - x)⟫) := by
             linarith
           rw [h'']
           apply norm_neg
-        have : (∇* gradf ) (x1 - x) = inner gradf (x1 - x) := by
-          rfl
-        rw [this, ← hp'] at hm2
+        rw [← hp'] at hm2
         apply hm2
     specialize sep2 x' h'
     apply sep2
   rcases h₂ with ⟨δ₂, δ₂pos, hδ₂⟩
-  have ε2pos : 0 < ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖gradf‖ + 1 )) := by
+  have ε2pos : 0 < ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖grad‖ + 1 )) := by
     apply div_pos
     repeat apply mul_pos
     apply εpos
@@ -165,18 +197,15 @@ theorem HasGradnAt.one_div (hf : HasGradnAt f gradf x)(h₁: ¬ f x = (0 : ℝ))
     apply h₁
     apply mul_pos
     linarith
-    have h' : (0 : ℝ )  < 1 := by linarith
-    have h'' : 0 ≤ ‖gradf‖ := by exact norm_nonneg (gradf)
+    have h' : (0 : ℝ)  < 1 := by linarith
+    have h'' : 0 ≤ ‖grad‖ := by exact norm_nonneg (grad)
     exact add_pos_of_nonneg_of_pos h'' h'
-
-
-  have h₃ : ∃ δ₃ > (0 : ℝ ), ∀ (x' : (EuclideanSpace ℝ n)),
-    ‖x - x'‖ ≤ δ₃ → ‖f x' - f x‖ ≤ ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖gradf‖ + 1 )) := by
-    apply h''
-    apply ε2pos
+  have h₃ : ∃ δ₃ > (0 : ℝ ), ∀ (x' : E),
+    ‖x - x'‖ ≤ δ₃ → ‖f x' - f x‖ ≤ ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖grad‖ + 1 )) := by
+    sorry
   rcases h₃ with ⟨δ₃,δ₃pos,hδ₃⟩
-  have h₄ : ∃ δ > (0 : ℝ ), ∀ (x' : (EuclideanSpace ℝ n)), ‖x - x'‖ ≤ δ →
-      ‖(f x' * ⟪gradf, (x' - x)⟫ - f x * ⟪gradf, (x' - x)⟫)/((f x) * (f x) * (f x'))‖
+  have h₄ : ∃ δ > (0 : ℝ ), ∀ (x' : E), ‖x - x'‖ ≤ δ →
+      ‖(f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)/((f x) * (f x) * (f x'))‖
       ≤ (ε / 2) * ‖x' - x‖ := by
     use min δ₀ δ₃
     constructor
@@ -195,67 +224,67 @@ theorem HasGradnAt.one_div (hf : HasGradnAt f gradf x)(h₁: ¬ f x = (0 : ℝ))
         apply Iff.mpr norm_pos_iff h₁
         norm_num
       apply lt_of_lt_of_le h'' h'
-    have l1 : ‖(f x' - f x) * ⟪gradf, (x' - x)⟫/((f x) * (f x) * (f x'))‖  =
-        ‖(f x' - f x) * ⟪gradf, (x' - x)⟫‖ * ‖1 / ((f x) * (f x) * (f x'))‖  := by
-      apply vert_div
-    have l2 : ‖(f x' - f x) * ⟪gradf, (x' - x)⟫‖ * ‖1 / ((f x) * (f x) * (f x'))‖ =
-        ‖f x' - f x‖ * ‖ ⟪gradf, (x' - x)⟫‖  * ‖1 / ((f x) * (f x) * (f x'))‖ := by
-      have h' : ‖(f x' - f x) * ⟪gradf, (x' - x)⟫‖ = ‖f x' - f x‖ * ‖ ⟪gradf, (x' - x)⟫‖ := by
-        exact norm_mul (f x' - f x) ⟪gradf, (x' - x)⟫
+    have l1 : ‖(f x' - f x) * ⟪grad, (x' - x)⟫/((f x) * (f x) * (f x'))‖  =
+        ‖(f x' - f x) * ⟪grad, (x' - x)⟫‖ * ‖1 / ((f x) * (f x) * (f x'))‖  := by
+      apply Vert_div
+    have l2 : ‖(f x' - f x) * ⟪grad, (x' - x)⟫‖ * ‖1 / ((f x) * (f x) * (f x'))‖ =
+        ‖f x' - f x‖ * ‖ ⟪grad, (x' - x)⟫‖  * ‖1 / ((f x) * (f x) * (f x'))‖ := by
+      have h' : ‖(f x' - f x) * ⟪grad, (x' - x)⟫‖ = ‖f x' - f x‖ * ‖ ⟪grad, (x' - x)⟫‖ := by
+        exact norm_mul (f x' - f x) ⟪grad, (x' - x)⟫
       rw [h']
-    have l3 : ‖f x' - f x‖ * ‖⟪gradf, (x' - x)⟫‖ ≤ ‖f x' - f x‖ * ‖gradf‖ * ‖x' - x‖ := by
-      have h' : ‖f x' - f x‖ * ‖gradf‖ * ‖x' - x‖ = ‖f x' - f x‖ * (‖gradf‖ * ‖x' - x‖) := by
+    have l3 : ‖f x' - f x‖ * ‖⟪grad, (x' - x)⟫‖ ≤ ‖f x' - f x‖ * ‖grad‖ * ‖x' - x‖ := by
+      have h' : ‖f x' - f x‖ * ‖grad‖ * ‖x' - x‖ = ‖f x' - f x‖ * (‖grad‖ * ‖x' - x‖) := by
         apply mul_assoc
       rw [h']
       have h'' : 0 ≤ ‖f x' - f x‖ := by apply norm_nonneg (f x' - f x)
-      have h''' : ‖⟪gradf, (x' - x)⟫‖ ≤ ‖gradf‖ * ‖x' - x‖ := by
-        exact norm_inner_le_norm gradf (x' - x)
+      have h''' : ‖⟪grad, (x' - x)⟫‖ ≤ ‖grad‖ * ‖x' - x‖ := by
+        exact norm_inner_le_norm grad (x' - x)
       exact mul_le_mul_of_nonneg_left h''' h''
-    have l5 :  ‖f x' - f x‖ ≤ ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖gradf‖ + 1 )) := hδ₃ x' hp₂
+    have l5 :  ‖f x' - f x‖ ≤ ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖grad‖ + 1 )) := hδ₃ x' hp₂
     calc
-      ‖(f x' * ⟪gradf, (x' - x)⟫ - f x * ⟪gradf, (x' - x)⟫)/(f x * f x * f x')‖ =
-          ‖(f x' - f x) * ⟪gradf, (x' - x)⟫/((f x) * (f x) * (f x'))‖ := by rw [← sub_mul]
-      _ = ‖(f x' - f x) * ⟪gradf, (x' - x)⟫‖ * ‖1 / ((f x) * (f x) * (f x'))‖  := l1
-      _ = ‖f x' - f x‖ * ‖⟪gradf, (x' - x)⟫‖ * ‖1 / ((f x) * (f x) * (f x'))‖ := l2
-      _ ≤ ‖f x' - f x‖ * ‖gradf‖ * ‖x' - x‖ * ‖1 / ((f x) * (f x) * (f x'))‖  := by
+      ‖(f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)/(f x * f x * f x')‖ =
+          ‖(f x' - f x) * ⟪grad, (x' - x)⟫/((f x) * (f x) * (f x'))‖ := by rw [← sub_mul]
+      _ = ‖(f x' - f x) * ⟪grad, (x' - x)⟫‖ * ‖1 / ((f x) * (f x) * (f x'))‖  := l1
+      _ = ‖f x' - f x‖ * ‖⟪grad, (x' - x)⟫‖ * ‖1 / ((f x) * (f x) * (f x'))‖ := l2
+      _ ≤ ‖f x' - f x‖ * ‖grad‖ * ‖x' - x‖ * ‖1 / ((f x) * (f x) * (f x'))‖  := by
         have h' : 0 ≤ ‖1 / ((f x) * (f x) * (f x'))‖ := by
           apply norm_nonneg (1 / ((f x) * (f x) * (f x')))
         apply mul_le_mul_of_nonneg_right l3 h'
-      _ ≤ ‖(f x' - f x)‖ * ‖gradf‖ * ‖x' - x‖ * ‖2 / ((f x) * (f x) * (f x))‖ := by
+      _ ≤ ‖(f x' - f x)‖ * ‖grad‖ * ‖x' - x‖ * ‖2 / ((f x) * (f x) * (f x))‖ := by
         have h'' : ‖1 / ((f x) * (f x) * (f x'))‖ ≤ ‖2 / ((f x) * (f x) * (f x))‖ := by
-          apply simplifying1 (f x') (f x)
+          apply Simplifying₁ (f x') (f x)
           apply Iff.mp norm_pos_iff l0
           apply h₁
           apply hδ₀
           apply hp₁
         exact mul_le_mul_of_nonneg_left h'' (mul_nonneg (mul_nonneg
-            (norm_nonneg (f x' - f x)) (norm_nonneg gradf)) (norm_nonneg (x' - x)))
-      _ ≤ ‖(2 / ((f x) * (f x) * (f x)))‖ * ‖f x' - f x‖ * ‖x' - x‖ * ‖gradf‖  := by
+            (norm_nonneg (f x' - f x)) (norm_nonneg grad)) (norm_nonneg (x' - x)))
+      _ ≤ ‖(2 / ((f x) * (f x) * (f x)))‖ * ‖f x' - f x‖ * ‖x' - x‖ * ‖grad‖  := by
         linarith
-      _ ≤ ‖(2 / ((f x) * (f x) * (f x)))‖ * ‖f x' - f x‖ * ‖x' - x‖ * (‖gradf‖ + 1) := by
-        have h' : ‖gradf‖ ≤ ‖gradf‖ + 1 := by
+      _ ≤ ‖(2 / ((f x) * (f x) * (f x)))‖ * ‖f x' - f x‖ * ‖x' - x‖ * (‖grad‖ + 1) := by
+        have h' : ‖grad‖ ≤ ‖grad‖ + 1 := by
           linarith
         exact mul_le_mul_of_nonneg_left h' (mul_nonneg (mul_nonneg
         (norm_nonneg (2 / (f x * f x * f x))) (norm_nonneg (f x' - f x))) (norm_nonneg (x' - x)))
-      _ = ‖(2 / ((f x) * (f x) * (f x)))‖ * ‖x' - x‖ * (‖gradf‖ + 1) * ‖f x' - f x‖ := by
+      _ = ‖(2 / ((f x) * (f x) * (f x)))‖ * ‖x' - x‖ * (‖grad‖ + 1) * ‖f x' - f x‖ := by
         linarith
-      _ ≤ ‖(2 / ((f x) * (f x) * (f x)))‖ * ‖x' - x‖ * (‖gradf‖ + 1) *
-          (ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖gradf‖ + 1 ))) := by
+      _ ≤ ‖(2 / ((f x) * (f x) * (f x)))‖ * ‖x' - x‖ * (‖grad‖ + 1) *
+          (ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖grad‖ + 1 ))) := by
         apply mul_le_mul_of_nonneg_left l5
         apply mul_nonneg
         apply mul_nonneg
         apply norm_nonneg
         apply norm_nonneg
-        have h' : 0 ≤ ‖gradf‖ := by apply norm_nonneg
-        have h'' : ‖gradf‖ ≤ ‖gradf‖ + 1 := by linarith
+        have h' : 0 ≤ ‖grad‖ := by apply norm_nonneg
+        have h'' : ‖grad‖ ≤ ‖grad‖ + 1 := by linarith
         apply le_trans h' h''
       _ = (ε / 2) * ‖x' - x‖ := by
-        apply simplifying2
+        apply Simplifying₂
         apply h₁
         apply norm_nonneg
   rcases h₄ with ⟨δ₄,δ₄pos,hδ₄⟩
-  have h₅ : ∃ δ > (0 : ℝ ), ∀ (x' : (EuclideanSpace ℝ n)), ‖x - x'‖ ≤ δ →
-      ‖f x * (f x -f x' + ⟪gradf, (x' - x)⟫)/((f x) * (f x) * (f x'))‖ ≤ (ε / 2) * ‖x' - x‖ := by
+  have h₅ : ∃ δ > (0 : ℝ ), ∀ (x' : E), ‖x - x'‖ ≤ δ →
+      ‖f x * (f x -f x' + ⟪grad, (x' - x)⟫)/((f x) * (f x) * (f x'))‖ ≤ (ε / 2) * ‖x' - x‖ := by
     use min δ₀ δ₂
     constructor
     exact lt_min δ₀pos δ₂pos
@@ -267,10 +296,10 @@ theorem HasGradnAt.one_div (hf : HasGradnAt f gradf x)(h₁: ¬ f x = (0 : ℝ))
       have h₂ : min δ₀ δ₂ ≤ δ₂ := by exact min_le_right δ₀ δ₂
       apply le_trans h' h₂
 
-    have zp1 :‖f x * (f x - f x' + inner gradf (x' - x)) / (f x * f x * f x')‖ =
-        ‖(f x - f x' + inner gradf (x' - x)) / (f x * f x')‖ := by
+    have zp1 :‖f x * (f x - f x' + inner grad (x' - x)) / (f x * f x * f x')‖ =
+        ‖(f x - f x' + inner grad (x' - x)) / (f x * f x')‖ := by
       rw [mul_comm, mul_assoc (f x) (f x) (f x'),
-      div_mul_eq_div_div ((f x - f x' + inner gradf (x' - x)) * (f x)) (f x) (f x * f x'), mul_div_cancel]
+      div_mul_eq_div_div ((f x - f x' + inner grad (x' - x)) * (f x)) (f x) (f x * f x'), mul_div_cancel]
       apply h₁
 
     have zp2 : ‖f x‖ * ‖f x‖/2 ≤ ‖f x * f x'‖ := by
@@ -321,16 +350,16 @@ theorem HasGradnAt.one_div (hf : HasGradnAt f gradf x)(h₁: ¬ f x = (0 : ℝ))
         _ = (ε / 2) * ‖x' - x‖ := by
           rw [div_self (mul_ne_zero l l), mul_one, norm_sub_rev]
     calc
-      ‖f x * (f x - f x' + inner gradf (x' - x)) / (f x * f x * f x')‖ =
-          ‖(f x - f x' + inner gradf (x' - x)) / (f x * f x')‖ := by
+      ‖f x * (f x - f x' + inner grad (x' - x)) / (f x * f x * f x')‖ =
+          ‖(f x - f x' + inner grad (x' - x)) / (f x * f x')‖ := by
         apply zp1
-      _ = ‖(f x - f x' + inner gradf (x' - x))‖ * ‖1/(f x * f x')‖ := by
-        apply vert_div
-      _ ≤ ‖(f x - f x' + inner gradf (x' - x))‖ * (2 / (‖f x‖ * ‖f x‖)) := by
+      _ = ‖(f x - f x' + inner grad (x' - x))‖ * ‖1/(f x * f x')‖ := by
+        apply Vert_div
+      _ ≤ ‖(f x - f x' + inner grad (x' - x))‖ * (2 / (‖f x‖ * ‖f x‖)) := by
         apply mul_le_mul_of_nonneg_left zp3
         apply norm_nonneg
       _ ≤ ((ε * ‖f x‖ * ‖f x‖/4) * ‖x - x'‖) * (2 / (‖f x‖ * ‖f x‖)) := by
-        have : ‖(f x - f x' + inner gradf (x' - x))‖ ≤ (ε * ‖f x‖ * ‖f x‖/4) * ‖x - x'‖ := by
+        have : ‖(f x - f x' + inner grad (x' - x))‖ ≤ (ε * ‖f x‖ * ‖f x‖/4) * ‖x - x'‖ := by
           apply hδ₂
           apply hp₂
         apply mul_le_mul_of_nonneg_right this
@@ -380,7 +409,7 @@ theorem HasGradnAt.one_div (hf : HasGradnAt f gradf x)(h₁: ¬ f x = (0 : ℝ))
     exact inv_sub_inv l' h₁
   have k₂ : (f x - f x')/(f x' * f x) = (f x - f x') * f x /(f x' * f x * f x) := by
     apply Eq.symm (mul_div_mul_right (f x - f x') (f x' * f x) h₁)
-  have k₃ : ⟪ (-(1 / f x ^ 2) • gradf),  (x' - x)⟫ = -⟪gradf, (x' - x)⟫/((f x) * (f x)) := by
+  have k₃ : ⟪ (-(1 / f x ^ 2) • grad),  (x' - x)⟫ = -⟪grad, (x' - x)⟫/((f x) * (f x)) := by
     have h' : 1 / f x ^ 2 = 1 / (f x * f x) := by
       rw [← inv_eq_one_div]
       have : (f x) ^ 2 = (f x) * (f x) := by
@@ -388,67 +417,61 @@ theorem HasGradnAt.one_div (hf : HasGradnAt f gradf x)(h₁: ¬ f x = (0 : ℝ))
         rw [pow_two]
       rw [this, inv_eq_one_div]
     rw [h']
-    have l1 : ⟪(-(1 / (f x * f x)) • gradf), (x' - x)⟫ =
-         -(1 / (f x * f x)) *  ⟪gradf, (x' - x)⟫ := by
+    have l1 : ⟪(-(1 / (f x * f x)) • grad), (x' - x)⟫ =
+         -(1 / (f x * f x)) *  ⟪grad, (x' - x)⟫ := by
       rw [inner_smul_left]
       rfl
     rw [l1, neg_mul, mul_comm, mul_one_div, neg_div]
-  have k₄ : ‖1 / f x' - 1 / f x - - (⟪gradf, (x' - x)⟫)/((f x) * (f x))‖ =
-      ‖1 / f x' - 1 / f x + (⟪gradf, (x' - x)⟫)/((f x) * (f x))‖ := by
+  have k₄ : ‖1 / f x' - 1 / f x - - (⟪grad, (x' - x)⟫)/((f x) * (f x))‖ =
+      ‖1 / f x' - 1 / f x + (⟪grad, (x' - x)⟫)/((f x) * (f x))‖ := by
     congr
     ring_nf
-  have k₅ : (⟪gradf, (x' - x)⟫)/((f x) * (f x)) =
-      f x' * (⟪gradf, (x' - x)⟫)/((f x') * ((f x) * (f x))) := by
-    apply Eq.symm (mul_div_mul_left (⟪gradf, (x' - x)⟫) ((f x) * (f x)) l')
-  have k₆ : (f x - f x') * f x /(f x' * f x * f x) + f x' * (⟪gradf, (x' - x)⟫)/(f x' * f x * f x)
-      = ((f x - f x') * f x  + f x' * (⟪gradf, (x' - x)⟫))/(f x' * f x * f x) := by
-    apply div_add_div_same ((f x - f x') * f x) (f x' * (⟪gradf, (x' - x)⟫)) (f x' * f x * f x)
-  have k₇ : ((f x - f x') * f x + f x' * inner gradf (x' - x)) / (f x' * f x * f x) =
-      (f x * (f x - f x' + inner gradf (x' - x)) +
-      (f x' * inner gradf (x' - x) - f x * inner gradf (x' - x))) / (f x' * f x * f x) := by
-    have h' : (f x - f x') * f x + f x' * inner gradf (x' - x) =
-        f x * (f x - f x' + inner gradf (x' - x)) +
-        (f x' * (inner gradf (x' - x)) - f x * (inner gradf (x' - x)))  := by
+  have k₅ : (⟪grad, (x' - x)⟫)/((f x) * (f x)) =
+      f x' * (⟪grad, (x' - x)⟫)/((f x') * ((f x) * (f x))) := by
+    apply Eq.symm (mul_div_mul_left (⟪grad, (x' - x)⟫) ((f x) * (f x)) l')
+  have k₆ : (f x - f x') * f x /(f x' * f x * f x) + f x' * (⟪grad, (x' - x)⟫)/(f x' * f x * f x)
+      = ((f x - f x') * f x  + f x' * (⟪grad, (x' - x)⟫))/(f x' * f x * f x) := by
+    apply div_add_div_same ((f x - f x') * f x) (f x' * (⟪grad, (x' - x)⟫)) (f x' * f x * f x)
+  have k₇ : ((f x - f x') * f x + f x' * inner grad (x' - x)) / (f x' * f x * f x) =
+      (f x * (f x - f x' + inner grad (x' - x)) +
+      (f x' * inner grad (x' - x) - f x * inner grad (x' - x))) / (f x' * f x * f x) := by
+    have h' : (f x - f x') * f x + f x' * inner grad (x' - x) =
+        f x * (f x - f x' + inner grad (x' - x)) +
+        (f x' * (inner grad (x' - x)) - f x * (inner grad (x' - x)))  := by
       linarith
     rw [h']
-  have k₈ : (f x * (f x - f x' + inner gradf (x' - x)) +
-      (f x' * inner gradf (x' - x) - f x * inner gradf (x' - x))) /
-      (f x * f x * f x') = f x * (f x - f x' + inner gradf (x' - x))/
-      (f x * f x * f x') + (f x' * inner gradf (x' - x) - f x * inner gradf (x' - x))/
+  have k₈ : (f x * (f x - f x' + inner grad (x' - x)) +
+      (f x' * inner grad (x' - x) - f x * inner grad (x' - x))) /
+      (f x * f x * f x') = f x * (f x - f x' + inner grad (x' - x))/
+      (f x * f x * f x') + (f x' * inner grad (x' - x) - f x * inner grad (x' - x))/
       (f x * f x * f x') := by
-        apply add_div ((f x) * (f x - f x' + inner gradf (x' - x)))
-          (f x' * inner gradf (x' - x) - f x * inner gradf (x' - x)) (f x * f x * f x')
+        apply add_div ((f x) * (f x - f x' + inner grad (x' - x)))
+          (f x' * inner grad (x' - x) - f x * inner grad (x' - x)) (f x * f x * f x')
   have k₉ : f x' * f x * f x =  f x * f x * f x' := by linarith
-
-  have p₁ : ‖1 / f x' - 1 / f x - (- (⟪gradf, (x' - x)⟫))/((f x) * (f x))‖ ≤ ε * ‖x' - x‖ := by
+  have p₁ : ‖1 / f x' - 1 / f x - (- (⟪grad, (x' - x)⟫))/((f x) * (f x))‖ ≤ ε * ‖x' - x‖ := by
     rw [k₄, k₁, k₂, k₅]
     have : f x' * (f x * f x) = f x' * f x * f x := by
       rw [← mul_assoc]
     rw [this]
     rw [k₆, k₇, k₉]
     calc
-      ‖(f x * (f x - f x' + inner gradf (x' - x)) +
-      (f x' * inner gradf (x' - x) - f x * inner gradf (x' - x))) /
-      (f x * f x * f x')‖ = ‖f x * (f x - f x' + inner gradf (x' - x))/
-      (f x * f x * f x') + (f x' * inner gradf (x' - x) - f x * inner gradf (x' - x))/
+      ‖(f x * (f x - f x' + inner grad (x' - x)) +
+      (f x' * inner grad (x' - x) - f x * inner grad (x' - x))) /
+      (f x * f x * f x')‖ = ‖f x * (f x - f x' + inner grad (x' - x))/
+      (f x * f x * f x') + (f x' * inner grad (x' - x) - f x * inner grad (x' - x))/
       (f x * f x * f x')‖ := by
         rw [k₈]
-      _ ≤ ‖f x * (f x - f x' + inner gradf (x' - x))/
-      (f x * f x * f x')‖ + ‖(f x' * inner gradf (x' - x) - f x * inner gradf (x' - x))/
+      _ ≤ ‖f x * (f x - f x' + inner grad (x' - x))/
+      (f x * f x * f x')‖ + ‖(f x' * inner grad (x' - x) - f x * inner grad (x' - x))/
       (f x * f x * f x')‖ := by
-        apply norm_add_le ((f x) * (f x - f x' + inner gradf (x' - x))/
-      (f x * f x * f x')) ((f x' * inner gradf (x' - x) - f x * inner gradf (x' - x))/
+        apply norm_add_le ((f x) * (f x - f x' + inner grad (x' - x))/
+      (f x * f x * f x')) ((f x' * inner grad (x' - x) - f x * inner grad (x' - x))/
       (f x * f x * f x'))
       _ ≤ (ε/2) * ‖x' - x‖ + (ε/2) * ‖x' - x‖ := by exact add_le_add (hδ₅ x' hp₂) (hδ₄ x' hp₁)
       _ = ε * ‖x' - x‖ := by linarith
-
-  have j₁ : ‖1 / f x' - 1 / f x - (- (⟪gradf, (x' - x)⟫))/((f x) * (f x))‖ = ‖1 / f x' - 1 / f x -
-  ((-(1 / f x ^ ↑2) • gradf) ∇*) (x' - x)‖ := by
-    congr
-    have l1: ((-(1 / f x ^ 2) • gradf) ∇*) (x' - x) = ⟪ (-(1 / f x ^ 2) • gradf), (x' - x)⟫ := by
-      rfl
-    rw [l1]
-    rw [k₃]
+  have j₁ : ‖1 / f x' - 1 / f x - (- (⟪grad, (x' - x)⟫))/((f x) * (f x))‖ = ‖1 / f x' - 1 / f x -
+      inner ((-(1 / f x ^ ↑2) • grad)) (x' - x)‖ := by
+    congr; rw [k₃]
   rw [j₁] at p₁
   have l1 : ‖x - x'‖ = ‖x' - x‖ := by
     exact norm_sub_rev x x'

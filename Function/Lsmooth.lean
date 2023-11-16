@@ -7,6 +7,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.InnerProductSpace.Dual
 import Analysis.Calculation
 /-!
   the properties of the L smooth function
@@ -63,7 +64,7 @@ theorem lipschitz_continuos_upper_bound
       _ ≤ ‖f' (x + u • (y - x)) - f' (x + v • (y - x))‖ * ‖y - x‖ :=
          ContinuousLinearMap.le_op_norm (f' (x + u • (y - x)) - f' (x + v • (y - x))) (y - x)
       _ ≤ l * ‖x + u • (y - x) - (x + v • (y - x))‖ * ‖y - x‖ :=
-         mul_le_mul_of_le_of_le h₂ (le_refl ‖y - x‖) (norm_nonneg (f' (x + u • (y - x)) - f' (x + v • (y - x)))) (norm_nonneg (y - x))
+         mul_le_mul_of_le_of_le h₂ (le_refl ‖y - x‖) (norm_nonneg _) (norm_nonneg _)
       _ = l * ‖(u - v) • (y - x)‖ * ‖y - x‖  := by rw [this]
       _ = l * ‖y - x‖ ^ 2 * ‖u - v‖ := by rw [norm_smul]; ring_nf; simp
   let upperf := fun t₀ : ℝ ↦ g 0 + t₀ * (g' 0) +  t₀ ^ 2 * (LL / 2)
@@ -79,8 +80,8 @@ theorem lipschitz_continuos_upper_bound
             _   = LL * |t| := by simp
             _   = LL * t := abs_pos
     exact tsub_le_iff_left.mp HH₆
-  have H1₀ : (upperf 0) = g 0 := by simp only [zero_smul, add_zero, map_sub, Real.rpow_two, zero_mul, ne_eq,
-    zero_pow']
+  have H1₀ : (upperf 0) = g 0 := by
+    simp only [zero_smul, add_zero, map_sub, Real.rpow_two, zero_mul, ne_eq, zero_pow']
   have H₃' : ∀ t : ℝ , HasDerivAt upperf (upperf' t) t  := by
     intro t
     apply HasDerivAt.add
@@ -94,7 +95,7 @@ theorem lipschitz_continuos_upper_bound
           DifferentiableAt.mul]
       rw [← h2]
       apply DifferentiableAt.hasDerivAt h3
-  have H₄ : ∀ (t:ℝ), t ∈ Set.Icc (0 : ℝ) (2 : ℝ) → g t ≤ upperf t := by
+  have H₄ : ∀ (t : ℝ), t ∈ Set.Icc (0 : ℝ) (2 : ℝ) → g t ≤ upperf t := by
     apply image_le_of_deriv_right_le_deriv_boundary
     · have : ∀ (x : ℝ), x ∈ (Set.Icc (0 : ℝ) (2 : ℝ)) → HasDerivAt g (g' x) x :=
         fun x _ ↦ H₁ x
@@ -121,12 +122,32 @@ end
 
 section
 
-variable {f : E → ℝ} {l a : ℝ} {f': E → E} {xm : E}
+open InnerProductSpace
+
+variable {f : E → ℝ} {l a : ℝ} {f' : E → E} {xm : E}
 
 theorem lipschitz_continuos_upper_bound'
     (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (h₂ : LipschitzOn f' l) :
-    ∀ (x y : E), f y ≤ f x + inner (f' x) (y - x) + l / 2 * ‖y - x‖ ^ 2 := by
-  sorry
+    ∀ x y : E, f y ≤ f x + inner (f' x) (y - x) + l / 2 * ‖y - x‖ ^ 2 := by
+  intro x y
+  let g := fun x ↦ (toDual ℝ E) (f' x)
+  have h' : ∀ x : E, HasFDerivAt f (g x) x := h₁
+  have equiv : ∀ x y : E, inner (f' x) (y - x) = (g x) (y - x) := by
+    intro x y
+    rw [InnerProductSpace.toDual_apply]
+  have h₂' : LipschitzOn g l := by
+    simp only [LipschitzOn, equiv]
+    rw [LipschitzOn] at h₂
+    intro x y
+    have h1 : ∀ x : E, ‖(toDual ℝ E) x‖ =‖x‖ := by
+      simp [LinearIsometryEquiv.norm_map]
+    have : ‖(toDual ℝ E) (f' x) - (toDual ℝ E) (f' y)‖ = ‖f' x - f' y‖ := by
+      rw [← map_sub (toDual ℝ E) (f' x) (f' y)]
+      exact h1 (f' x - f' y)
+    rw [this]
+    exact (h₂ x y)
+  rw [equiv]
+  exact lipschitz_continuos_upper_bound h' h₂' x y
 
 theorem lipschitz_minima (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' l)
     (min: IsMinOn f Set.univ xm):
@@ -135,10 +156,10 @@ theorem lipschitz_minima (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : Li
 
 end
 
-section
+section Convex
 
 variable {f : E → ℝ} {l a : ℝ} {f': E → E} {xm : E} (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
-variable (hfun: ConvexOn ℝ Set.univ f)
+variable (hfun: ConvexOn ℝ Set.univ f) {x y : E}
 
 theorem lipschitz_lower (h₂ : LipschitzOn f' l) :
     inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
@@ -156,4 +177,4 @@ theorem convex_to_lower (h₂ : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖
     inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
   sorry
 
-end
+end Convex

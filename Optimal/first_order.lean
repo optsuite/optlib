@@ -20,6 +20,23 @@ open Set
 def DescentDirection (d : E) (x : E) (_ : HasGradientAt f (f' x) x) : Prop :=
   inner (f' x) d < (0 : ℝ)
 
+private lemma continuous (h : ContinuousAt f x) : ∀ ε > 0, ∃ δ > 0, ∀ (y : E), ‖y - x‖ < δ
+    → ‖f y - f x‖ < ε := by
+  rw [continuousAt_def] at h
+  intro ε epos
+  let A := Metric.ball (f x) ε
+  specialize h A (Metric.ball_mem_nhds (f x) epos)
+  rw [Metric.mem_nhds_iff] at h
+  rcases h with ⟨δ, dpos, h⟩
+  use (δ / 2); constructor
+  exact half_pos dpos
+  intro x' x1le
+  have H1: x' ∈ Metric.ball x δ := by
+    rw [Metric.ball, Set.mem_setOf, dist_comm, dist_eq_norm_sub, norm_sub_rev]
+    apply lt_trans x1le
+    linarith
+  exact h H1
+
 theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
     (min : IsMinOn f univ xm) (hfc : ContinuousOn f' univ) :
     ∀ d : E, ¬ (DescentDirection d xm (hf xm)) := by

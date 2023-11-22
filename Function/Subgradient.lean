@@ -8,14 +8,16 @@ import Mathlib.Topology.MetricSpace.Basic
 import Mathlib.Topology.Basic
 import Mathlib.Analysis.Convex.Function
 import Analysis.Basic
+import Mathlib.Topology.MetricSpace.PseudoMetric
+import Function.Convex_Function
 
 /-!
 # Subgradient of convex functions in EuclideanSpace
 
-The file defines subgradient for convex functions in EuclideanSpace ℝ n and proves some basic properties.
+The file defines subgradient for convex functions in E and proves some basic properties.
 
-Let `f : (EuclideanSpace ℝ n) → ℝ` be a convex function on `s` and `g : EuclideanSpace ℝ n`,
-where `s` is a set of `EuclideanSpace ℝ n`. Suppose `hf : ConvexOn ℝ s f`.
+Let `f : E → ℝ` be a convex function on `s` and `g : E`,
+where `s` is a set of `E`. Suppose `hf : ConvexOn ℝ s f`.
 `g` is a subgradient of `f` at `x` if for any `y ∈ s`, we have `f y ≥ f x + inner g (y - x)`.
 The insight comes from the first order condition of convex function.
 
@@ -38,11 +40,13 @@ noncomputable section
 
 variable {n : Type _} [Fintype n] [DecidableEq n]
 
-variable {s : Set (EuclideanSpace ℝ n)}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-variable {f : (EuclideanSpace ℝ n) → ℝ} {g : EuclideanSpace ℝ n} {x : EuclideanSpace ℝ n}
+variable {s : Set E}
 
-variable {f' : EuclideanSpace ℝ n → EuclideanSpace ℝ n →L[ℝ] ℝ}
+variable {f : E → ℝ} {g : E} {x : E}
+
+variable {f' : E → (E →L[ℝ] ℝ)}
 
 set_option quotPrecheck false
 
@@ -51,19 +55,19 @@ local notation gradient "∇*" => (toDualMap ℝ _) gradient
 local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 
 /-- Subgradient of functions --/
-def IsSubgradAt (_ : ConvexOn ℝ s f) (g x :  EuclideanSpace ℝ n) : Prop :=
+def IsSubgradAt (_ : ConvexOn ℝ s f) (g x : E) : Prop :=
   ∀ y ∈ s, f y ≥ f x + inner g (y - x)
 
 /-- Subderiv of functions --/
-def SubderivAt (hf : ConvexOn ℝ s f) (x :  EuclideanSpace ℝ n) : Set (EuclideanSpace ℝ n) :=
-  {g : EuclideanSpace ℝ n| IsSubgradAt hf g x}
+def SubderivAt (hf : ConvexOn ℝ s f) (x :  E) : Set E :=
+  {g : E| IsSubgradAt hf g x}
 
 @[simp]
 theorem mem_SubderivAt (hf : ConvexOn ℝ s f) : IsSubgradAt hf g x ↔ g ∈ SubderivAt hf x := ⟨id, id⟩
 
 /-! ### Basic properties about `Subderiv` -/
 
-open EuclideanSpace
+open EuclideanSpace Set
 
 variable (hf : ConvexOn ℝ s f)
 
@@ -89,7 +93,7 @@ theorem Subderiv.convex : ∀ x ∈ s, Convex ℝ (SubderivAt hf x) := by
   have ineq2 : b • f y ≥ b • f x + b • inner g₂ (y - x) := by
     rw [← smul_add]
     apply smul_le_smul_of_nonneg (h2 y ys) leb
-  have eq : (a • f x + a • inner g₁ (y - x)) + (b • f x + b • inner g₂ (y - x)) 
+  have eq : (a • f x + a • inner g₁ (y - x)) + (b • f x + b • inner g₂ (y - x))
       = f x + inner (a • g₁ + b • g₂) (y - x) := by
     rw [add_add_add_comm, ← Eq.symm (Convex.combo_self abeq (f x))]
     apply congrArg (HAdd.hAdd (f x))
@@ -98,9 +102,10 @@ theorem Subderiv.convex : ∀ x ∈ s, Convex ℝ (SubderivAt hf x) := by
   apply add_le_add ineq1 ineq2
 
 /-- The subderiv of `f` at `x ∈ interior s` is a convex set. --/
-theorem Subderiv.bounded : ∀ x ∈ interior s, Metric.Bounded (SubderivAt hf x) := by
+theorem Subderiv.bounded {s : Set (EuclideanSpace ℝ n)} {x : EuclideanSpace ℝ n}:
+    ∀ x ∈ interior s,  Bornology.IsBounded (SubderivAt hf x) := by
   intro x h
-  rw [bounded_iff_forall_norm_le]
+  rw [isBounded_iff_forall_norm_le]
   rw [interior_eq_nhds', mem_setOf, Metric.mem_nhds_iff] at h
   obtain ⟨ε, εpos, bs⟩ := h
   have ineq : ∀ i ∈ Finset.univ, ‖(ε / 2) • single (i : n) (1 : ℝ)‖ < ε := by
@@ -176,7 +181,7 @@ theorem Subderiv.bounded : ∀ x ∈ interior s, Metric.Bounded (SubderivAt hf x
       intro i; simp only [Real.rpow_two]; apply sq_nonneg
 
 /-- Monotonicity of subderiv--/
-theorem subgrad_mono {u v : EuclideanSpace ℝ n} (hf : ConvexOn ℝ s f) (xs : x ∈ s) (ys : y ∈ s)
+theorem subgrad_mono {u v : E} (hf : ConvexOn ℝ s f) (xs : x ∈ s) (ys : y ∈ s)
   (hu : u ∈ SubderivAt hf x) (hv : v ∈ SubderivAt hf y) :
     ⟪u - v, x - y⟫ ≥ (0 : ℝ):= by
       specialize hu y ys; specialize hv x xs
@@ -190,11 +195,11 @@ theorem subgrad_mono {u v : EuclideanSpace ℝ n} (hf : ConvexOn ℝ s f) (xs : 
 
 open Pointwise
 
-lemma first_order_condition_gradn {f: (EuclideanSpace ℝ n) → ℝ} {gradf : (EuclideanSpace ℝ n)}
-  {s : Set (EuclideanSpace ℝ n)} {x: (EuclideanSpace ℝ n)} (h: HasGradnAt f gradf x) (hf: ConvexOn ℝ s f) (xs: x∈ s) :
-  ∀ (y:(EuclideanSpace ℝ n)), y ∈ s → f x + inner gradf (y - x) ≤ f y:= by
-  have H1: ∀ (y:(EuclideanSpace ℝ n)), y ∈ s → f x + (gradf ∇*) (y - x) ≤ f y:= by
-    rw [HasGradnAt] at h
+lemma first_order_condition_gradn {f: E → ℝ} {gradf : E}
+  {s : Set E} {x: E} (h: HasGradientAt f gradf x) (hf: ConvexOn ℝ s f) (xs: x∈ s) :
+  ∀ (y : E), y ∈ s → f x + inner gradf (y - x) ≤ f y:= by
+  have H1: ∀ (y : E), y ∈ s → f x + (gradf ∇*) (y - x) ≤ f y:= by
+    rw [HasGradientAt] at h
     apply first_order_condition; apply h;
     apply hf; apply xs
   intro y ys
@@ -202,9 +207,9 @@ lemma first_order_condition_gradn {f: (EuclideanSpace ℝ n) → ℝ} {gradf : (
   exact H1
 
 /-- Subderiv of differentiable functions --/
-theorem subgrad_of_grad' (hx : x ∈ interior s) (hf : ConvexOn ℝ s f) (h : HasGradnAt f g x) :
+theorem subgrad_of_grad' (hx : x ∈ interior s) (hf : ConvexOn ℝ s f) (h : HasGradientAt f g x) :
   SubderivAt hf x = {g} := by
-  obtain h' := HasGradn_HasFDeriv h
+  obtain h' := HasGradientAt_iff_HasFDerivAt.mp h
   rw [Set.eq_singleton_iff_nonempty_unique_mem]
   constructor
   · use g; intro y ys
@@ -281,14 +286,16 @@ theorem subgrad_of_grad' (hx : x ∈ interior s) (hf : ConvexOn ℝ s f) (h : Ha
 
 /-- Alternarive version for FDeriv --/
 theorem subgrad_of_grad (hx : x ∈ interior s) (hf : ConvexOn ℝ s f) (h : HasFDerivAt f (f' x) x) :
-  SubderivAt hf x = {grad (f' x)} := by
-    obtain h' := HasFDeriv_HasGradn h
+  SubderivAt hf x = {(toDual ℝ E).symm (f' x)} := by
+    have h₁ : HasFDerivAt f ((toDual ℝ E) ((LinearIsometryEquiv.symm (toDual ℝ E)) (f' x))) x := by
+      simp [h]
+    obtain h' := HasGradientAt_iff_HasFDerivAt.mpr h₁
     exact subgrad_of_grad' hx hf h'
 
 /-- Subderiv of the sum of two functions is a subset of the sum of the subderivs of the two functions --/
-theorem subgrad_of_add {s t : Set (EuclideanSpace ℝ n)} {f₁ f₂ : EuclideanSpace ℝ n → ℝ}
+theorem subgrad_of_add {s t : Set E} {f₁ f₂ : E → ℝ}
   (hf₁ : ConvexOn ℝ s f₁) (hf₂ : ConvexOn ℝ t f₂) (hadd : ConvexOn ℝ (s ∩ t) (f₁ + f₂)):
-    ∀ (x : EuclideanSpace ℝ n), SubderivAt hf₁ x + SubderivAt hf₂ x ⊆ SubderivAt hadd x := by
+    ∀ (x : E), SubderivAt hf₁ x + SubderivAt hf₂ x ⊆ SubderivAt hadd x := by
       intro x y ymem; intro y' hy'
       obtain ⟨y₁, y₂, hy₁, hy₂, eq⟩ := Set.mem_add.mpr ymem
       have eq' : y₁ + y₂ = y := eq
@@ -299,15 +306,15 @@ theorem subgrad_of_add {s t : Set (EuclideanSpace ℝ n)} {f₁ f₂ : Euclidean
 /-! ### Optimality Theory for Unconstrained Nondifferentiable Problems -/
 
 theorem zero_mem (hf : ConvexOn ℝ s f) (h : x ∈ {x | ∀ y ∈ s, f x ≤ f y}) :
-  (0 : EuclideanSpace ℝ n) ∈ SubderivAt hf x :=
+  (0 : E) ∈ SubderivAt hf x :=
     fun y ys => le_of_le_of_eq' (h y ys) (by rw [inner_zero_left, add_zero])
 
-theorem isGlobalmin (hf : ConvexOn ℝ s f) (h : (0 : EuclideanSpace ℝ n) ∈ SubderivAt hf x ) :
+theorem isGlobalmin (hf : ConvexOn ℝ s f) (h : (0 : E) ∈ SubderivAt hf x ) :
   x ∈ {x | ∀ y ∈ s, f x ≤ f y} := by
     intro y ys; specialize h y ys
     rwa [inner_zero_left, add_zero] at h
 
 /-- `x'` minimize `f` if and only if `0` is a subgradient of `f` at `x'` --/
 theorem zero_mem_iff_isGlobalmin (hf : ConvexOn ℝ s f) :
-  (0 : EuclideanSpace ℝ n) ∈ SubderivAt hf x ↔ x ∈ {x | ∀ y ∈ s, f x ≤ f y} :=
+  (0 : E) ∈ SubderivAt hf x ↔ x ∈ {x | ∀ y ∈ s, f x ≤ f y} :=
     ⟨fun h => isGlobalmin hf h, fun h => zero_mem hf h⟩

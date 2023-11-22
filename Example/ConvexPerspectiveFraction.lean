@@ -29,10 +29,10 @@ variable {n : Type _ }[Fintype n]
 
 def perspective: (n -> ℝ) × ℝ → (n -> ℝ) := fun x ↦ (1 / x.2) • x.1
 
-def dom: Set ((n -> ℝ) × ℝ) := {x | x.2 > 0}
+def dom : Set ((n -> ℝ) × ℝ) := {x | x.2 > 0}
 
-lemma neq_0 {x y a b: ℝ}(hx: x > 0)(hy: y > 0)(ha : 0 ≤ a)(hb: 0 ≤ b)
-(hab: a + b = 1) : a * y + b * x ≠ 0 := by
+lemma neq_0 {x y a b: ℝ} (hx: x > 0) (hy: y > 0) (ha : 0 ≤ a) (hb: 0 ≤ b)
+    (hab: a + b = 1) : a * y + b * x ≠ 0 := by
   have hay: 0 ≤ a * y := by exact Iff.mpr (zero_le_mul_right hy) ha
   have hbx: 0 ≤ b * x := by exact Iff.mpr (zero_le_mul_right hx) hb
   by_contra h
@@ -59,7 +59,7 @@ lemma neq_0 {x y a b: ℝ}(hx: x > 0)(hy: y > 0)(ha : 0 ≤ a)(hb: 0 ≤ b)
   linarith
 
 theorem convex_perspective_image{s : Set ((n -> ℝ) × ℝ)} (h1: Convex ℝ s)
-  (h2: ∀ x ∈ s, x.2 > 0): Convex ℝ (perspective '' s) := by
+    (h2: ∀ x ∈ s, x.2 > 0): Convex ℝ (perspective '' s) := by
   intro x hx y hy a b ha hb hab
   obtain ⟨x', hx', rfl⟩ := mem_image_iff_bex.1 hx
   obtain ⟨y', hy', rfl⟩ := mem_image_iff_bex.1 hy

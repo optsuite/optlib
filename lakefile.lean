@@ -13,14 +13,18 @@ lean_lib «Analysis» {
   -- add any library configuration options here
 }
 
-lean_lib «Algorithm» {
-  -- add any library configuration options here
-}
-
 lean_lib «Function» {
   -- add any library configuration options here
 }
 
-lean_lib «Matrix» {
+lean_lib «Algorithm» {
+  -- add any library configuration options here
+}
+
+lean_lib «Example» {
+  -- add any library configuration options here
+}
+
+lean_lib «Optimal» {
   -- add any library configuration options here
 }

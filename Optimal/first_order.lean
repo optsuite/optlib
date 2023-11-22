@@ -13,6 +13,10 @@ variable {x xm : E} {f : E → ℝ} {f' : E → E} {s : Set E}
 
 open Set
 
+/-
+  A vector d is considered a descent direction at a point x if the inner product of the gradient at
+  x with d is less than zero
+-/
 def DescentDirection (d : E) (x : E) (_ : HasGradientAt f (f' x) x) : Prop :=
   inner (f' x) d < (0 : ℝ)
 
@@ -54,6 +58,7 @@ theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
             rcases ha with ⟨ha1, ha2⟩
             constructor; linarith; linarith
           specialize hT2 a this
+          simp at hT2
           rw [abs_lt] at hT2
           rcases hT2 with ⟨hs1, hs2⟩
           rw [sub_lt_iff_lt_add] at hs2
@@ -66,7 +71,10 @@ theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
       rcases (expansion hf xm (T • d)) with ⟨ts,⟨ts1,⟨ts2,ts3⟩⟩⟩
       use (ts • T)
       constructor
-      · simp [hT1]; linarith
+      · simp; apply le_trans
+        · show -T ≤ 0
+          linarith
+        · simp [hT1]; linarith
       · constructor
         · simp [hT1]; linarith
         · rw [smul_assoc]; exact ts3

@@ -6,6 +6,7 @@ Authors: Chenyi Li,
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.MeanValue
 import Analysis.Calculation
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
@@ -14,8 +15,28 @@ variable {x p y : E} {f : E → ℝ} {f' : E → E} {s : Set E}
 open Set
 
 theorem expansion (h : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
-    ∃ t, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner (f' (x + t • p)) p := by
-  sorry
+    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner (f' (x + t • p)) p := by
+  let g := fun r : ℝ ↦ f (x + r • p)
+  let g' := fun r : ℝ ↦ (inner (f' (x + r • p)) p : ℝ)
+  have h1 : ∀ r , HasDerivAt g (g' r) r := by
+    intro r
+    simp; sorry
+  have e1 : f (x + p) = g 1 := by simp [g]
+  have e2 : f x = g 0 := by simp [g]
+  have e3 : ∀ t, inner (f' (x + t • p)) p = g' t := by simp [g']
+  rw [e1, e2]
+  have : ∃ c ∈ Set.Ioo 0 1, g' c = (g 1 - g 0) / (1 - 0) := by
+    apply exists_hasDerivAt_eq_slope g g' (by norm_num)
+    · have : ∀ x ∈ Icc 0 1, HasDerivAt g (g' x) x := by
+        intro x hx
+        exact (h1 x)
+      exact HasDerivAt.continuousOn this
+    · simp [h1]
+  rcases this with ⟨c, ⟨c1, c2⟩, h2⟩
+  use c
+  constructor; exact c1;
+  constructor; exact c2;
+  rw [e3 c]; simp [h2]
 
 -- This theorem should not place here, but let's just first do this for now.
 theorem continuous (h : ContinuousAt f x) : ∀ ε > 0, ∃ δ > 0, ∀ (y : E), ‖y - x‖ < δ

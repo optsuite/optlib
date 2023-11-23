@@ -1,13 +1,15 @@
 /-
 Copyright (c) 2023 Ziyu Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chenyi Li, Ziyu Wang
+Authors: Chenyi Li, Ziyu Wang, Yuxuan Wu, Junda Ying
 -/
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.InnerProductSpace.Dual
+import Function.Convex_Function
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import Analysis.Calculation
 /-!
   the properties of the L smooth function
@@ -59,7 +61,7 @@ theorem lipschitz_continuos_upper_bound
     specialize h₂ (x + u • (y - x)) (x + v • (y - x))
     have : x + u • (y - x) - (x + v • (y - x)) = (u - v) • (y - x) := by
       rw [← sub_sub, add_sub_right_comm, sub_self, zero_add, ← sub_smul]
-    calc ‖g' u - g' v‖ = ‖(f' (x + u • (y - x))) (y - x) - (f' (x + v • (y - x))) (y - x)‖ := by rfl
+    calc ‖g' u - g' v‖ = ‖(f' (x + u • (y - x))) (y - x) - (f' (x + v • (y - x))) (y - x)‖ := rfl
       _ = ‖(f' (x + u • (y - x)) - f' (x + v • (y - x))) (y - x)‖ := by congr
       _ ≤ ‖f' (x + u • (y - x)) - f' (x + v • (y - x))‖ * ‖y - x‖ :=
          ContinuousLinearMap.le_op_norm (f' (x + u • (y - x)) - f' (x + v • (y - x))) (y - x)
@@ -88,11 +90,11 @@ theorem lipschitz_continuos_upper_bound
     · apply HasDerivAt.const_add
       · apply hasDerivAt_mul_const
     · show HasDerivAt (fun x_1 => x_1 ^ 2 * (l * ‖y - x‖ ^ 2 / 2)) (l * ‖y - x‖ ^ 2 * t) t
-      have h2: deriv (fun x_1 => x_1 ^ 2 * (l * ‖y - x‖ ^ 2 / 2)) t = (l * ‖y - x‖ ^ 2 * t):= by
+      have h2: deriv (fun x_1 => x_1 ^ 2 * (l * ‖y - x‖ ^ 2 / 2)) t = (l * ‖y - x‖ ^ 2 * t) := by
         simp; ring_nf
       have h3:  DifferentiableAt ℝ (fun x_1 => x_1 ^ 2 * (l * ‖y - x‖ ^ 2 / 2)) t:= by
-        simp only [Real.rpow_two, differentiableAt_id', DifferentiableAt.pow, differentiableAt_const,
-          DifferentiableAt.mul]
+        simp only [Real.rpow_two, differentiableAt_id', DifferentiableAt.pow,
+          differentiableAt_const, DifferentiableAt.mul]
       rw [← h2]
       apply DifferentiableAt.hasDerivAt h3
   have H₄ : ∀ (t : ℝ), t ∈ Set.Icc (0 : ℝ) (2 : ℝ) → g t ≤ upperf t := by
@@ -109,7 +111,8 @@ theorem lipschitz_continuos_upper_bound
     · intro t _
       exact HasDerivAt.hasDerivWithinAt (H₃' t)
     · intro t ht
-      have s₁ : t ≥ 0 := by simp only [gt_iff_lt, zero_lt_two, not_true, ge_iff_le, Set.mem_Ico] at ht; linarith
+      have s₁ : t ≥ 0 := by
+        simp only [gt_iff_lt, zero_lt_two, not_true, ge_iff_le, Set.mem_Ico] at ht; linarith
       apply H₃ t s₁
   specialize H₄ (1 : ℝ) (Set.mem_Icc.mpr (by norm_num))
   have H₅ : g 1 = f y := by simp only [one_smul, add_sub_cancel'_right]
@@ -158,23 +161,120 @@ end
 
 section Convex
 
-variable {f : E → ℝ} {l a : ℝ} {f': E → E} {xm : E} (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
-variable (hfun: ConvexOn ℝ Set.univ f) {x y : E}
+variable {f : E → ℝ} {l a : ℝ} {f': E → E} {xm : E}
+variable {x y : E}
 
-theorem lipschitz_lower (h₂ : LipschitzOn f' l) :
+lemma gradient_norm_sq_eq_two_self (x : E) :
+    HasGradientAt (fun x ↦ ‖x‖ ^ 2) ((2 : ℝ) • x) x := by
+  apply Convergence_HasGradient
+  simp
+  intro e ep
+  use e
+  constructor
+  . linarith
+  . intro x' dles
+    rw [← norm_neg (x - x'), neg_sub] at dles
+    rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, inner_sub_right]
+    rw [real_inner_smul_left, real_inner_smul_left]; ring_nf
+    rw [add_sub, add_sub_right_comm, mul_two, ← sub_sub]
+    rw [← inner_sub_left, sub_add, ← inner_sub_right]
+    rw [real_inner_comm, ← inner_sub_left, real_inner_self_eq_norm_sq]
+    rw [abs_of_nonneg, pow_two, ← norm_neg (x - x'), neg_sub]
+    apply mul_le_mul_of_nonneg_right dles (norm_nonneg (x' - x))
+    apply pow_two_nonneg
+
+theorem lipschitz_to_convex (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' l)
+    (lp : l > 0) : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) := by
+  let g' : E → E := fun x ↦ l • x - f' x
+  have H₂ : ∀ x y : E, inner (g' x - g' y) (x - y) ≥ (0 : ℝ) := by
+    intro x y
+    have : l • x - f' x - (l • y - f' y) =  l • (x - y) - (f' x - f' y) := by
+      rw [smul_sub, ← sub_add, ← sub_add, sub_right_comm]
+    calc
+    _ = l * (inner (x - y) (x - y)) - inner (f' x - f' y) (x - y) := by
+      simp
+      rw [this, inner_sub_left, sub_left_inj, real_inner_smul_left]
+    _ = l * ‖x - y‖ ^ 2 - inner (f' x - f' y) (x - y) := by
+      simp; left
+      apply real_inner_self_eq_norm_sq
+    _ ≥ l * ‖x - y‖ ^ 2 - ‖f' x - f' y‖ * ‖x - y‖ := by
+      apply add_le_add; linarith
+      simp
+      apply real_inner_le_norm
+    _ ≥ l * ‖x - y‖ ^ 2 - l * ‖x - y‖ ^ 2 := by
+      simp
+      rw [pow_two, ← mul_assoc]
+      apply mul_le_mul (h₂ x y); linarith; apply norm_nonneg
+      apply mul_nonneg (le_of_lt lp) (norm_nonneg _)
+    _ = 0 := by simp
+  have H₃ : ∀ (x : E), HasGradientAt (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) (g' x) x := by
+    intro x
+    have u₂ := HasGradientAt.const_smul (gradient_norm_sq_eq_two_self x) ((l / (2 : ℝ)) : ℝ)
+    have u := u₂.add (HasGradientAt.neg (h₁ x))
+    have l₁ : (fun x ↦ l / 2 * ‖x‖ ^ 2 + -f x) = (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) := by
+      ext; ring
+    have l₂ : (l / 2) • (2 : ℝ)  • x + -f' x = g' x := by
+      simp; rw [smul_smul (l / 2) 2, ← sub_eq_add_neg]; ring_nf
+    rw [← l₁, ← l₂]
+    apply u
+  apply monotone_gradient_convex' convex_univ
+  apply H₃
+  intro x _ y _
+  exact H₂ x y
+
+theorem convex_to_lower (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
+    (h₂ : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x)) (lp : l > 0)
+    (hfun: ConvexOn ℝ Set.univ f) (x : E) (y : E) :
     inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
+  let fx : E → ℝ := fun z ↦ f z - inner (f' x) z
+  let fy : E → ℝ := fun z ↦ f z - inner (f' y) z
+  have hfx : ConvexOn ℝ Set.univ fx := by sorry
+  have hfy : ConvexOn ℝ Set.univ fy := by sorry
+  let gx : E → ℝ := fun z ↦ l / 2 * ‖z‖ ^ 2 - fx z
+  let gy : E → ℝ := fun z ↦ l / 2 * ‖z‖ ^ 2 - fy z
+  have hgx : ConvexOn ℝ Set.univ gx := by sorry
+  have hgx : ConvexOn ℝ Set.univ gy := by sorry
   sorry
 
-theorem lipschitz_to_convex (h₂ : LipschitzOn f' l) :
-    ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) := by
-  sorry
+theorem lipschitz_to_lower (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' l)
+    (lp : l > 0) (hfun: ConvexOn ℝ Set.univ f) :
+    inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
+  have convex : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) := lipschitz_to_convex h₁ h₂ lp
+  exact convex_to_lower h₁ convex lp hfun x y
 
-theorem convex_to_lipschitz (h₂ : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) ) :
+theorem lower_to_lipschitz (h₂ : ∀ x y : E, inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2)
+    (lpos : l > 0) : LipschitzOn f' l := by
+  intro x y
+  have H₁ : (1 / l * ‖f' x - f' y‖) * ‖f' x - f' y‖ ≤ (1 / l * ‖f' x - f' y‖) * (l * ‖x - y‖) := by
+    calc
+    _ = 1 / l * ‖f' x - f' y‖ ^ 2 := by
+      simp
+      rw [mul_assoc, ← pow_two (‖f' x - f' y‖)]
+    _ ≤ ‖f' x - f' y‖ * ‖x - y‖ := by
+      apply le_trans (h₂ x y)
+      apply real_inner_le_norm
+    _ = (1 / l * ‖f' x - f' y‖) * (l * ‖x - y‖) := by
+      field_simp
+      ring
+  have H₂ : 1 / l > 0 := by
+    apply one_div_pos.mpr lpos
+  cases lt_or_ge 0 (‖f' x - f' y‖)
+  case inl h =>
+    apply le_of_mul_le_mul_left H₁
+    apply mul_pos H₂ h
+  case inr h =>
+    apply le_trans h
+    apply mul_nonneg (le_of_lt lpos)
+    apply norm_nonneg _
+
+theorem convex_to_lipschitz (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (lp : l > 0)
+    (hfun: ConvexOn ℝ Set.univ f) (h₂ : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) ) :
     LipschitzOn f' l := by
-  sorry
+  have : ∀ x y : E, inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
+    intro x y
+    exact convex_to_lower h₁ h₂ lp hfun x y
+  exact lower_to_lipschitz this lp
 
-theorem convex_to_lower (h₂ : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) ) :
-    inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
-  sorry
+
 
 end Convex

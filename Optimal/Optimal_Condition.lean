@@ -5,18 +5,19 @@ Authors: Chenyi Li,
 -/
 import Analysis.Calculation
 import Mathlib.Analysis.Convex.Basic
+import Mathlib.Analysis.Calculus.MeanValue
 import Function.Convex_Function
-import Analysis.Taylor
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 variable {x xm : E} {f : E → ℝ} {f' : E → E} {s : Set E}
 
-open Set
+open Set InnerProductSpace
 
 /-
   A vector d is considered a descent direction at a point x if the inner product of the gradient at
   x with d is less than zero
 -/
+
 def DescentDirection (d : E) (x : E) (_ : HasGradientAt f (f' x) x) : Prop :=
   inner (f' x) d < (0 : ℝ)
 
@@ -37,13 +38,47 @@ private lemma continuous (h : ContinuousAt f x) : ∀ ε > 0, ∃ δ > 0, ∀ (y
     linarith
   exact h H1
 
+private lemma expansion (hf : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
+    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner (f' (x + t • p)) p := by
+  let g := fun r : ℝ ↦ f (x + r • p)
+  let g' := fun r : ℝ ↦ (inner (f' (x + r • p)) p : ℝ)
+  have h1 : ∀ r , HasDerivAt g (g' r) r := by
+    let h := fun r : ℝ ↦ x + r • p
+    have : g = f ∘ h := by rfl
+    rw [this]; intro r
+    have : inner (f' (x + r • p)) p = toDual ℝ E (f' (x + r • p)) p := rfl
+    simp; rw [this]; apply HasFDerivAt.comp_hasDerivAt
+    · apply HasGradientAt.hasFDerivAt
+      simp; exact hf (x + r • p)
+    · apply HasDerivAt.const_add
+      have ht: HasDerivAt (fun x : ℝ ↦ x) 1 r := hasDerivAt_id' r
+      have : HasDerivAt (fun r : ℝ ↦ r • p) ((1 : ℝ) • p) r := by
+        apply HasDerivAt.smul_const ht p
+      rw [one_smul] at this; exact this
+  have e1 : f (x + p) = g 1 := by simp [g]
+  have e2 : f x = g 0 := by simp [g]
+  have e3 : ∀ t, inner (f' (x + t • p)) p = g' t := by simp [g']
+  rw [e1, e2]
+  have : ∃ c ∈ Set.Ioo 0 1, g' c = (g 1 - g 0) / (1 - 0) := by
+    apply exists_hasDerivAt_eq_slope g g' (by norm_num)
+    · have : ∀ x ∈ Icc 0 1, HasDerivAt g (g' x) x := by
+        intro x _
+        exact (h1 x)
+      exact HasDerivAt.continuousOn this
+    · simp [h1]
+  rcases this with ⟨c, ⟨c1, c2⟩, h2⟩
+  use c
+  constructor; exact c1;
+  constructor; exact c2;
+  rw [e3 c]; simp [h2]
+
 theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
     (min : IsMinOn f univ xm) (hfc : ContinuousOn f' univ) :
     ∀ d : E, ¬ (DescentDirection d xm (hf xm)) := by
   intro d
   by_contra h
   have : ∃ t : ℝ , f (xm + t • d) < f xm := by
-    have h₁ : ∃ T : ℝ , T > 0 ∧ (∀ a ∈ Icc (- T) T, inner (f' (xm + a • d)) d < (0 : ℝ)):= by
+    have h₁ : ∃ T : ℝ , T > 0 ∧ (∀ a ∈ Icc (- T) T, inner (f' (xm + a • d)) d < (0 : ℝ)) := by
       let g := fun r : ℝ ↦ (inner (f' (xm + r • d)) d : ℝ)
       have hg0 : g 0 = inner (f' xm) d := by simp
       have hc : ContinuousOn g univ := by
@@ -84,7 +119,8 @@ theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
       rcases hc' with ⟨T, ⟨hT1, hT2⟩⟩
       use T
     rcases h₁ with ⟨T, ⟨hT1,hT2⟩⟩
-    have h₂ : ∃ t1 : ℝ, t1 ≥ -T ∧ t1 ≤ T ∧ f (xm + T • d) = f xm + inner (f' (xm + t1 • d)) (T • d) := by
+    have h₂ : ∃ t1 : ℝ, t1 ≥ -T ∧ t1 ≤ T ∧ f (xm + T • d) =
+        f xm + inner (f' (xm + t1 • d)) (T • d) := by
       rcases (expansion hf xm (T • d)) with ⟨ts,⟨ts1,⟨ts2,ts3⟩⟩⟩
       use (ts • T)
       constructor
@@ -113,16 +149,20 @@ theorem first_order (hf : ∀ x : E, HasGradientAt f (f' x) x) (min : IsMinOn f 
   exact (optimal_no_descent_direction hf min hfc (- f' xm)) h1
 
 theorem first_order_convex (hf : ∀ x : E, HasGradientAt f (f' x) x) (hcon : ConvexOn ℝ univ f)
+    (hfm : f' xm = 0) : IsMinOn f univ xm := by
+  have : ∀ y , f y ≥ f xm + inner (f' xm) (y - xm) := by
+    intro y
+    exact first_order_condition' (hf xm) hcon (by trivial) y (by trivial)
+  intro y _
+  dsimp; specialize this y
+  rw [hfm, inner_zero_left, add_zero] at this
+  exact this
+
+theorem first_order_convex_iff (hf : ∀ x : E, HasGradientAt f (f' x) x) (hcon : ConvexOn ℝ univ f)
     (hfc : ContinuousOn f' univ) :
     IsMinOn f univ xm ↔ f' xm = 0 := by
   constructor
   · intro hmin
     exact first_order hf hmin hfc
   · intro hgrad
-    have : ∀ y , f y ≥ f xm + inner (f' xm) (y - xm) := by
-      intro y
-      exact first_order_condition' (hf xm) hcon (by trivial) y (by trivial)
-    intro y _
-    dsimp; specialize this y
-    rw [hgrad, inner_zero_left, add_zero] at this
-    exact this
+    exact first_order_convex hf hcon hgrad

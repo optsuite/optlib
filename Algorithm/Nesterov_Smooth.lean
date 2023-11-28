@@ -3,7 +3,7 @@ Copyright (c) 2023 Chenyi Li. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Ziyu Wang
 -/
-import Function.First_Order
+import Function.Convex_Function
 import Analysis.Calculation
 import Function.Lsmooth
 /-!

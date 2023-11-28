@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Ziyu Wang
 -/
 import Function.Lsmooth
-import Function.First_Order
+import Function.Convex_Function
 import Analysis.Calculation
 /-!
   the convergence of the gradient method for the convex function

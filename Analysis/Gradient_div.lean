@@ -2,7 +2,7 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Analysis.Basic
-import Function.First_Order
+import Function.Convex_Function
 
 /- Cao Zhipeng, HUST ; Yu Penghao, PKU-/
 
@@ -135,6 +135,7 @@ theorem ContinuousAt_iff_Convergence: ContinuousAt f x ↔ ∀ ε > (0 : ℝ),
 
 theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : ℝ)):
     HasGradientAt (fun y => (1 : ℝ) / (f y)) (- ((1 : ℝ) / (f x) ^ (2 : ℕ)) • grad) x := by
+  have hf' : HasGradientAt f grad x := hf
   rw [HasGradient_iff_Convergence_Point]
   intro ε εpos
   rcases (ContinuousAt_Convergence (ContinuousAt.abs (HasGradientAt.continuousAt hf))) ε εpos with ⟨δ', _ , _⟩
@@ -200,9 +201,11 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
     have h' : (0 : ℝ)  < 1 := by linarith
     have h'' : 0 ≤ ‖grad‖ := by exact norm_nonneg (grad)
     exact add_pos_of_nonneg_of_pos h'' h'
-  have h₃ : ∃ δ₃ > (0 : ℝ ), ∀ (x' : E),
-    ‖x - x'‖ ≤ δ₃ → ‖f x' - f x‖ ≤ ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖grad‖ + 1 )) := by
-    sorry
+  have h₃ : ∃ δ₃ > (0 : ℝ), ∀ (x' : E),
+      ‖x - x'‖ ≤ δ₃ → ‖f x' - f x‖ ≤ ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖grad‖ + 1 )) := by
+    apply ContinuousAt_Convergence
+    · exact HasGradientAt.continuousAt hf'
+    · exact ε2pos
   rcases h₃ with ⟨δ₃,δ₃pos,hδ₃⟩
   have h₄ : ∃ δ > (0 : ℝ ), ∀ (x' : E), ‖x - x'‖ ≤ δ →
       ‖(f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)/((f x) * (f x) * (f x'))‖

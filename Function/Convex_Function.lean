@@ -1,12 +1,14 @@
 /-
 Copyright (c) 2023 Ziyu Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chenyi Li, Ziyu Wang, Yu Penghao, Cao Zhipeng
+Authors: Chenyi Li, Ziyu Wang, Penghao Yu, Cao Zhipeng
 -/
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Convex.Function
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.MeanValue
 import Analysis.Calculation
 /-!
   the first order condition of the convex functions
@@ -16,10 +18,13 @@ open InnerProductSpace
 noncomputable section
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-variable {f: E → ℝ} {f': E → (E →L[ℝ] ℝ)} {x y x': E}
+
+section FirstOrderCondition
+
+variable {f : E → ℝ} {f' : E → (E →L[ℝ] ℝ)} {x y x': E}
 
 theorem HasFDeriv_Convergence (h: HasFDerivAt f (f' x) x) :
-  ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖ x - x'‖ ≤ δ
+  ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ
     → ‖f x' - f x - (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
   rw [HasFDerivAt, HasFDerivAtFilter, Asymptotics.isLittleO_iff] at h
   intro ε epos
@@ -87,7 +92,7 @@ theorem first_order_condition {s : Set E}
     (h : HasFDerivAt f (f' x) x) (hf : ConvexOn ℝ s f) (xs : x ∈ s):
     ∀ (y : E), y ∈ s → f x + f' x (y - x) ≤ f y := by
   have h₁ : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ
-       → ‖ f x' -f x- (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖:= by
+       → ‖f x' -f x- (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖:= by
     apply HasFDeriv_Convergence h
   intro y ys
   by_cases h₂: y = x
@@ -260,56 +265,29 @@ theorem convex_monotone_gradient {s : Set E} (hfun: ConvexOn ℝ s f)
   simp only [map_sub, ContinuousLinearMap.coe_sub', Pi.sub_apply]
   linarith
 
-theorem monotone_gradient_convex {s : Set E} (h₁: Convex ℝ s)
-    (hf : ∀ (x: E), HasFDerivAt f (f' x) x)
-    (mono: ∀ x ∈ s, ∀ y ∈ s,  (f' x - f' y) (x - y) ≥ 0) : ConvexOn ℝ s f := by
-  sorry
+end FirstOrderCondition
 
 section
 
-variable {f : E → ℝ} {f' : E → E} {x x' y: E} {s : Set E}
+open Set InnerProductSpace
+
+variable {f : E → ℝ} {f' : E → E} {s : Set E}
 
 theorem HasGradient_Convergence (h : HasGradientAt f (f' x) x) :
     ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E, ‖x - x'‖ ≤ δ
     → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
-  intro ε hepos
-  have equiv : ∀ x x' : E, inner (f' x) (x' - x) = (toDual ℝ E) (f' x) (x' - x) := by
-    intro x x'
-    rw [InnerProductSpace.toDual_apply]
   rw [HasGradientAt_iff_HasFDerivAt] at h
-  let g := fun x ↦ (toDual ℝ E) (f' x)
-  have h' : HasFDerivAt f (g x) x := h
-  have equiv' : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E, ‖x - x'‖ ≤ δ
-    → ‖f x' - f x - (toDual ℝ E) (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
-    exact HasFDeriv_Convergence h'
-  specialize equiv' ε hepos
-  rcases equiv' with ⟨δ, ⟨hd, hd1⟩⟩
-  use δ; constructor
-  exact hd
-  intro x' hx'
-  rw [equiv]
-  exact hd1 x' hx'
+  show ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ
+    → ‖f x' - f x - ((toDual ℝ E) (f' x)) (x' - x)‖ ≤ ε * ‖x - x'‖
+  apply HasFDeriv_Convergence
+  exact h
 
 theorem Convergence_HasGradient (h : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
       ‖x - x'‖ ≤ δ → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖) :
       HasGradientAt f (f' x) x := by
   rw [HasGradientAt_iff_HasFDerivAt]
-  have equiv : ∀ x x' : E, inner (f' x) (x' - x) = (toDual ℝ E) (f' x) (x' - x) := by
-    intro x x'
-    rw [InnerProductSpace.toDual_apply]
-  have h' : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
-      ‖x - x'‖ ≤ δ → ‖f x' - f x - ((toDual ℝ E) (f' x)) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
-    intro ε hepos
-    specialize h ε hepos
-    rcases h with ⟨δ, ⟨hd, hd1⟩⟩
-    use δ; constructor
-    exact hd
-    intro x' hx'
-    rw [← equiv]
-    exact hd1 x' hx'
-  let g := fun x ↦ (toDual ℝ E) (f' x)
-  have : HasFDerivAt f (g x) x := Convergence_HasFDeriv h'
-  exact this
+  apply Convergence_HasFDeriv
+  exact h
 
 theorem HasGradient_iff_Convergence_Point {f'x : E}:
       HasGradientAt f f'x x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
@@ -327,26 +305,18 @@ theorem HasGradient_iff_Convergence :
 
 theorem first_order_condition' (h : HasGradientAt f (f' x) x) (hf : ConvexOn ℝ s f) (xs : x ∈ s):
     ∀ (y : E), y ∈ s → f x + inner (f' x) (y - x) ≤ f y := by
-  intro y hy
-  rw [HasGradientAt_iff_HasFDerivAt] at h
-  let g := fun x ↦ (toDual ℝ E) (f' x)
-  have h' : HasFDerivAt f (g x) x := h
-  have : inner (f' x) (y - x) = (toDual ℝ E) (f' x) (y - x) := by rw [InnerProductSpace.toDual_apply]
-  rw [this]
-  exact first_order_condition h' hf xs y hy
+  show ∀ (y : E), y ∈ s → f x + (toDual ℝ E) (f' x) (y - x) ≤ f y
+  apply first_order_condition _ hf xs
+  apply h
 
 theorem first_order_condition_inverse'  (h : ∀ x : E, HasGradientAt f (f' x) x) (h₁ : Convex ℝ s)
     (h₂ : ∀ x : E, x ∈ s → ∀ y : E, y ∈ s → f x + inner (f' x) (y - x) ≤ f y) : ConvexOn ℝ s f := by
-  let g := fun x ↦ (toDual ℝ E) (f' x)
-  have h' : ∀ x : E, HasFDerivAt f (g x) x := h
-  have equiv : ∀ x y : E, inner (f' x) (y - x) = (toDual ℝ E) (f' x) (y - x) := by
-    intro x y
-    rw [InnerProductSpace.toDual_apply]
-  have h₂' : ∀ x : E, x ∈ s → ∀ y : E, y ∈ s → f x + (toDual ℝ E) (f' x) (y - x) ≤ f y := by
-    intro x xs y ys
-    rw [← equiv]
-    exact h₂ x xs y ys
-  exact first_order_condition_inverse h' h₁ h₂'
+  apply first_order_condition_inverse
+  intro x; specialize h x
+  rw [HasGradientAt_iff_HasFDerivAt] at h
+  apply h
+  apply h₁
+  apply h₂
 
 theorem first_order_condition_iff' (h₁ : Convex ℝ s) (h : ∀ x : E, HasGradientAt f (f' x) x) :
     ConvexOn ℝ s f ↔ ∀ x : E,
@@ -367,23 +337,71 @@ theorem convex_monotone_gradient' (hfun: ConvexOn ℝ s f) (h : ∀ x : E, HasGr
   exact convex_monotone_gradient hfun h' x hx  y hy
 
 theorem monotone_gradient_convex' (h₁: Convex ℝ s) (hf : ∀ x, HasGradientAt f (f' x) x)
-    (mono: ∀ x ∈ s, ∀ y ∈ s, inner (f' x - f' y) (x - y) ≥ (0 : ℝ)) : ConvexOn ℝ s f := by
-  let g := fun x ↦ (toDual ℝ E) (f' x)
-  have h' : ∀ x : E, HasFDerivAt f (g x) x := hf
-  have equiv : ∀ x y : E, inner (f' x - f' y) (x - y) = (g x - g y) (x - y) := by
+    (mono: ∀ x1 ∈ s, ∀ y1 ∈ s, inner (f' x1 - f' y1) (x1 - y1) ≥ (0 : ℝ)) : ConvexOn ℝ s f := by
+  apply first_order_condition_inverse' hf h₁
+  intro x xs y ys
+  let g := fun t : ℝ ↦ f (x + t • (y - x))
+  let g' := fun t : ℝ ↦ (inner (f' (x + t • (y - x))) (y - x) : ℝ)
+  have h1 : ∀ r , HasDerivAt g (g' r) r := by
+    let h := fun r : ℝ ↦ (x + r • (y - x))
+    have : g = f ∘ h := rfl
+    rw [this]; intro t
+    have : inner (f' (x + t • (y - x))) (y - x) = toDual ℝ  E (f' (x + t • (y - x))) (y - x) := rfl
+    simp; rw [this]; apply HasFDerivAt.comp_hasDerivAt
+    · apply HasGradientAt.hasFDerivAt
+      simp; exact hf (x + t • (y - x))
+    · have ht: HasDerivAt (fun r : ℝ ↦ r) 1 t := hasDerivAt_id' t
+      have : HasDerivAt (fun r : ℝ ↦ r • (y - x)) ((1 : ℝ) • (y - x)) t := by
+        exact HasDerivAt.smul_const ht (y - x)
+      rw [one_smul] at this; exact HasDerivAt.const_add x this
+  have e1 : f x = g 0 := by simp
+  have e2 : f y = g 1 := by simp
+  have e3 : inner (f' x) (y - x) = g' 0 := by simp
+  rw [e1, e2, e3]
+  have mono' : ∀ t ∈ Ioo 0 1, g' t ≥ g' 0 := by
+    intro t ht;
+    simp; rw [← sub_nonneg, ← inner_sub_left]
+    rcases ht with ⟨ht1, ht2⟩
+    have hh: inner (f' (x + t • (y - x)) - f' x) (x + t • (y - x) - x) ≥ (0 : ℝ) := by
+      apply mono (x + t • (y - x)) _ x xs
+      have e4 : x + t • (y - x) = (1 - t) • x + t • y := by
+        rw [smul_sub, add_sub, sub_smul, one_smul, add_sub_right_comm]
+      rw [e4]
+      apply convex_iff_forall_pos.mp h₁ xs ys (by linarith) (by linarith) (by norm_num)
+    rw [add_sub_cancel', inner_smul_right] at hh
+    exact (zero_le_mul_left ht1).mp hh
+  have h2 : ∃ c ∈ Set.Ioo 0 1, g' c = (g 1 - g 0) / (1 - 0) := by
+    apply exists_hasDerivAt_eq_slope
+    · linarith
+    · have : ∀ x ∈ Icc 0 1, HasDerivAt g (g' x) x := by
+        intro x _
+        exact (h1 x)
+      exact HasDerivAt.continuousOn this
+    · simp [h1]
+  rcases h2 with ⟨c, ⟨⟨hc1,hc2⟩,hc3⟩⟩
+  rw [sub_zero, div_one] at hc3; rw [← le_sub_iff_add_le', ← hc3]
+  apply mono' c
+  simp; constructor; linarith; linarith
+
+theorem monotone_gradient_convex {s : Set E} {f' : E → (E →L[ℝ] ℝ)}(h₁: Convex ℝ s)
+    (hf : ∀ (x : E), HasFDerivAt f (f' x) x)
+    (mono: ∀ x ∈ s, ∀ y ∈ s,  (f' x - f' y) (x - y) ≥ 0) : ConvexOn ℝ s f := by
+  let g := fun x ↦ ((toDual ℝ E).symm (f' x))
+  have h' : ∀ x : E, HasGradientAt f (g x) x := by
+    intro x'
+    exact HasFDerivAt.hasGradientAt (hf x')
+  have equiv : ∀ x y : E, inner (g x - g y) (x - y) = (f' x - f' y) (x - y) := by
     intro x y
-    rw [← InnerProductSpace.toDual_apply]
-    simp only [ContinuousLinearMap.strongUniformity_topology_eq, map_sub,
-      ContinuousLinearMap.coe_sub', Pi.sub_apply, toDual_apply]
-  have mono' : ∀ x ∈ s, ∀ y ∈ s, (g x - g y) (x - y) ≥ (0 : ℝ) := by
+    rw [← InnerProductSpace.toDual_apply]; simp
+  have mono' : ∀ x ∈ s, ∀ y ∈ s, inner (g x - g y) (x - y) ≥ (0 : ℝ) := by
     intro x hx y hy
     specialize mono x hx y hy
-    rw [← equiv]; exact mono
-  exact monotone_gradient_convex h₁ h' mono'
+    rw [equiv]; exact mono
+  exact monotone_gradient_convex' h₁ h' mono'
 
 section strict
 
-variable {f : E → ℝ} {f' : E → E} {x x' y: E} {s : Set E}
+variable {f : E → ℝ} {f' : E → E} {s : Set E}
 
 theorem monotone_gradient_strict_convex (hs: Convex ℝ s) (h : ∀ x : E, HasGradientAt f (f' x) x)
     (mono: ∀ x ∈ s, ∀ y ∈ s, inner (f' x - f' y) (x - y) > (0 : ℝ)) : StrictConvexOn ℝ s f := by

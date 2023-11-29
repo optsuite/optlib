@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2023 Ziyu Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chenyi Li, Ziyu Wang, Yuxuan Wu, Junda Ying
+Authors: Chenyi Li, Ziyu Wang, Yuxuan Wu, Junda Ying, Hongjia Chen
 -/
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -11,6 +11,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Function.Convex_Function
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Analysis.Calculation
+import Optimal.Optimal_Condition
 /-!
   the properties of the L smooth function
 -/
@@ -222,19 +223,181 @@ theorem lipschitz_to_convex (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ :
   intro x _ y _
   exact H₂ x y
 
+lemma gradient1 (x : E) (a : E):
+    HasGradientAt (fun x ↦ (inner a x : ℝ)) a x := by
+  apply Convergence_HasGradient
+  simp only [gt_iff_lt, Real.norm_eq_abs]
+  intros ε εpos
+  use (1 : ℝ)
+  constructor; simp
+  · intro x' _
+    rw[← inner_sub_right, ← inner_sub_right, sub_self, inner_zero_right]
+    simp; positivity
+
+lemma gradient2 (l : ℝ) (z : E) :
+    HasGradientAt (fun (x : E) => l / 2 * ‖x‖ ^ 2) (l • z) z := by
+  let h := fun x : E => ‖x‖ ^ 2
+  have e1 : (l • z) = (l / 2) • (2 : ℝ) • z := by rw [smul_smul]; simp
+  have : (fun (x : E) => l / 2 * ‖x‖ ^ 2) = (fun (x : E) => (l / 2) • h x) := by
+    ext; simp
+  have h1 : HasGradientAt h ((2 : ℝ) • z) z := gradient_norm_sq_eq_two_self z
+  rw [this, e1]; refine HasGradientAt.const_smul' (l / 2) h1
+
 theorem convex_to_lower (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
     (h₂ : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x)) (lp : l > 0)
     (hfun: ConvexOn ℝ Set.univ f) (x : E) (y : E) :
     inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
-  let fx : E → ℝ := fun z ↦ f z - inner (f' x) z
-  let fy : E → ℝ := fun z ↦ f z - inner (f' y) z
-  have hfx : ConvexOn ℝ Set.univ fx := by sorry
-  have hfy : ConvexOn ℝ Set.univ fy := by sorry
-  let gx : E → ℝ := fun z ↦ l / 2 * ‖z‖ ^ 2 - fx z
-  let gy : E → ℝ := fun z ↦ l / 2 * ‖z‖ ^ 2 - fy z
-  have hgx : ConvexOn ℝ Set.univ gx := by sorry
-  have hgx : ConvexOn ℝ Set.univ gy := by sorry
-  sorry
+  rw [ConvexOn] at hfun
+  let fs : E → (E → ℝ) := fun s => (fun x => f x - inner (f' s) x)
+  have hfunconvex : ∀ s : E, ConvexOn ℝ Set.univ (fs s) := by
+    intro s
+    rw [ConvexOn]
+    simp
+    constructor
+    · apply hfun.1
+    · intro x₁ y₁ a b ha hb hab
+      have : f (a • x₁ + b • y₁) ≤ a * f x₁ + b * f y₁ := by
+        apply hfun.2 _ _ ha hb hab
+        simp; simp
+      apply le_trans this
+      apply Eq.ge ; ring_nf
+      rw[inner_add_right, real_inner_smul_right, real_inner_smul_right]; ring
+  let fs' : E → (E → E) := fun s => (fun z ↦ f' z - f' s)
+  have hfconx₁:  ∀ s x : E, HasGradientAt (fs s) (fs' s x) x := by
+    intro s z
+    apply HasGradientAt.sub
+    · rcases h₁ z with _
+      apply h₁
+    · apply gradient1 z (f' s)
+  have hfy₁:  ∀ x : E, HasGradientAt (fs y) (fs' y x) x := hfconx₁ y
+  have hfx₁:  ∀ x₁ : E, HasGradientAt (fs x) (fs' x x₁) x₁ := hfconx₁ x
+  rw [ConvexOn] at h₂
+  let gs : E → (E → ℝ) := fun s ↦ (fun z ↦ l / 2 * ‖z‖ ^ 2 - (fs s) z)
+  have hgxconvex : ∀ s : E, ConvexOn ℝ Set.univ (gs s) := by
+    intro s; rw [ConvexOn]
+    constructor
+    · apply hfun.1
+    · intro x₁ hhx₁ y₁ hhy₁ a b ha hb hab
+      have h₂' : l / 2 * ‖a • x₁ + b • y₁‖ ^ 2 - f (a • x₁ + b • y₁) ≤
+          a • (l / 2 * ‖x₁‖ ^ 2 - f x₁) + b • (l / 2 * ‖y₁‖ ^ 2 - f y₁) := by
+        apply h₂.2 hhx₁ hhy₁ ha hb hab
+      simp only [smul_eq_mul]
+      rw [inner_add_right, real_inner_smul_right, real_inner_smul_right]
+      calc
+        _ = (l / 2) * ‖a • x₁ + b • y₁‖ ^ 2 - f (a • x₁ + b • y₁) +
+            (a * inner (f' s) x₁ + b * inner (f' s) y₁) := by ring_nf
+        _ ≤ a • (l / 2 * ‖x₁‖ ^ 2 - f x₁) + b • (l / 2 * ‖y₁‖ ^ 2 - f y₁) +
+            (a * inner (f' s) x₁ + b * inner (f' s) y₁) := by apply add_le_add_right h₂'
+        _ = a • (l / 2 * ‖x₁‖ ^ 2 - (f x₁ - inner (f' s) x₁)) + b •
+            (l / 2 * ‖y₁‖ ^ 2 - (f y₁ - inner (f' s) y₁)) := by simp; ring_nf
+  let gs' := fun s ↦ (fun z ↦ l • z - (fs' s z))
+  have hgx₁ :  ∀ s x : E, HasGradientAt (gs s) ((gs' s) x) x := by
+    intro s z
+    apply HasGradientAt.sub (gradient2 l z) (hfconx₁ s z)
+  have hgx₂ : ∀ s z₁ z₂ : E, (gs s) z₁ + inner (gs' s z₁) (z₂ - z₁) ≤ gs s z₂ := by
+    intro s z₁ z₂
+    apply first_order_condition' (hgx₁ s z₁) (hgxconvex s)
+    · simp only [Set.mem_univ]
+    · simp only [Set.mem_univ]
+  have hfx₂ : ∀ (s x y₁ : E), (fs s) y₁ ≤ fs s x +
+      inner (fs' s x) (y₁ - x) + l / 2 * ‖y₁ - x‖ ^ 2 := by
+    intro s z₁ z₂
+    simp only []
+    rcases hgx₂ s z₁ z₂ with hgx₂'
+    have t₇ : gs s z₁ =  l / 2 * ‖z₁‖ ^ 2 - fs s z₁ := by rfl
+    have t₈ : gs s z₂ =  l / 2 * ‖z₂‖ ^ 2 - fs s z₂ := by rfl
+    have t₉ : gs' s z₁ = l • z₁ - fs' s z₁ := by rfl
+    rw [t₇, t₈, t₉] at hgx₂'
+    have t₁₀ : fs s z₂ + (l / 2 * ‖z₁‖ ^ 2 - fs s z₁ + inner (l • z₁ - fs' s z₁) (z₂ - z₁))
+        ≤ l / 2 * ‖z₂‖ ^ 2 := by
+      apply add_le_of_le_sub_left hgx₂'
+    have t₁₁ : fs s z₂ ≤ l / 2 * ‖z₂‖ ^ 2 - (l / 2 * ‖z₁‖ ^ 2 - fs s z₁ +
+        inner (l • z₁ - fs' s z₁) (z₂ - z₁)) := by
+      rw [add_comm] at t₁₀
+      apply le_sub_left_of_add_le t₁₀
+    simp only [] at t₁₁; rw [← sub_add (l / 2 * ‖z₁‖ ^ 2) _ _] at t₁₁
+    calc
+      _ ≤ l / 2 * ‖z₂‖ ^ 2 - (l / 2 * ‖z₁‖ ^ 2 - f z₁ +
+          inner (f' s) z₁ + inner (l • z₁ - fs' s z₁) (z₂ - z₁)) := by apply t₁₁
+      _ = f z₁ - inner (f' s) z₁ + inner (f' z₁ - f' s) (z₂ - z₁) + l / 2 * ‖z₂ - z₁‖ ^ 2 := by
+        repeat rw [Real.rpow_two, ← real_inner_self_eq_norm_sq]
+        rw [inner_sub_left, real_inner_smul_left, inner_sub_sub_self]
+        rw [inner_sub_right, real_inner_comm z₂ z₁]; ring
+  have hfs₃ : ∀ s : E, IsMinOn (fs s) _ s := by
+    intro s
+    apply first_order_convex (hfconx₁ s) (hfunconvex s)
+    simp only [sub_self]
+  have hfy₃ : IsMinOn (fs y) _ y := hfs₃ y
+  have hfx₄ : fs x x ≤ fs x y - 1 / (2 * l) * ‖fs' x y‖ ^ 2 := by
+    have : fs x x ≤ fs x (y - (1 / l) • fs' x y) := by
+      rcases hfs₃ x with hf3'
+      rw[isMinOn_iff] at hf3'
+      apply hf3'
+      simp
+    apply le_trans this
+    rcases hfx₂ x y (y - (1 / l) • fs' x y) with hfx₂'
+    calc
+      _ ≤ fs x y + inner (fs' x y) (y - (1 / l) • fs' x y - y)
+          + l / 2 * ‖y - (1 / l) • fs' x y - y‖ ^ 2 := by apply hfx₂'
+      _ = fs x y - 1 / (2 * l) * ‖fs' x y‖ ^ 2 := by
+        have : y - (1 / l) • fs' x y - y = - (1 / l) • fs' x y := by simp
+        rw [this, real_inner_smul_right, Real.rpow_two, Real.rpow_two ‖fs' x y‖]
+        repeat rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq]
+        rw [real_inner_smul_right, real_inner_smul_left]; field_simp; ring
+  have hfy₄ : fs y y ≤ fs y x - 1 / (2 * l) * ‖fs' y x‖ ^ 2 := by
+    have : fs y y ≤ fs y (x - (1 / l) • fs' y x) := by
+      rw [isMinOn_iff] at hfy₃
+      rcases hfy₃ (x - (1 / l) • fs' y x) with hfy₃'
+      apply hfy₃'
+      simp
+    apply le_trans this
+    rcases hfx₂ y x (x - (1 / l) • fs' y x) with hfy₂'
+    calc
+      _ ≤ fs y x + inner (fs' y x) (x - (1 / l) • fs' y x - x)
+          + l / 2 * ‖x - (1 / l) • fs' y x - x‖ ^ 2 := by apply hfy₂'
+      _ = fs y x - 1 / (2 * l) * ‖fs' y x‖ ^ 2 := by
+        have : x - (1 / l) • fs' y x - x = - (1 / l) • fs' y x := by simp
+        rw [this, real_inner_smul_right, Real.rpow_two , Real.rpow_two ‖fs' y x‖]
+        rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, real_inner_smul_right]
+        rw [real_inner_smul_left]; field_simp; ring
+  have hh₁: (1 / (2 * l)) * ‖f' x - f' y‖ ^ 2 ≤ f y - f x - inner (f' x) (y - x) := by
+    calc
+      (1 / (2 * l)) * ‖f' x - f' y‖ ^ 2 ≤ fs x y - fs x x := by
+        have : f' x - f' y = - fs' x y := by
+          have : fs' x y = f' y - f' x := by rfl
+          rw [this]; simp
+        rw [this]
+        have : ‖- fs' x y‖  = ‖fs' x y‖  :=by apply norm_neg
+        rw [this]
+        linarith [hfx₄]
+      _ = f y - f x - inner (f' x) (y - x) := by
+        have t₄: fs x y = f y - inner (f' x) y := by rfl
+        have t₅: fs x x = f x - inner (f' x) x := by rfl
+        rw [t₄,t₅,inner_sub_right]
+        ring
+  have hh₂: (1 / (2 * l)) * ‖f' x - f' y‖ ^ 2 ≤ f x - f y - inner (f' y) (x - y) := by
+    calc
+      (1 / (2 * l)) * ‖f' x - f' y‖ ^ 2 ≤ fs y x -fs y y := by
+        have : f' x - f' y = fs' y x := by simp
+        rw [this]
+        linarith [hfy₄]
+      _ = f x - f y - inner (f' y) (x - y) := by
+        have t₄' : fs y y = f y - inner (f' y) y := by rfl
+        have t₅' : fs y x = f x - inner (f' y) x := by rfl
+        rw [t₄', t₅', inner_sub_right]
+        ring
+  calc
+    _ = (1 / (2 * l)) * ‖f' x - f' y‖ ^ 2 + (1 / (2 * l)) * ‖f' x - f' y‖ ^ 2 := by
+      field_simp
+      rw [← mul_two,mul_comm]
+      ring
+    _ ≤ (f y - f x - inner (f' x) (y - x)) + (f x - f y - inner (f' y) (x - y)) := by
+      apply add_le_add hh₁ hh₂
+    _ = inner (f' x - f' y) (x - y) := by
+      rw [inner_sub_left]
+      have t₆ : (inner (f' x) (y - x) : ℝ) = - (inner (f' x) (x - y) : ℝ) := by
+        rw [inner_sub_right, inner_sub_right]; ring
+      rw[t₆]; ring
 
 theorem lipschitz_to_lower (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' l)
     (lp : l > 0) (hfun: ConvexOn ℝ Set.univ f) :

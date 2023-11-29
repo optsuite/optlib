@@ -101,84 +101,6 @@ theorem Subderiv.convex : ∀ x ∈ s, Convex ℝ (SubderivAt hf x) := by
   rw [Eq.symm (Convex.combo_self abeq (f y)), ← eq]
   apply add_le_add ineq1 ineq2
 
-/-- The subderiv of `f` at `x ∈ interior s` is a convex set. --/
-theorem Subderiv.bounded {s : Set (EuclideanSpace ℝ n)} {x : EuclideanSpace ℝ n}:
-    ∀ x ∈ interior s,  Bornology.IsBounded (SubderivAt hf x) := by
-  intro x h
-  rw [isBounded_iff_forall_norm_le]
-  rw [interior_eq_nhds', mem_setOf, Metric.mem_nhds_iff] at h
-  obtain ⟨ε, εpos, bs⟩ := h
-  have ineq : ∀ i ∈ Finset.univ, ‖(ε / 2) • single (i : n) (1 : ℝ)‖ < ε := by
-    intro i _
-    rw [norm_smul, congrArg (HMul.hMul ‖ε / 2‖) (norm_single i (1 : ℝ)), ← norm_mul, congrArg norm (mul_one (ε / 2))]
-    apply lt_of_eq_of_lt _ (half_lt_self_iff.mpr εpos)
-    have : ‖ε / 2‖ = |ε / 2| := rfl
-    rw [this, (abs_eq_self.mpr (le_of_lt (half_pos εpos)))]
-  have eq : ∀ i ∈ Finset.univ,
-    ‖x - (x + (ε / 2) • single (i : n) (1 : ℝ))‖ = ‖(ε / 2) • single i (1 : ℝ)‖ := by
-      intro i _; rw [norm_sub_rev]; congr; rw [add_sub_cancel']
-  have eq' : ∀ i ∈ Finset.univ,
-    ‖x - (x - (ε / 2) • single (i : n) (1 : ℝ))‖ = ‖(ε / 2) • single i (1 : ℝ)‖ := by
-      intro i _; congr; field_simp
-  obtain his := fun i is => bs (mem_ball_iff_norm'.mpr (by linarith [ineq i is, eq i is]))
-  obtain his' := fun i is => bs (mem_ball_iff_norm'.mpr (by linarith [ineq i is, eq' i is]))
-  let C := fun i =>
-    (max |(- ((f (x - (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2)))|
-        |((f (x + (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2))|) ^ 2
-  use Real.sqrt (Finset.sum Finset.univ C); intro g hg
-  have eq2 : ∀ i ∈ Finset.univ, g i = (1 / (ε / 2)) * (⟪g, (ε / 2) • single i (1 : ℝ)⟫) := by
-    intro i _
-    have eq' : (1 : ℝ) * ⟪g, single i (1 : ℝ)⟫ = 1 / (ε / 2) * (ε / 2) * ⟪g, single i (1 : ℝ)⟫ := by
-      apply congrFun (congrArg HMul.hMul _) (⟪g, single i 1⟫)
-      exact Eq.symm (one_div_mul_cancel (ne_iff_lt_or_gt.mpr <|Or.inr (half_pos εpos)))
-    have eq1 : ⟪g, single i 1⟫ = g i := by rw [inner_single_right, one_mul]; rfl
-    rw [← eq1, ← (one_mul ⟪g, (single i (1 : ℝ))⟫), eq', mul_assoc, mul_eq_mul_left_iff]
-    left; rw [← inner_smul_right]
-  have ineq1 : ∀ i ∈ Finset.univ, g i ≤ (f (x + (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2) := by
-    intro i is; specialize hg (x + (ε / 2) • single i (1 : ℝ)) (his i is)
-    have hg' : f (x + (ε / 2) • single i (1 : ℝ)) - f x ≥ ⟪g, (ε / 2) • single i (1 : ℝ)⟫ := by
-      calc
-        ⟪g, (ε / 2) • single i (1 : ℝ)⟫ = ⟪g, x + (ε / 2) • single i (1 : ℝ) - x⟫ := by
-          congr; field_simp
-        _ ≤ f (x + (ε / 2) • single i (1 : ℝ)) - f x := Iff.mpr le_sub_iff_add_le' hg
-    calc
-      g i = (1 / (ε / 2)) * (⟪g, (ε / 2) • single i (1 : ℝ)⟫) := eq2 i is
-      _ ≤ (1 / (ε / 2)) * (f (x + (ε / 2) • single i (1 : ℝ)) - f x) :=
-        (mul_le_mul_left (one_div_pos.mpr (half_pos εpos))).mpr hg'
-      _ = (f (x + (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2) := by rw [mul_comm, mul_one_div]
-  have ineq2 : ∀ i ∈ Finset.univ, - (g i) ≤ (f (x - (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2) := by
-    intro i is; specialize hg (x - (ε / 2) • single i (1 : ℝ)) (his' i is)
-    have hg' : f (x - (ε / 2) • single i (1 : ℝ)) - f x ≥ - (⟪g, (ε / 2) • EuclideanSpace.single i (1 : ℝ)⟫) := by
-      calc
-        - (⟪g, (ε / 2) • single i (1 : ℝ)⟫) = ⟪g, x - (ε / 2) • single i (1 : ℝ) - x⟫ := by
-          rw [← inner_neg_right g ((ε / 2) • single i (1 : ℝ))]
-          congr; field_simp
-        _ ≤ f (x - (ε / 2) • single i (1 : ℝ)) - f x := Iff.mpr le_sub_iff_add_le' hg
-    calc
-      - (g i) = (1 / (ε / 2)) * (- (⟪g, (ε / 2) • single i (1 : ℝ)⟫)) := by rw [eq2 i is, neg_mul_eq_mul_neg]
-      _ ≤ (1 / (ε / 2)) * (f (x - (ε / 2) • single i (1 : ℝ)) - f x) := by
-        rw [(mul_le_mul_left (one_div_pos.mpr (half_pos εpos)))]; exact hg'
-      _ = (f (x - (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2) := by rw [mul_comm, mul_one_div]
-  have ineq3 : Finset.sum Finset.univ (fun i => ‖g i‖ ^ 2) ≤ (Finset.sum Finset.univ C) := by
-    apply Finset.sum_le_sum
-    intro i is; simp only [Real.rpow_two]
-    apply sq_le_sq.mpr; simp only [abs_abs, abs_norm]
-    calc
-      ‖g i‖ = |g i| := rfl
-      _ ≤ max |(-((f (x - (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2)))|
-        |((f (x + (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2))| :=
-          abs_le_max_abs_abs (neg_le.mpr (ineq2 i is)) (ineq1 i is)
-      _ ≤ |(max |(-((f (x - (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2)))|
-        |((f (x + (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2))|)| :=
-          le_abs_self (max |(-((f (x - (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2)))|
-              |(f (x + (ε / 2) • single i (1 : ℝ)) - f x) / (ε / 2)|)
-  calc
-    ‖g‖ = Real.sqrt (Finset.sum Finset.univ (fun i => ‖g i‖ ^ 2)) := by
-      simp only [Real.rpow_two]; rw [norm_eq]
-    _ ≤ Real.sqrt (Finset.sum Finset.univ C) := by
-      apply (Real.sqrt_le_sqrt_iff _ ).mpr ineq3
-      apply Finset.sum_nonneg'
-      intro i; simp only [Real.rpow_two]; apply sq_nonneg
 
 /-- Monotonicity of subderiv--/
 theorem subgrad_mono {u v : E} (hf : ConvexOn ℝ s f) (xs : x ∈ s) (ys : y ∈ s)
@@ -318,3 +240,38 @@ theorem isGlobalmin (hf : ConvexOn ℝ s f) (h : (0 : E) ∈ SubderivAt hf x ) :
 theorem zero_mem_iff_isGlobalmin (hf : ConvexOn ℝ s f) :
   (0 : E) ∈ SubderivAt hf x ↔ x ∈ {x | ∀ y ∈ s, f x ≤ f y} :=
     ⟨fun h => isGlobalmin hf h, fun h => zero_mem hf h⟩
+
+
+
+/-! ### Convergence of Subgradient method -/
+variable {G : NNReal} (hf : ConvexOn ℝ s f) (lf : LipschitzWith G f)
+
+variable (point : ℕ → E) (g : ℕ → E)
+  (a : ℕ → ℝ) (ha : ∀ (n : ℕ), a n > 0) (x₀ : E)
+  (hg : ∀ (n : ℕ), g n ∈ SubderivAt hf (point n))
+
+variable (update : ∀ (k : ℕ), (point (k + 1)) = point k - a k • (g k))
+
+variable (xm : E) (hm : IsMinOn f s xm)
+
+/- Subgradient of `f` is bounded if and only if `f` is Lipschitz -/
+theorem bounded_subgradient_iff_Lipschitz :
+    ∀ g ∈ SubderivAt hf x, ‖g‖ ≤ G ↔ LipschitzWith G f := by sorry
+
+theorem subgradient_method :
+    ∀ (k : ℕ), 2 * ((Finset.range (k + 1)).sum a) * (sInf {f (point i) | i ∈ Finset.range (k + 1)} - (f xm))
+      ≤ ‖x₀ - xm‖ ^ 2 + G ^ 2 * (Finset.range (k + 1)).sum (fun i => (a i) ^ 2) := by sorry
+
+theorem subgradient_method_1 {t : ℝ} (ha' : ∀ (n : ℕ), a n = t) :
+    ∀ (k : ℕ), sInf {f (point i) | i ∈ Finset.range (k + 1)} - (f xm)
+      ≤ ‖x₀ - xm‖ ^ 2 / (2 * k * t) + G ^ 2 * t / 2 := by sorry
+
+theorem subgradient_method_2 {s : ℝ} (ha' : ∀ (n : ℕ), a n * ‖g n‖ = s) :
+    ∀ (k : ℕ), sInf {f (point i) | i ∈ Finset.range (k + 1)} - (f xm)
+      ≤ G * ‖x₀ - xm‖ ^ 2 / (2 * k * s) + G * s / 2 := by sorry
+
+theorem subgradient_method_3 (ha' : Tendsto a atTop (𝓝 0))
+    (ha'' : Tendsto (fun (k : ℕ) => (Finset.range (k + 1)).sum a) atTop atTop) :
+    Tendsto (fun k => sInf {f (point i) | i ∈ Finset.range (k + 1)}) atTop (𝓝 (f xm)) := by sorry
+
+end

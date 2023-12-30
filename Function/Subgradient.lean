@@ -7,7 +7,7 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Topology.MetricSpace.Basic
 import Mathlib.Topology.Basic
 import Mathlib.Analysis.Convex.Function
-import Analysis.Basic
+import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Topology.MetricSpace.PseudoMetric
 import Function.Convex_Function
 
@@ -131,7 +131,7 @@ lemma first_order_condition_gradn {f: E → ℝ} {gradf : E}
 /-- Subderiv of differentiable functions --/
 theorem subgrad_of_grad' (hx : x ∈ interior s) (hf : ConvexOn ℝ s f) (h : HasGradientAt f g x) :
   SubderivAt hf x = {g} := by
-  obtain h' := HasGradientAt_iff_HasFDerivAt.mp h
+  obtain h' := hasGradientAt_iff_hasFDerivAt.mp h
   rw [Set.eq_singleton_iff_nonempty_unique_mem]
   constructor
   · use g; intro y ys
@@ -211,7 +211,7 @@ theorem subgrad_of_grad (hx : x ∈ interior s) (hf : ConvexOn ℝ s f) (h : Has
   SubderivAt hf x = {(toDual ℝ E).symm (f' x)} := by
     have h₁ : HasFDerivAt f ((toDual ℝ E) ((LinearIsometryEquiv.symm (toDual ℝ E)) (f' x))) x := by
       simp [h]
-    obtain h' := HasGradientAt_iff_HasFDerivAt.mpr h₁
+    obtain h' := hasGradientAt_iff_hasFDerivAt.mpr h₁
     exact subgrad_of_grad' hx hf h'
 
 /-- Subderiv of the sum of two functions is a subset of the sum of the subderivs of the two functions --/
@@ -240,38 +240,5 @@ theorem isGlobalmin (hf : ConvexOn ℝ s f) (h : (0 : E) ∈ SubderivAt hf x ) :
 theorem zero_mem_iff_isGlobalmin (hf : ConvexOn ℝ s f) :
   (0 : E) ∈ SubderivAt hf x ↔ x ∈ {x | ∀ y ∈ s, f x ≤ f y} :=
     ⟨fun h => isGlobalmin hf h, fun h => zero_mem hf h⟩
-
-
-
-/-! ### Convergence of Subgradient method -/
-variable {G : NNReal} (hf : ConvexOn ℝ s f) (lf : LipschitzWith G f)
-
-variable (point : ℕ → E) (g : ℕ → E)
-  (a : ℕ → ℝ) (ha : ∀ (n : ℕ), a n > 0) (x₀ : E)
-  (hg : ∀ (n : ℕ), g n ∈ SubderivAt hf (point n))
-
-variable (update : ∀ (k : ℕ), (point (k + 1)) = point k - a k • (g k))
-
-variable (xm : E) (hm : IsMinOn f s xm)
-
-/- Subgradient of `f` is bounded if and only if `f` is Lipschitz -/
-theorem bounded_subgradient_iff_Lipschitz :
-    ∀ g ∈ SubderivAt hf x, ‖g‖ ≤ G ↔ LipschitzWith G f := by sorry
-
-theorem subgradient_method :
-    ∀ (k : ℕ), 2 * ((Finset.range (k + 1)).sum a) * (sInf {f (point i) | i ∈ Finset.range (k + 1)} - (f xm))
-      ≤ ‖x₀ - xm‖ ^ 2 + G ^ 2 * (Finset.range (k + 1)).sum (fun i => (a i) ^ 2) := by sorry
-
-theorem subgradient_method_1 {t : ℝ} (ha' : ∀ (n : ℕ), a n = t) :
-    ∀ (k : ℕ), sInf {f (point i) | i ∈ Finset.range (k + 1)} - (f xm)
-      ≤ ‖x₀ - xm‖ ^ 2 / (2 * k * t) + G ^ 2 * t / 2 := by sorry
-
-theorem subgradient_method_2 {s : ℝ} (ha' : ∀ (n : ℕ), a n * ‖g n‖ = s) :
-    ∀ (k : ℕ), sInf {f (point i) | i ∈ Finset.range (k + 1)} - (f xm)
-      ≤ G * ‖x₀ - xm‖ ^ 2 / (2 * k * s) + G * s / 2 := by sorry
-
-theorem subgradient_method_3 (ha' : Tendsto a atTop (𝓝 0))
-    (ha'' : Tendsto (fun (k : ℕ) => (Finset.range (k + 1)).sum a) atTop atTop) :
-    Tendsto (fun k => sInf {f (point i) | i ∈ Finset.range (k + 1)}) atTop (𝓝 (f xm)) := by sorry
 
 end

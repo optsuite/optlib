@@ -8,6 +8,32 @@ More topics related to computational mathematics such as numerical linear algebr
 - A comprehensive installation guide in Chinese:
 http://faculty.bicmr.pku.edu.cn/~wenzw/formal/docs/#/
 
+- Download guide provided by the official Lean team:
+https://leanprover-community.github.io/get_started.html
+
+## How to use the code in this repository
+
+- Take downloading the `Analysis` folder from the `mathematics_in_lean` directory as an example:
+
+1. Identify the local directory where the Lean software can run, and open this directory with VScode (such as `mathematics_in_lean`).
+2. Copy the provided `Analysis` folder entirely into this directory (`mathematics_in_lean`).
+3. In this directory (`mathematics_in_lean`), locate a file named `lakefile.lean`.
+4. If there is a `@[default_target]` section in this `lakefile.lean`, then add the following at the end of this section:
+   ```
+    lean_lib «Analysis» {
+        -- add any library configuration options here
+    }
+   ```
+   If there is no `@[default_target]` section, then add the following in `lakefile.lean`:
+   ```
+    @[default_target]
+    lean_lib «Analysis» {
+        -- add any library configuration options here
+    }
+   ```
+    The complete code can be referred to in the corresponding section of the `lakefile.lean` file.
+5. At this point, you can call the locally written Lean files across directories and also run the corresponding proof parts of the code in Lean.
+
 # What we have done
 
 ## Analysis

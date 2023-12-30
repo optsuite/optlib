@@ -14,21 +14,21 @@ More topics related to computational mathematics such as numerical linear algebr
 - Taylor.lean: the local expansion of a differentiable function.
 
 ## Function
-- ClosedFunction.lean
-- Convex_Function.lean
-- Lsmooth.lean
-- Minima_ClosedFunction.lean
-- QuasiConvex_First_Order.lean
-- StronglyConvex.lean
-- Subgradient.lean
+- ClosedFunction.lean: the basic definitions and the properties of closed functions.
+- Convex_Function.lean: the properties of convex functions.
+- Lsmooth.lean: the properties of L-smooth functions.
+- Minima_ClosedFunction.lean: Weierstrass theorem for closed functions.
+- QuasiConvex_First_Order.lean: first order conditions for quasi-convex functions.
+- StronglyConvex.lean: the properties of strongly convex functions. (Part of this has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Convex/Strong.lean)
+- Subgradient.lean: the basic definitions and the properties of subgradient.
 
 ## Optimal
-- Optimality_Condition_of_Unconstrained_Problem.lean
+- Optimality_Condition_of_Unconstrained_Problem.lean: first order optimality conditions for unconstrained optimization problems.
 
 ## Algorithm
-- Gradient_Descent.lean
-- Gradient_Descent_Strongly_Convex.lean
-- Nestrov_Smooth.lean
+- Gradient_Descent.lean: convergence rate of gradient descent algorithm for smooth convex functions.
+- Gradient_Descent_Strongly_Convex.lean: convergence rate of gradient descent algorithm for smooth strongly convex functions.
+- Nestrov_Smooth.lean: convergence rate of Nesterov accelerated gradient descent algorithm for smooth convex functions.
 
 ## Example
 - ConvexPerspectiveFraction.lean
@@ -69,3 +69,36 @@ More topics related to computational mathematics such as numerical linear algebr
 ## Many other things to be added
 
 # Reference
+- [H. Liu, J. Hu, Y. Li, Z. Wen, Optimization: Modeling, Algorithm and Theory (in Chinese)](http://faculty.bicmr.pku.edu.cn/~wenzw/optbook.html)
+- [Rockafellar, R. Tyrrell, and Roger J-B. Wets. Variational analysis. Vol. 317. Springer Science & Business Media, 2009.](https://link.springer.com/book/10.1007/978-3-642-02431-3)
+- [Nocedal, Jorge, and Stephen J. Wright, eds. Numerical optimization. New York, NY: Springer New York, 1999.](https://link.springer.com/chapter/10.1007/0-387-22742-3_18)
+- [Nesterov, Yurii. Lectures on convex optimization. Vol. 137. Berlin: Springer, 2018.](https://link.springer.com/book/10.1007/978-3-319-91578-4)
+
+
+# The Authors
+
+## Main team
+
+- Zaiwen Wen
+- Chenyi Li
+- Ziyu Wang
+
+## Other Contributors
+- Undergraduate student from Peking University:
+
+   Hongjia Chen, Wanyi He, Yuxuan Wu, Shengyang Xu, Junda Ying, Penghao Yu, ...
+
+- Undergraduate student from 
+
+
+# Installation
+
+A comprehensive installation guide in Chinese:
+http://faculty.bicmr.pku.edu.cn/~wenzw/formal/docs/#/
+
+# Copyright
+
+Copyright (c) 2023 Chenyi Li, Ziyu Wang, Zaiwen Wen. All rights reserved.
+
+Released under Apache 2.0 license as described in the file LICENSE.
+

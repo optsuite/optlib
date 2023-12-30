@@ -31,11 +31,11 @@ More topics related to computational mathematics such as numerical linear algebr
 - Nestrov_Smooth.lean: convergence rate of Nesterov accelerated gradient descent algorithm for smooth convex functions.
 
 ## Example
-- ConvexPerspectiveFraction.lean
-- GeneralizedInequality.lean
-- Normexamples.lean
-- Polyhedron.lean
-- SymPosde.lean
+- ConvexPerspectiveFraction.lean: convexity preservation of perspective transformations and linear fractional transformations.
+- GeneralizedInequality.lean: partial order respected to proper cones.
+- Normexamples.lean: examples of norm ball and norm cone and their convexity.
+- Polyhedron.lean: the definition and convexity of polyhedrons.
+- SymPosde.lean: convex conicity of symmetric matrices, semi-positive definite matrices and positive definite matrices.
 
 # What we plan to do
 
@@ -88,7 +88,7 @@ More topics related to computational mathematics such as numerical linear algebr
 
    Hongjia Chen, Wanyi He, Yuxuan Wu, Shengyang Xu, Junda Ying, Penghao Yu, ...
 
-- Undergraduate student from Summer Seminar on Mathematical Formalization and Theorem Proving, BICMR, Peking University:
+- Undergraduate student from Summer Seminar on Mathematical Formalization and Theorem Proving, BICMR, Peking University, 2023:
 
     Zhipeng Cao, Yiyuan Chen, Heying Wang, Zuokai Wen, Mingquan Zhang, Ruichong Zhang, ... 
 

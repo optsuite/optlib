@@ -25,6 +25,6 @@ lean_lib «Example» {
   -- add any library configuration options here
 }
 
-lean_lib «Optimalityity» {
+lean_lib «Optimality» {
   -- add any library configuration options here
 }

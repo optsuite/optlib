@@ -9,6 +9,7 @@ More topics related to computational mathematics will be included in the future.
 # What we have done
 
 ## Analysis
+- Basic.lean (This has been merged into mathlib)(https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Calculus/Gradient/Basic.lean)
 - Calculation.lean
 - Gradient_div.lean
 - Taylor.lean

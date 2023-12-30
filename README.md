@@ -3,6 +3,11 @@ We aim to formalize the broad area of *mathematical programming* including conve
 
 More topics related to computational mathematics such as numerical linear algebra and numerical analysis will be included in the future.
 
+# Installation
+
+- A comprehensive installation guide in Chinese:
+http://faculty.bicmr.pku.edu.cn/~wenzw/formal/docs/#/
+
 # What we have done
 
 ## Analysis
@@ -90,12 +95,6 @@ We are a team of undergraduate and graduate students at the Beijing Internationa
 - Undergraduate students from Summer Seminar on Mathematical Formalization and Theorem Proving, BICMR, Peking University, 2023:
 
     Zhipeng Cao, Yiyuan Chen, Heying Wang, Zuokai Wen, Mingquan Zhang, Ruichong Zhang, ... 
-
-
-# Installation
-
-- A comprehensive installation guide in Chinese:
-http://faculty.bicmr.pku.edu.cn/~wenzw/formal/docs/#/
 
 # Copyright
 

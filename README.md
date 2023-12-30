@@ -1,18 +1,17 @@
 # optlib
-We are the team of Professor Wen Zaiwen from the Beijing International Center for Mathmatical Research (BICMR). 
+We are a team of undergraduate and graduate students at the Beijing International Center for Mathematical Research (BICMR) of Peking University, under the supervision of Professor Zaiwen Wen.
 
+We aim to formalize the broad area of mathematical programming including convex analysis, convex optimization, nonlinear programming, integer programming and etc in Lean4. Related topics include but are not limited to the definition and properties of convex and nonconvex functions, optimality conditions, convergence of various algorithms.
 
-We aim to formalize theorems from convex analysis and convex optimization in Lean4. Related topics include but are not limited to the definition and properties of convex functions, optimality conditions, convergence of various algorithms.
-
-More topics related to computational mathematics will be included in the future.
+More topics related to computational mathematics such as numerical linear algebra and numerical analysis will be included in the future.
 
 # What we have done
 
 ## Analysis
-- Basic.lean (This has been merged into mathlib)(https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Calculus/Gradient/Basic.lean)
-- Calculation.lean: In this file, we prove the properties of the gradient of a function, including the chain rule, the product rule.
-- Gradient_div.lean: In this file, we prove the quotient rule of the gradient.
-- Taylor.lean: In this file, we prove the local expansion of a differentiable function.
+- Basic.lean (This has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Calculus/Gradient/Basic.lean)
+- Calculation.lean: the properties of the gradient of a function, including the chain rule, the product rule.
+- Gradient_div.lean: the quotient rule of the gradient.
+- Taylor.lean: the local expansion of a differentiable function.
 
 ## Function
 - ClosedFunction.lean
@@ -47,12 +46,14 @@ More topics related to computational mathematics will be included in the future.
 - Definition and Properties of Strongly Convex Functions (Done)
 - Definition and Properties of L-smooth Functions (Done)
 - Definition and Properties of Subgradients
+- ......
 
 ## Optimality Conditions
 
 - First Order Conditions for Constrained and Unconstrained Methods
 - Second Order Conditions for Constrained and Unconstrained Methods
 - KKT conditions
+- ......
 
 ## Convergence of Optimization Algorithms
 
@@ -63,3 +64,8 @@ More topics related to computational mathematics will be included in the future.
 - Proximal Gradient Methods 
 - Nesterov Accelerated Method for Non-smooth Functions
 - ADMM Methods
+- ......
+
+## Many other things to be added
+
+# Reference

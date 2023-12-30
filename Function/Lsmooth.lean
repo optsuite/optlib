@@ -12,7 +12,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Function.Convex_Function
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Analysis.Calculation
-import Optimal.Optimality_Condition_of_Unconstrained_Problem
+import Optimality.Optimality_Condition_of_Unconstrained_Problem
 /-!
   the properties of the L smooth function
 -/

@@ -79,16 +79,18 @@ More topics related to computational mathematics such as numerical linear algebr
 
 ## Main team
 
-- Zaiwen Wen
-- Chenyi Li
-- Ziyu Wang
+- Zaiwen Wen, Beijing International Center for Mathematical Research, Peking University, CHINA (wenzw@pku.edu.cn)
+- Chenyi Li, School of Mathematical Sciences, Peking University, CHINA (lichenyi@stu.pku.edu.cn)
+- Ziyu Wang, School of Mathematical Sciences, Peking University, CHINA (wangziyu-edu@stu.pku.edu.cn)
 
 ## Other Contributors
 - Undergraduate student from Peking University:
 
    Hongjia Chen, Wanyi He, Yuxuan Wu, Shengyang Xu, Junda Ying, Penghao Yu, ...
 
-- Undergraduate student from 
+- Undergraduate student from Summer Seminar on Mathematical Formalization and Theorem Proving, BICMR, Peking University:
+
+    Zhipeng Cao, Yiyuan Chen, Heying Wang, Zuokai Wen, Mingquan Zhang, Ruichong Zhang, ... 
 
 
 # Installation

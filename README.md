@@ -10,9 +10,9 @@ More topics related to computational mathematics will be included in the future.
 
 ## Analysis
 - Basic.lean (This has been merged into mathlib)(https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Calculus/Gradient/Basic.lean)
-- Calculation.lean
-- Gradient_div.lean
-- Taylor.lean
+- Calculation.lean: In this file, we prove the properties of the gradient of a function, including the chain rule, the product rule.
+- Gradient_div.lean: In this file, we prove the quotient rule of the gradient.
+- Taylor.lean: In this file, we prove the local expansion of a differentiable function.
 
 ## Function
 - ClosedFunction.lean

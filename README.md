@@ -1,7 +1,5 @@
 # optlib
-We are a team of undergraduate and graduate students at the Beijing International Center for Mathematical Research (BICMR) of Peking University, under the supervision of Professor Zaiwen Wen.
-
-We aim to formalize the broad area of mathematical programming including convex analysis, convex optimization, nonlinear programming, integer programming and etc in Lean4. Related topics include but are not limited to the definition and properties of convex and nonconvex functions, optimality conditions, convergence of various algorithms.
+We aim to formalize the broad area of *mathematical programming* including convex analysis, convex optimization, nonlinear programming, integer programming and etc in Lean4. Related topics include but are not limited to the definition and properties of convex and nonconvex functions, optimality conditions, convergence of various algorithms.
 
 More topics related to computational mathematics such as numerical linear algebra and numerical analysis will be included in the future.
 
@@ -90,7 +88,7 @@ We are a team of undergraduate and graduate students at the Beijing Internationa
 - Ziyu Wang, School of Mathematical Sciences, Peking University, CHINA (wangziyu-edu@stu.pku.edu.cn)
 
 ## Other Contributors
-- Undergraduate student from Peking University:
+- Undergraduate students from Peking University:
 
    Hongjia Chen, Wanyi He, Yuxuan Wu, Shengyang Xu, Junda Ying, Penghao Yu, ...
 
@@ -103,4 +101,3 @@ We are a team of undergraduate and graduate students at the Beijing Internationa
 Copyright (c) 2023 Chenyi Li, Ziyu Wang, Zaiwen Wen. All rights reserved.
 
 Released under Apache 2.0 license as described in the file LICENSE.
-

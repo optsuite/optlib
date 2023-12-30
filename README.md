@@ -37,7 +37,7 @@ https://leanprover-community.github.io/get_started.html
 # What we have done
 
 ## Analysis
-- Basic.lean (This has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Calculus/Gradient/Basic.lean)
+- Basic.lean: the definition and basic properties of the gradient of a function. (This has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Calculus/Gradient/Basic.lean)
 - Calculation.lean: the properties of the gradient of a function, including the chain rule, the product rule.
 - Gradient_div.lean: the quotient rule of the gradient.
 - Taylor.lean: the local expansion of a differentiable function.

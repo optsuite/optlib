@@ -1,8 +1,15 @@
 /-
 Copyright (c) 2023 Zuokai Wen. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Author: Zuokai Wen,Mingquan Zhang
+Author: Zuokai Wen, Mingquan Zhang
 -/
+import Mathlib.Tactic
+import Mathlib.Analysis.NormedSpace.Basic
+import Mathlib.LinearAlgebra.FiniteDimensional
+import Mathlib.Data.Real.Basic
+import Mathlib.Analysis.Convex.Basic
+import Mathlib.Algebra.Field.Basic
+import Mathlib.Data.Set.Image
 
 /-
   This file contains proofs of convexity preservation of perspective transformations
@@ -12,14 +19,6 @@ Author: Zuokai Wen,Mingquan Zhang
   Linear fractional transformation: g : ℝⁿ → ℝᵐ， g(x)= (Ax+b)/(cᵀx+d),
   domg = {x | cᵀx+d > 0}.
 -/
-
-import Mathlib.Tactic
-import Mathlib.Analysis.NormedSpace.Basic
-import Mathlib.LinearAlgebra.FiniteDimensional
-import Mathlib.Data.Real.Basic
-import Mathlib.Analysis.Convex.Basic
-import Mathlib.Algebra.Field.Basic
-import Mathlib.Data.Set.Image
 
 open Set Finset BigOperators Real InnerProductSpace DivisionSemiring Matrix
 

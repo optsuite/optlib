@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2023 Chenyi Li. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chenyi Li,
+Authors: Chenyi Li
 -/
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Calculus.FDeriv.Basic
@@ -12,6 +12,10 @@ import Analysis.Calculation
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 variable {x p y : E} {f : E → ℝ} {f' : E → E} {s : Set E}
 
+/-
+  The Main Theorem states: if f is differentiable with gradient f',
+  then f(x + p) = f (x) + inner (f' (x + t • p)) p for some t ∈ (0, 1).
+-/
 open Set InnerProductSpace
 
 theorem expansion (hf : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
@@ -23,9 +27,9 @@ theorem expansion (hf : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
     have : g = f ∘ h := by rfl
     rw [this]; intro r
     have : inner (f' (x + r • p)) p = toDual ℝ  E (f' (x + r • p)) p := rfl
-    simp; rw [this];apply HasFDerivAt.comp_hasDerivAt
+    simp; rw [this]; apply HasFDerivAt.comp_hasDerivAt
     · apply HasGradientAt.hasFDerivAt
-      simp; exact hf (x + r • p)
+      exact hf (x + r • p)
     · apply HasDerivAt.const_add
       have ht: HasDerivAt (fun x : ℝ ↦ x) 1 r := hasDerivAt_id' r
       have : HasDerivAt (fun r : ℝ ↦ r • p) ((1 : ℝ) • p) r := by

@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2023 Chenyi Li. All rights reserved.
+Copyright (c) 2023 Chenyi Li, Ziyu Wang, Zaiwen Wen. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chenyi Li, Ziyu Wang
+Authors: Chenyi Li, Ziyu Wang, Zaiwen Wen
 -/
 import Function.Lsmooth
 import Function.Convex_Function
@@ -13,7 +13,7 @@ noncomputable section
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-open InnerProductSpace
+open InnerProductSpace Set
 
 variable {f: E → ℝ} {f' : E → E}
 
@@ -30,7 +30,7 @@ lemma convex_function (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
 
 -- the bound for one step of the gradient method using the Lipschitz continuity of the gradient
 lemma convex_lipschitz (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
-    (h₂ : l > 0) (step₁: l ≤ (1 / a)) (step₂ : a > 0) (h₃ : LipschitzOn f' l) :
+    (h₂ : l > 0) (step₁: l ≤ (1 / a)) (step₂ : a > 0) (h₃ : LipschitzOn f' univ l) :
     ∀ x : E, f (x - a • (f' x)) ≤ f x - a / 2 * ‖(f' x)‖ ^ 2 := by
   intro x
   have t2 : inner (f' x) (f' x) =  ‖f' x‖ ^ 2 := by
@@ -59,7 +59,7 @@ lemma convex_lipschitz (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
 
 -- using the point version for the certain iteration of the gradient method
 lemma point_descent_for_convex (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁)
-    (hfun : ConvexOn ℝ Set.univ f) (h₂ : l > 0) (h₃ : LipschitzOn f' l)
+    (hfun : ConvexOn ℝ Set.univ f) (h₂ : l > 0) (h₃ : LipschitzOn f' univ l)
     (step₁: l ≤ (1 / a)) (step₂ : a > 0)
     (update : ∀ k : ℕ, point (k + 1) = point k - a • (f' (point k))) :
     ∀ k : ℕ, f (point (k + 1)) ≤ f xm + 1 / ((2 : ℝ) * a)
@@ -180,7 +180,7 @@ lemma mono_sum_prop (mono : ∀ k: ℕ, f (point (k + 1)) ≤ f (point k)):
 variable {f: E → ℝ} {f' : E → E} {l a: ℝ} {xm x₀: E} {point : ℕ → E}
 
 lemma gradient_method (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
-    (hfun: ConvexOn ℝ Set.univ f) (h₂: l > 0) (h₃ : LipschitzOn f' l) (step₁: l ≤ (1/a))
+    (hfun: ConvexOn ℝ Set.univ f) (h₂: l > 0) (h₃ : LipschitzOn f' univ l) (step₁: l ≤ (1/a))
     (step₂ : a > 0) (initial : point 0 = x₀)
     (update: ∀ (k : ℕ), point (k + 1) = point k - a • (f' (point k))):
     ∀ k : ℕ  , f (point (k + 1)) - f xm ≤ 1 / (2 * (k + 1) * a) * ‖x₀ - xm‖ ^ 2 := by
@@ -214,7 +214,6 @@ lemma gradient_method (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
       calc f (point 1) ≤ f xm + 1 / (2 * a) * (‖point 0 - xm‖ ^ 2 - ‖point (0 + 1) - xm‖ ^ 2) := by
              exact pointdescent
         _ = a⁻¹ * 2⁻¹ * (‖x₀ - xm‖^ 2 - ‖point 1 - xm‖ ^ 2) + f xm := by rw [initial]; simp; ring_nf
-      simp
     · specialize pointdescent (j + 1)
       calc (Finset.range (j.succ + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)) - f xm)
             = (Finset.range (j + 1)).sum (fun (k : ℕ) ↦ f (point (k + 1)) - f xm)

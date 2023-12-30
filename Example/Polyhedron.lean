@@ -3,7 +3,9 @@ Copyright (c) 2023 Zuokai Wen. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Zuokai Wen
 -/
-
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Data.Matrix.Basic
+import Mathlib.Analysis.Convex.Basic
 
 /-
   We call the set of points that
@@ -13,13 +15,6 @@ Authors: Zuokai Wen
   less than or equal to the corresponding component of y.
   And it is a convex set.
 -/
-
-import Mathlib.Analysis.NormedSpace.Basic
-import Mathlib.Analysis.NormedSpace.PiLp
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Analysis.Convex.Basic
-
 open scoped Matrix
 
 variable {p m n: Type _}[Fintype p][Fintype m] [Fintype n]

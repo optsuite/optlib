@@ -3,7 +3,6 @@ Copyright (c) 2023 Zuokai Wen. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Zuokai Wen
 -/
-
 import Mathlib.Analysis.Convex.Cone.Basic
 import Mathlib.Analysis.NormedSpace.Basic
 import Mathlib.LinearAlgebra.Matrix.Symmetric

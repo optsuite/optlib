@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2023 Chenyi Li. All rights reserved.
+Copyright (c) 2023 Chenyi Li, Ziyu Wang, Zaiwen Wen. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chenyi Li, Ziyu Wang
+Authors: Chenyi Li, Ziyu Wang, Zaiwen Wen
 -/
 import Function.Convex_Function
 import Analysis.Calculation
@@ -18,8 +18,10 @@ variable {f: E → ℝ} {f' : E → E} {l a: ℝ} {xm x₀: E} {point : ℕ → 
 
 variable {x : ℕ → E} {y : ℕ+ → E} {v : ℕ → E} {γ : ℕ+ → ℝ}
 
+open Set
+
 lemma one_iter (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (hfun: ConvexOn ℝ Set.univ f)
-    (h₂: l > 0) (hg : ∀ (k : ℕ+), γ k = 2 / (k + 1)) (h₃ : LipschitzOn f' l)
+    (h₂: l > 0) (hg : ∀ (k : ℕ+), γ k = 2 / (k + 1)) (h₃ : LipschitzOn f' univ l)
     (update1 : ∀ (k : ℕ+), y k = (1 - γ k) • x (k - 1) + γ k • v (k - 1))
     (update2 : ∀ (k : ℕ+), x k = y k - (1 / l) • (f' (y k)))
     (update3 : ∀ (k : ℕ+), v k = x (k - 1) + (1 / (γ k)) • (x k - x (k - 1))) :
@@ -110,9 +112,7 @@ lemma one_iter (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (hfun: Conv
   have this2 : l / 2 * (‖y k - (1 - γ k) • (x (k - 1)) - γ k • xm‖ ^ 2 -
       ‖x k - (1 - γ k) • x (k - 1) - γ k • xm‖ ^ 2) = l * (inner (x k - y k) ((1 - γ k) •
       (x (k - 1)) + ((γ k) • xm)- x k)) + l / 2 * ‖x k - y k‖ ^ 2 := by
-    simp only [Real.rpow_two]
     rw [sub_sub, sub_sub, norm_sub_sq_real (y k), norm_sub_sq_real (x k), norm_sub_sq_real (x k)]
-    rw [← Real.rpow_two, ← Real.rpow_two, ← Real.rpow_two]
     calc l / 2 * (‖y k‖ ^ 2 - 2 * inner (y k) ((1 - γ k) • x (↑k - 1) + γ k • xm) +
           ‖(1 - γ k) • x (k - 1) + γ k • xm‖ ^ 2 - (‖x k‖ ^ 2 - 2 * inner (x ↑k)
           ((1 - γ k) • x (↑k - 1) + γ k • xm) + ‖(1 - γ k) • x (k - 1) + γ k • xm‖ ^ 2))
@@ -128,14 +128,14 @@ lemma one_iter (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (hfun: Conv
             _ = l / 2 * (‖y k‖ ^ 2 - ‖x k‖ ^ 2) + l * ‖x k‖ ^ 2 - l * inner (x k) (y k) +
                   l * (inner (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm) - x k)) := by
               rw [inner_sub_left, mul_sub, mul_sub, real_inner_self_eq_norm_sq]
-              rw [real_inner_comm, add_sub]; simp
+              rw [real_inner_comm, add_sub];
             _ = l * (inner (x k - y k) ((1 - γ k) • (x (k - 1)) + ((γ k) • xm) - x k))
                   + l / 2 * (‖x k‖ ^ 2 - 2 * inner (x k) (y k) + ‖y k‖ ^ 2) := by ring_nf
   rw [this1, this2]
   exact (h3 k)
 
 theorem nesterov_algorithm (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁) (hfun: ConvexOn ℝ Set.univ f)
-    (h₂: l > 0) (hg : ∀ (k : ℕ+), γ k = 2 / (k + 1)) (h₃ : LipschitzOn f' l)
+    (h₂: l > 0) (hg : ∀ (k : ℕ+), γ k = 2 / (k + 1)) (h₃ : LipschitzOn f' univ l)
     (min : IsMinOn f Set.univ xm) (initial1 : γ 1 = (1 : ℝ)) (initial2 : v 0 = x₀)
     (update1 : ∀ (k : ℕ+), y k = (1 - γ k) • x (k - 1) + γ k • v (k - 1))
     (update2 : ∀ (k : ℕ+), x k = y k - (1 / l) • (f' (y k)))
@@ -165,7 +165,6 @@ theorem nesterov_algorithm (h₁ : ∀ x₁ :E, HasGradientAt f (f' x₁) x₁) 
     simp only [Real.rpow_two, ge_iff_le, add_le_add_iff_right, gt_iff_lt, sub_pos, sub_neg]
     have : f xm ≤ f (x (k - 1)):= min (by trivial)
     apply mul_le_mul_of_nonneg_right _ (by linarith)
-    simp only [Real.rpow_two] at con
     exact con
   have h6 : ∀ (k : ℕ+), 1 / (γ k) ^ 2 * (f (x k) - f xm) + l / 2 * ‖v k - xm‖ ^ 2
       ≤ 1 / (γ 1) ^ 2 * (f (x 1) - f xm) + l / 2 * ‖v 1 - xm‖ ^ 2 := by

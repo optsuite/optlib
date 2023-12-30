@@ -3,6 +3,8 @@ Copyright (c) 2023 Mingquan Zhang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Mingquan Zhang
 -/
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.Convex.Basic
 
 /-
   Here, we give examples of norm ball and norm cone and prove their convexity.
@@ -10,18 +12,6 @@ Authors: Mingquan Zhang
   We call a set of the form {(x, t) | ‖x‖ ≤ t} a norm cone,
   where x is an n-dimensional real vector and t is a nonnegative real number.
 -/
-
-import Mathlib.Analysis.NormedSpace.Basic
-import Mathlib.LinearAlgebra.FiniteDimensional
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Data.Real.NNReal
-import Mathlib.Data.Real.Sqrt
-import Mathlib.Data.Real.Basic
-import Mathlib.Analysis.Convex.Basic
-import Mathlib.Analysis.NormedSpace.PiLp
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Algebra.GroupPower.Basic
-
 
 open Set Finset BigOperators Real
 
@@ -60,7 +50,7 @@ def Normcone (k: ℕ): Set ((Fin k -> Real) × Real) :=
 
 theorem convex_Normcone: Convex ℝ (Normcone k) := by
     apply convex_iff_forall_pos.mpr
-    intro x hx y hy s t hs ht hst
+    intro x hx y hy s t hs ht _
     simp only [Set.mem_setOf_eq, smul_eq_mul, mem_setOf] at *
     have hs': 0 ≤ s := by linarith
     have ht': 0 ≤ t := by linarith

@@ -1,7 +1,8 @@
 /-
-Copyright (c) 2023 Ziyu Wang. All rights reserved.
+Copyright (c) 2023 Chenyi Li, Ziyu Wang, Zaiwen Wen. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chenyi Li, Ziyu Wang, Yuxuan Wu, Junda Ying, Hongjia Chen
+Authors: Chenyi Li, Ziyu Wang, Yuxuan Wu, Junda Ying,
+         Hongjia Chen, Shengyang Xu, Zaiwen Wen
 -/
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -11,7 +12,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Function.Convex_Function
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Analysis.Calculation
-import Optimal.Optimal_Condition
+import Optimal.Optimality_Condition_of_Unconstrained_Problem
 /-!
   the properties of the L smooth function
 -/
@@ -20,12 +21,12 @@ noncomputable section
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
-def LipschitzOn (f : E → F) (l : ℝ) : Prop :=
-  ∀ x y : E, ‖f x - f y‖ ≤ l * ‖x - y‖
+def LipschitzOn (f : E → F) (s : Set E) (l : ℝ) : Prop :=
+  ∀ x ∈ s, ∀ y ∈ s, ‖f x - f y‖ ≤ l * ‖x - y‖
 
 section
 
-open InnerProductSpace
+open InnerProductSpace  Set
 
 variable {f : E → ℝ} {l a : ℝ} {f': E → (E →L[ℝ] ℝ)}
 
@@ -48,8 +49,8 @@ theorem deriv_function_comp_segment (x y : E) (h₁ : ∀ x₁ : E, HasFDerivAt 
   intro t₀
   apply H₂ t₀
 
-theorem lipschitz_continuos_upper_bound
-    (h₁ : ∀ x₁ : E, HasFDerivAt f (f' x₁) x₁) (h₂ : LipschitzOn f' l) :
+theorem lipschitz_continuous_upper_bound
+    (h₁ : ∀ x₁ : E, HasFDerivAt f (f' x₁) x₁) (h₂ : LipschitzOn f' univ l):
   ∀ (x y : E), f y ≤ f x + (f' x) (y - x) + l / 2 * ‖y - x‖ ^ 2 := by
   intro x y
   let g := fun t : ℝ ↦ f (x + t • (y - x))
@@ -59,7 +60,7 @@ theorem lipschitz_continuos_upper_bound
   have L₁ : LL = l * ‖y - x‖ ^ 2 := by exact rfl
   have H₂ : ∀ u v : ℝ, ‖g' u - g' v‖  ≤ l * ‖y - x‖ ^ 2 * ‖u - v‖ := by
     intro u v
-    specialize h₂ (x + u • (y - x)) (x + v • (y - x))
+    specialize h₂ (x + u • (y - x)) (trivial) (x + v • (y - x)) (trivial)
     have : x + u • (y - x) - (x + v • (y - x)) = (u - v) • (y - x) := by
       rw [← sub_sub, add_sub_right_comm, sub_self, zero_add, ← sub_smul]
     calc ‖g' u - g' v‖ = ‖(f' (x + u • (y - x))) (y - x) - (f' (x + v • (y - x))) (y - x)‖ := rfl
@@ -69,7 +70,7 @@ theorem lipschitz_continuos_upper_bound
       _ ≤ l * ‖x + u • (y - x) - (x + v • (y - x))‖ * ‖y - x‖ :=
          mul_le_mul_of_le_of_le h₂ (le_refl ‖y - x‖) (norm_nonneg _) (norm_nonneg _)
       _ = l * ‖(u - v) • (y - x)‖ * ‖y - x‖  := by rw [this]
-      _ = l * ‖y - x‖ ^ 2 * ‖u - v‖ := by rw [norm_smul]; ring_nf; simp
+      _ = l * ‖y - x‖ ^ 2 * ‖u - v‖ := by rw [norm_smul]; ring_nf
   let upperf := fun t₀ : ℝ ↦ g 0 + t₀ * (g' 0) +  t₀ ^ 2 * (LL / 2)
   let upperf':= fun t : ℝ ↦ g' 0 + LL * t
   have H₃ : ∀ t ≥ 0 , g' t ≤ upperf' t := by
@@ -83,8 +84,7 @@ theorem lipschitz_continuos_upper_bound
             _   = LL * |t| := by simp
             _   = LL * t := abs_pos
     exact tsub_le_iff_left.mp HH₆
-  have H1₀ : (upperf 0) = g 0 := by
-    simp only [zero_smul, add_zero, map_sub, Real.rpow_two, zero_mul, ne_eq, zero_pow']
+  have H1₀ : (upperf 0) = g 0 := by simp
   have H₃' : ∀ t : ℝ , HasDerivAt upperf (upperf' t) t  := by
     intro t
     apply HasDerivAt.add
@@ -126,12 +126,12 @@ end
 
 section
 
-open InnerProductSpace
+open InnerProductSpace Set
 
 variable {f : E → ℝ} {l a : ℝ} {f' : E → E} {xm : E}
 
 theorem lipschitz_continuos_upper_bound'
-    (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (h₂ : LipschitzOn f' l) :
+    (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (h₂ : LipschitzOn f' univ l) :
     ∀ x y : E, f y ≤ f x + inner (f' x) (y - x) + l / 2 * ‖y - x‖ ^ 2 := by
   intro x y
   let g := fun x ↦ (toDual ℝ E) (f' x)
@@ -139,31 +139,51 @@ theorem lipschitz_continuos_upper_bound'
   have equiv : ∀ x y : E, inner (f' x) (y - x) = (g x) (y - x) := by
     intro x y
     rw [InnerProductSpace.toDual_apply]
-  have h₂' : LipschitzOn g l := by
+  have h₂' : LipschitzOn g univ l := by
     simp only [LipschitzOn, equiv]
     rw [LipschitzOn] at h₂
-    intro x y
+    intro x _ y _
     have h1 : ∀ x : E, ‖(toDual ℝ E) x‖ =‖x‖ := by
       simp [LinearIsometryEquiv.norm_map]
     have : ‖(toDual ℝ E) (f' x) - (toDual ℝ E) (f' y)‖ = ‖f' x - f' y‖ := by
       rw [← map_sub (toDual ℝ E) (f' x) (f' y)]
       exact h1 (f' x - f' y)
     rw [this]
-    exact (h₂ x y)
+    exact (h₂ x trivial y trivial)
   rw [equiv]
-  exact lipschitz_continuos_upper_bound h' h₂' x y
+  exact lipschitz_continuous_upper_bound h' h₂' x y
 
-theorem lipschitz_minima (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' l)
+theorem lipschitz_minima (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' univ l)
     (min: IsMinOn f Set.univ xm):
     ∀ x : E, 1 / (2 * l) * ‖f' x‖ ^ 2 ≤ f x - f xm := by
-  sorry
+  intro x
+  rw [IsMinOn, IsMinFilter] at min
+  simp at min
+  let y : E := x - ((1 : ℝ) / l : ℝ) • (f' x)
+  have eq : f xm ≤ f x - 1 / (2 * l) * ‖f' x‖ ^ 2 := by
+    calc
+      _ ≤ f y := by apply min
+      _ ≤ f x + inner (f' x) (y - x) + l / 2 * ‖y - x‖ ^ 2 := by
+        apply lipschitz_continuos_upper_bound' h₁ h₂
+      _ = f x - 1 / (2 * l) * ‖f' x‖ ^ 2 := by
+        rw [add_assoc]; rw [sub_eq_add_neg (f x), add_left_cancel_iff.2]
+        field_simp; rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq]
+        rw [inner_smul_right, inner_smul_left, inner_smul_right]
+        field_simp
+        have (a : ℝ): -(a * 2) / l + l * a / (l * l) = -(a * 2) / (2 * l) := by
+          rw [mul_two]; ring_nf; rw [mul_assoc, pow_two, ← mul_assoc l]; field_simp
+          rw [mul_two]; ring_nf
+        apply this
+  linarith
 
 end
 
 section Convex
 
 variable {f : E → ℝ} {l a : ℝ} {f': E → E} {xm : E}
-variable {x y : E}
+variable {x y : E} {s v : Set E}
+
+open Set
 
 lemma gradient_norm_sq_eq_two_self (x : E) :
     HasGradientAt (fun x ↦ ‖x‖ ^ 2) ((2 : ℝ) • x) x := by
@@ -184,11 +204,12 @@ lemma gradient_norm_sq_eq_two_self (x : E) :
     apply mul_le_mul_of_nonneg_right dles (norm_nonneg (x' - x))
     apply pow_two_nonneg
 
-theorem lipschitz_to_convex (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' l)
-    (lp : l > 0) : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) := by
+theorem lipschitz_to_convex (s : Set E) (hs : Convex ℝ s)
+    (h₁ : ∀ x ∈ s, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' s l) (lp : l > 0) :
+    ConvexOn ℝ s (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) := by
   let g' : E → E := fun x ↦ l • x - f' x
-  have H₂ : ∀ x y : E, inner (g' x - g' y) (x - y) ≥ (0 : ℝ) := by
-    intro x y
+  have H₂ : ∀ x ∈ s, ∀ y ∈ s, inner (g' x - g' y) (x - y) ≥ (0 : ℝ) := by
+    intro x hx y hy
     have : l • x - f' x - (l • y - f' y) =  l • (x - y) - (f' x - f' y) := by
       rw [smul_sub, ← sub_add, ← sub_add, sub_right_comm]
     calc
@@ -205,23 +226,23 @@ theorem lipschitz_to_convex (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ :
     _ ≥ l * ‖x - y‖ ^ 2 - l * ‖x - y‖ ^ 2 := by
       simp
       rw [pow_two, ← mul_assoc]
-      apply mul_le_mul (h₂ x y); linarith; apply norm_nonneg
+      apply mul_le_mul (h₂ x hx y hy); linarith; apply norm_nonneg
       apply mul_nonneg (le_of_lt lp) (norm_nonneg _)
     _ = 0 := by simp
-  have H₃ : ∀ (x : E), HasGradientAt (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) (g' x) x := by
-    intro x
+  have H₃ : ∀ x ∈ s, HasGradientAt (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) (g' x) x := by
+    intro x hx
     have u₂ := HasGradientAt.const_smul (gradient_norm_sq_eq_two_self x) ((l / (2 : ℝ)) : ℝ)
-    have u := u₂.add (HasGradientAt.neg (h₁ x))
+    have u := u₂.add (HasGradientAt.neg (h₁ x hx))
     have l₁ : (fun x ↦ l / 2 * ‖x‖ ^ 2 + -f x) = (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) := by
       ext; ring
     have l₂ : (l / 2) • (2 : ℝ)  • x + -f' x = g' x := by
       simp; rw [smul_smul (l / 2) 2, ← sub_eq_add_neg]; ring_nf
     rw [← l₁, ← l₂]
     apply u
-  apply monotone_gradient_convex' convex_univ
+  apply monotone_gradient_convex' hs
   apply H₃
-  intro x _ y _
-  exact H₂ x y
+  intro x hx y hy
+  exact H₂ x hx y hy
 
 lemma gradient1 (x : E) (a : E):
     HasGradientAt (fun x ↦ (inner a x : ℝ)) a x := by
@@ -319,11 +340,17 @@ theorem convex_to_lower (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
     calc
       _ ≤ l / 2 * ‖z₂‖ ^ 2 - (l / 2 * ‖z₁‖ ^ 2 - f z₁ +
           inner (f' s) z₁ + inner (l • z₁ - fs' s z₁) (z₂ - z₁)) := by apply t₁₁
-      _ = f z₁ - inner (f' s) z₁ + inner (f' z₁ - f' s) (z₂ - z₁) + l / 2 * ‖z₂ - z₁‖ ^ 2 := by
+      _ = l / 2 * ‖z₂‖ ^ 2 -(l / 2 * ‖z₁‖ ^ 2 - f z₁ + inner (f' s) z₁ +
+        (l * (inner z₁ z₂ - ‖z₁‖ ^ 2) - inner (f' z₁ - f' s) (z₂ - z₁))) := by
         repeat rw [Real.rpow_two, ← real_inner_self_eq_norm_sq]
-        rw [inner_sub_left, real_inner_smul_left, inner_sub_sub_self]
-        rw [inner_sub_right, real_inner_comm z₂ z₁]; ring
-  have hfs₃ : ∀ s : E, IsMinOn (fs s) _ s := by
+        rw [inner_sub_left, real_inner_smul_left]
+        simp; rw [inner_sub_right, real_inner_self_eq_norm_sq];left ; simp
+      _ = f z₁ - inner (f' s) z₁ + inner (f' z₁ - f' s) (z₂ - z₁) +
+        l / 2 * (‖z₂‖ ^ 2  - 2 * inner z₂ z₁ + ‖z₁‖ ^ 2) := by
+          field_simp; ring_nf; rw [real_inner_comm]
+      _ = f z₁ - inner (f' s) z₁ + inner (f' z₁ - f' s) (z₂ - z₁) + l / 2 * ‖z₂ - z₁‖ ^ 2 := by
+        rw [← norm_sub_sq_real]
+  have hfs₃ : ∀ s : E, IsMinOn (fs s) univ s := by
     intro s
     apply first_order_convex (hfconx₁ s) (hfunconvex s)
     simp only [sub_self]
@@ -341,7 +368,7 @@ theorem convex_to_lower (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
           + l / 2 * ‖y - (1 / l) • fs' x y - y‖ ^ 2 := by apply hfx₂'
       _ = fs x y - 1 / (2 * l) * ‖fs' x y‖ ^ 2 := by
         have : y - (1 / l) • fs' x y - y = - (1 / l) • fs' x y := by simp
-        rw [this, real_inner_smul_right, Real.rpow_two, Real.rpow_two ‖fs' x y‖]
+        rw [this, real_inner_smul_right]
         repeat rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq]
         rw [real_inner_smul_right, real_inner_smul_left]; field_simp; ring
   have hfy₄ : fs y y ≤ fs y x - 1 / (2 * l) * ‖fs' y x‖ ^ 2 := by
@@ -357,7 +384,7 @@ theorem convex_to_lower (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
           + l / 2 * ‖x - (1 / l) • fs' y x - x‖ ^ 2 := by apply hfy₂'
       _ = fs y x - 1 / (2 * l) * ‖fs' y x‖ ^ 2 := by
         have : x - (1 / l) • fs' y x - x = - (1 / l) • fs' y x := by simp
-        rw [this, real_inner_smul_right, Real.rpow_two , Real.rpow_two ‖fs' y x‖]
+        rw [this, real_inner_smul_right]
         rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, real_inner_smul_right]
         rw [real_inner_smul_left]; field_simp; ring
   have hh₁: (1 / (2 * l)) * ‖f' x - f' y‖ ^ 2 ≤ f y - f x - inner (f' x) (y - x) := by
@@ -399,15 +426,17 @@ theorem convex_to_lower (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
         rw [inner_sub_right, inner_sub_right]; ring
       rw[t₆]; ring
 
-theorem lipschitz_to_lower (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' l)
+theorem lipschitz_to_lower (h₁ : ∀ x, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' univ l)
     (lp : l > 0) (hfun: ConvexOn ℝ Set.univ f) :
-    inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
-  have convex : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) := lipschitz_to_convex h₁ h₂ lp
-  exact convex_to_lower h₁ convex lp hfun x y
+    ∀ x y, inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
+  have convex : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) := by
+    apply lipschitz_to_convex Set.univ convex_univ _ h₂ lp
+    · intro x _; exact h₁ x
+  exact convex_to_lower h₁ convex lp hfun
 
-theorem lower_to_lipschitz (h₂ : ∀ x y : E, inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2)
-    (lpos : l > 0) : LipschitzOn f' l := by
-  intro x y
+theorem lower_to_lipschitz (h₂ : ∀ x y, inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2)
+    (lpos : l > 0) : LipschitzOn f' univ l := by
+  intro x _ y _
   have H₁ : (1 / l * ‖f' x - f' y‖) * ‖f' x - f' y‖ ≤ (1 / l * ‖f' x - f' y‖) * (l * ‖x - y‖) := by
     calc
     _ = 1 / l * ‖f' x - f' y‖ ^ 2 := by
@@ -429,15 +458,5 @@ theorem lower_to_lipschitz (h₂ : ∀ x y : E, inner (f' x - f' y) (x - y) ≥ 
     apply le_trans h
     apply mul_nonneg (le_of_lt lpos)
     apply norm_nonneg _
-
-theorem convex_to_lipschitz (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (lp : l > 0)
-    (hfun: ConvexOn ℝ Set.univ f) (h₂ : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) ) :
-    LipschitzOn f' l := by
-  have : ∀ x y : E, inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
-    intro x y
-    exact convex_to_lower h₁ h₂ lp hfun x y
-  exact lower_to_lipschitz this lp
-
-
 
 end Convex

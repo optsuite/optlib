@@ -1,7 +1,12 @@
+/-
+Copyright (c) 2023 Chenyi Li. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Chenyi Li, Ziyu Wang, Penghao Yu, Zhipeng Cao, Zaiwen Wen
+-/
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Dual
-import Analysis.Basic
+import Mathlib.Analysis.Calculus.Gradient.Basic
 import Function.Convex_Function
 
 /- Cao Zhipeng, HUST ; Yu Penghao, PKU-/
@@ -26,17 +31,12 @@ variable {x y grad x': E} {gradient' : E}
 local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 
 lemma Vert_abs : ‖|a| - |b|‖ ≤ ‖a - b‖ := by
-  have h₁ : ‖|a| - |b|‖ = abs (|a| - |b|) := rfl
-  have h₂ : ‖a - b‖ = |a - b| := rfl
-  rw [h₁, h₂]
+  simp only [Real.norm_eq_abs]
   exact abs_abs_sub_abs_le_abs_sub a b
 
 lemma Vert_div : ‖a / b‖ = ‖a‖ * ‖1 / b‖ := by
-  have h₁ : ‖a / b‖ = ‖a‖ / ‖b‖ :=  norm_div a b
-  have h₂ : |1 / b| = 1 / |b|:= by
-    rw [abs_one_div]
-  rw [h₁, Real.norm_eq_abs b, Real.norm_eq_abs (1 / b), h₂]
-  exact div_eq_mul_one_div ‖a‖ |b|
+  simp only [norm_div, Real.norm_eq_abs, one_div, norm_inv]
+  exact rfl
 
 lemma Simplifying₁ (h₁ : a ≠ 0) (h₂ : b ≠ 0) (h₃ : ‖b‖ / 2 ≤ ‖a‖) :
     ‖1 / (b * b * a)‖ ≤ ‖2 / (b * b * b)‖ := by
@@ -66,7 +66,7 @@ lemma Simplifying₂ (h₁ : a ≠ 0) (h₂ : 0 ≤ c) :
     repeat rw [Real.norm_eq_abs]; rw [abs_mul, abs_mul, ← mul_assoc, ← mul_assoc]
   have l₃: (c + 1) * (d * |a * a * a| / (4 * (c + 1))) = (d * |a * a * a| / 4) := by
     have : d * |a * a * a| / (4 * (c + 1)) = (d * |a * a * a| / 4) / (c + 1):= by
-      exact div_mul_eq_div_div (d * |a * a * a|) 4 (c + 1)
+      exact div_mul_eq_div_div (d * |a * a * a|) _ _
     rw [mul_comm, this]
     apply div_mul_cancel
     linarith
@@ -79,9 +79,7 @@ lemma Simplifying₂ (h₁ : a ≠ 0) (h₂ : 0 ≤ c) :
 
 lemma div_div_mul (h₁ : a / b ≤ c) (h₂ : 0 < a) (h₃ : 0 < b) (h₄ : 0 < c):
     1 / c ≤ b / a := by
-  have : a ≤ c * b := by
-    apply Iff.mp (div_le_iff h₃)
-    apply h₁
+  have : a ≤ c * b := Iff.mp (div_le_iff h₃) h₁
   have : a ≤ b * c := by linarith
   apply Iff.mpr (div_le_div_iff h₄ h₂)
   rw [one_mul]
@@ -416,7 +414,6 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
     have h' : 1 / f x ^ 2 = 1 / (f x * f x) := by
       rw [← inv_eq_one_div]
       have : (f x) ^ 2 = (f x) * (f x) := by
-        simp only [Real.rpow_two]
         rw [pow_two]
       rw [this, inv_eq_one_div]
     rw [h']

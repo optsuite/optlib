@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2023 Wanyi He. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Author: Wanyi He
+Author: Wanyi He, Zaiwen Wen
 -/
 import Mathlib.Topology.Sequences
 import Mathlib.Order.LiminfLimsup
@@ -117,7 +117,5 @@ theorem lowerSemicontinuous_iff_IsClosed_epigraph :
 theorem LowerSemicontinuous.IsClosed_epigraph {f : E → F} (hf : LowerSemicontinuous f) :
     IsClosed {p : E × F | f p.1 ≤ p.2} :=
   lowerSemicontinuous_iff_IsClosed_epigraph.mp hf
-
-
 
 end

@@ -1,10 +1,11 @@
 /-
-Copyright (c) 2023  . All rights reserved.
+Copyright (c) 2023 . All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors:
 -/
 import Mathlib.Analysis.Convex.Quasiconvex
-import Function.First_Order
+import Function.Convex_Function
+
 open InnerProductSpace
 
 noncomputable section
@@ -23,13 +24,13 @@ theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs
   intro y ys fxy
   by_cases h₂: y = x
   · rw [h₂, sub_self, ContinuousLinearMap.map_zero (f' x)]
-  have h₃: 0 < ‖x - y‖:= by
+  have h₃: 0 < ‖x - y‖ := by
     rw[norm_sub_pos_iff, Ne]
     exact Iff.mpr ne_comm h₂
   by_contra H
   push_neg at H
   rw [quasiconvexOn_iff_le_max] at hf
-  rcases hf with ⟨ _, cxf⟩
+  rcases hf with ⟨_, cxf⟩
   specialize cxf xs ys
   let ε := (f' x) (y - x) / (2 * ‖x-y‖)
   have εpos: 0 < ε := by

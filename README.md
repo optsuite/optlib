@@ -1,5 +1,5 @@
 # optlib
-We aim to formalize the broad area of *mathematical programming* including convex analysis, convex optimization, nonlinear programming, integer programming and etc in Lean4. Related topics include but are not limited to the definition and properties of convex and nonconvex functions, optimality conditions, convergence of various algorithms.
+We aim to formalize the broad area of **mathematical optimization** including convex analysis, convex optimization, nonlinear programming, integer programming and etc in Lean4. Related topics include but are not limited to the definition and properties of convex and nonconvex functions, optimality conditions, convergence of various algorithms.
 
 More topics related to computational mathematics such as numerical linear algebra and numerical analysis will be included in the future.
 

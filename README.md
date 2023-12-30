@@ -1,5 +1,5 @@
 # optlib
-We aim to formalize the broad area of mathematical programming including convex analysis, convex optimization, nonlinear programming, integer programming and etc in Lean4. Related topics include but are not limited to the definition and properties of convex and nonconvex functions, optimality conditions, convergence of various algorithms.
+We aim to formalize the broad area of *mathematical programming* including convex analysis, convex optimization, nonlinear programming, integer programming and etc in Lean4. Related topics include but are not limited to the definition and properties of convex and nonconvex functions, optimality conditions, convergence of various algorithms.
 
 More topics related to computational mathematics such as numerical linear algebra and numerical analysis will be included in the future.
 
@@ -83,18 +83,18 @@ We are a team of undergraduate and graduate students at the Beijing Internationa
 - Ziyu Wang, School of Mathematical Sciences, Peking University, CHINA (wangziyu-edu@stu.pku.edu.cn)
 
 ## Other Contributors
-- Undergraduate student from Peking University:
+- Undergraduate students from Peking University:
 
    Hongjia Chen, Wanyi He, Yuxuan Wu, Shengyang Xu, Junda Ying, Penghao Yu, ...
 
-- Undergraduate student from Summer Seminar on Mathematical Formalization and Theorem Proving, BICMR, Peking University, 2023:
+- Undergraduate students from Summer Seminar on Mathematical Formalization and Theorem Proving, BICMR, Peking University, 2023:
 
     Zhipeng Cao, Yiyuan Chen, Heying Wang, Zuokai Wen, Mingquan Zhang, Ruichong Zhang, ... 
 
 
 # Installation
 
-A comprehensive installation guide in Chinese:
+- A comprehensive installation guide in Chinese:
 http://faculty.bicmr.pku.edu.cn/~wenzw/formal/docs/#/
 
 # Copyright

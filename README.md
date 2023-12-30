@@ -1,6 +1,4 @@
 # optlib
-We are a team of undergraduate and graduate students at the Beijing International Center for Mathematical Research (BICMR) of Peking University, under the supervision of Professor Zaiwen Wen.
-
 We aim to formalize the broad area of mathematical programming including convex analysis, convex optimization, nonlinear programming, integer programming and etc in Lean4. Related topics include but are not limited to the definition and properties of convex and nonconvex functions, optimality conditions, convergence of various algorithms.
 
 More topics related to computational mathematics such as numerical linear algebra and numerical analysis will be included in the future.
@@ -22,7 +20,7 @@ More topics related to computational mathematics such as numerical linear algebr
 - StronglyConvex.lean: the properties of strongly convex functions. (Part of this has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Convex/Strong.lean)
 - Subgradient.lean: the basic definitions and the properties of subgradient.
 
-## Optimal
+## Optimality
 - Optimality_Condition_of_Unconstrained_Problem.lean: first order optimality conditions for unconstrained optimization problems.
 
 ## Algorithm
@@ -66,7 +64,7 @@ More topics related to computational mathematics such as numerical linear algebr
 - ADMM Methods
 - ......
 
-## Many other things to be added
+## Many other things to be added ...
 
 # Reference
 - [H. Liu, J. Hu, Y. Li, Z. Wen, Optimization: Modeling, Algorithm and Theory (in Chinese)](http://faculty.bicmr.pku.edu.cn/~wenzw/optbook.html)
@@ -75,9 +73,10 @@ More topics related to computational mathematics such as numerical linear algebr
 - [Nesterov, Yurii. Lectures on convex optimization. Vol. 137. Berlin: Springer, 2018.](https://link.springer.com/book/10.1007/978-3-319-91578-4)
 
 
-# The Authors
+# The Team
+We are a team of undergraduate and graduate students at the Beijing International Center for Mathematical Research (BICMR) of Peking University, under the supervision of Professor Zaiwen Wen.
 
-## Main team
+## Members
 
 - Zaiwen Wen, Beijing International Center for Mathematical Research, Peking University, CHINA (wenzw@pku.edu.cn)
 - Chenyi Li, School of Mathematical Sciences, Peking University, CHINA (lichenyi@stu.pku.edu.cn)

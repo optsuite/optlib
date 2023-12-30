@@ -1,5 +1,5 @@
 // Lean compiler output
-// Module: Optimal.Optimality_Condition_of_Unconstrained_Problem
+// Module: Optimality.Optimality_Condition_of_Unconstrained_Problem
 // Imports: Init Analysis.Calculation Mathlib.Analysis.Convex.Basic Mathlib.Analysis.Calculus.MeanValue Function.Convex_Function
 #include <lean/lean.h>
 #if defined(__clang__)
@@ -19,7 +19,7 @@ lean_object* initialize_Mathlib_Analysis_Convex_Basic(uint8_t builtin, lean_obje
 lean_object* initialize_Mathlib_Analysis_Calculus_MeanValue(uint8_t builtin, lean_object*);
 lean_object* initialize_Function_Convex__Function(uint8_t builtin, lean_object*);
 static bool _G_initialized = false;
-LEAN_EXPORT lean_object* initialize_Optimal_Optimality__Condition__of__Unconstrained__Problem(uint8_t builtin, lean_object* w) {
+LEAN_EXPORT lean_object* initialize_Optimality_Optimality__Condition__of__Unconstrained__Problem(uint8_t builtin, lean_object* w) {
 lean_object * res;
 if (_G_initialized) return lean_io_result_mk_ok(lean_box(0));
 _G_initialized = true;

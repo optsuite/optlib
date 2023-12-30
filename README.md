@@ -4,6 +4,8 @@ We are the team of Professor Wen Zaiwen from the Beijing International Center fo
 
 We aim to formalize theorems from convex analysis and convex optimization in Lean4. Related topics include but are not limited to the definition and properties of convex functions, optimality conditions, convergence of various algorithms.
 
+More topics related to computational mathematics will be included in the future.
+
 # What we have done
 
 ## Analysis

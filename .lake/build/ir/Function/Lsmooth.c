@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Function.Lsmooth
-// Imports: Init Mathlib.Analysis.Calculus.Deriv.Add Mathlib.Analysis.Calculus.Deriv.Pow Mathlib.Analysis.Calculus.MeanValue Mathlib.Analysis.InnerProductSpace.PiL2 Mathlib.Analysis.InnerProductSpace.Dual Function.Convex_Function Mathlib.Analysis.InnerProductSpace.Calculus Analysis.Calculation Optimal.Optimality_Condition_of_Unconstrained_Problem
+// Imports: Init Mathlib.Analysis.Calculus.Deriv.Add Mathlib.Analysis.Calculus.Deriv.Pow Mathlib.Analysis.Calculus.MeanValue Mathlib.Analysis.InnerProductSpace.PiL2 Mathlib.Analysis.InnerProductSpace.Dual Function.Convex_Function Mathlib.Analysis.InnerProductSpace.Calculus Analysis.Calculation Optimality.Optimality_Condition_of_Unconstrained_Problem
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -22,7 +22,7 @@ lean_object* initialize_Mathlib_Analysis_InnerProductSpace_Dual(uint8_t builtin,
 lean_object* initialize_Function_Convex__Function(uint8_t builtin, lean_object*);
 lean_object* initialize_Mathlib_Analysis_InnerProductSpace_Calculus(uint8_t builtin, lean_object*);
 lean_object* initialize_Analysis_Calculation(uint8_t builtin, lean_object*);
-lean_object* initialize_Optimal_Optimality__Condition__of__Unconstrained__Problem(uint8_t builtin, lean_object*);
+lean_object* initialize_Optimality_Optimality__Condition__of__Unconstrained__Problem(uint8_t builtin, lean_object*);
 static bool _G_initialized = false;
 LEAN_EXPORT lean_object* initialize_Function_Lsmooth(uint8_t builtin, lean_object* w) {
 lean_object * res;
@@ -55,7 +55,7 @@ lean_dec_ref(res);
 res = initialize_Analysis_Calculation(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_Optimal_Optimality__Condition__of__Unconstrained__Problem(builtin, lean_io_mk_world());
+res = initialize_Optimality_Optimality__Condition__of__Unconstrained__Problem(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 return lean_io_result_mk_ok(lean_box(0));

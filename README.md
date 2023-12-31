@@ -6,7 +6,7 @@ More topics related to computational mathematics such as numerical linear algebr
 # Installation
 
 - A comprehensive installation guide in Chinese:
-[http://faculty.bicmr.pku.edu.cn/~wenzw/formal/index.html](http://faculty.bicmr.pku.edu.cn/~wenzw/formal/index.html)
+[https://faculty.bicmr.pku.edu.cn/~wenzw/formal/index.html](https://faculty.bicmr.pku.edu.cn/~wenzw/formal/index.html)
 
 - Download guide provided by the official Lean team:
 https://leanprover-community.github.io/get_started.html

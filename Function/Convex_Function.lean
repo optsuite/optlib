@@ -92,7 +92,7 @@ theorem first_order_condition {s : Set E}
     (h : HasFDerivAt f (f' x) x) (hf : ConvexOn ℝ s f) (xs : x ∈ s):
     ∀ (y : E), y ∈ s → f x + f' x (y - x) ≤ f y := by
   have h₁ : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ
-       → ‖f x' -f x- (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖:= by
+       → ‖f x' - f x- (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖:= by
     apply HasFDeriv_Convergence h
   intro y ys
   by_cases h₂: y = x
@@ -110,11 +110,10 @@ theorem first_order_condition {s : Set E}
     exact Iff.mpr sub_pos H
   have lnmp: ∀ c : ℝ , f' x (c • (y - x)) = c * (f' x (y - x)):= by
     intro c
-    rw [map_smul]
-    rfl
+    simp only [map_smul, map_sub, smul_eq_mul]
   let e1:= ε / (2 * ‖x - y‖)
   have npos: 0 < 2 * ‖x - y‖ := mul_pos two_pos h₃
-  have e1pos: 0 < e1:= div_pos epos npos
+  have e1pos: 0 < e1 := div_pos epos npos
   specialize h₁ e1 e1pos
   rcases h₁ with ⟨δ , dpos, converge⟩
   let b1 := δ / ‖x - y‖
@@ -122,80 +121,67 @@ theorem first_order_condition {s : Set E}
   let b := min b1 (1 : ℝ)
   let a := 1 - b
   have sum_a_b : a + b = 1:= sub_add_cancel 1 b
-  have b_nonneg: 0 ≤ b := le_min (LT.lt.le b1pos) zero_le_one
+  have b_nonneg: 0 ≤ b := by positivity
   have a_nonneg : 0 ≤ a := by
     have h1: 0 + b ≤ a + b := by
       rw[zero_add, sum_a_b]
       exact min_le_right b1 1
-    rw[add_le_add_iff_right b] at h1
-    exact h1
+    exact (add_le_add_iff_right b).mp h1
   specialize cxf a_nonneg b_nonneg sum_a_b
   let x' := a • x + b • y
   have x'rfl : x' = a • x + b • y := rfl
   have h1 : ‖x - x'‖ = ‖b • (x - y)‖ := by
     congr; apply point_proportion a_nonneg b_nonneg sum_a_b x'rfl
   have h2 : ‖b • (x - y)‖ = b * ‖x - y‖ := by
-    rw[norm_smul]
-    rw[Real.norm_of_nonneg]
-    apply b_nonneg
+    rw [norm_smul, Real.norm_of_nonneg b_nonneg]
   have x1nbhd: ‖x - x'‖ ≤ δ := by
-    rw[h1, h2]
+    rw [h1, h2]
     have h3: b * ‖x - y‖ ≤ b1 * ‖x - y‖:= by
-      rw[mul_le_mul_right]
+      rw [mul_le_mul_right]
       apply min_le_left
       exact h₃
     have h4: b1 * ‖x - y‖ = δ := by
-      rw[div_mul_cancel]
+      rw [div_mul_cancel]
       apply ne_of_gt h₃
     rw[← h4]
     apply h3
   specialize converge x' x1nbhd
   have H1: f x + (f' x) (x' - x) - e1 * ‖x - x'‖ ≤ f x':= by
     have l1: f x + (f' x) (x' - x) - f x' ≤ ‖f x' - f x - (f' x) (x' - x)‖:= by
-      rw[Real.norm_eq_abs]
-      have : f x + (f' x) (x' - x) - f x' = -(f x' - f x - (f' x) (x' - x)):= by
+      rw [Real.norm_eq_abs]
+      have : f x + (f' x) (x' - x) - f x' = - (f x' - f x - (f' x) (x' - x)):= by
         ring
       rw [this]
       apply neg_le_abs_self
-    have l2: f x + (f' x) (x' - x) - f x'≤ e1 * ‖x - x'‖:= by
-      apply le_trans l1 converge
-    linarith
+    linarith [le_trans l1 converge]
   have H2: f x' ≤ a • f x + b • f y := by apply cxf
   have H3: f y = f x + (f' x) (y - x) - ε := by simp only [map_sub, sub_sub_cancel]
   have l3: a • f x + b • f y= a * (f x) + b * (f y) := by exact rfl
   have l4: e1 * ‖x - x'‖ = ε * b / 2 := by
-    rw[h1, h2]
+    rw [h1, h2]
     calc
-      e1 * (b * ‖x - y‖) = ε / (2 * ‖x - y‖) * (b * ‖x - y‖):= by rfl
-      _ = ((ε / 2) / ‖x - y‖) *(b * ‖x - y‖):= by ring
-      _ = ((ε / 2) / ‖x - y‖) * ‖x - y‖ * b := by rw[mul_comm b, mul_assoc]
-      _ = (ε / 2) * b := by rw [div_mul_cancel]; apply ne_of_gt h₃
+      e1 * (b * ‖x - y‖) = ((ε / 2) / ‖x - y‖) *(b * ‖x - y‖):= by ring
+      _ = (ε / 2) * b := by rw [mul_comm b, ← mul_assoc, div_mul_cancel _ (ne_of_gt h₃)]
       _ = ε * b / 2 := by ring
-  rw [l4] at H1; rw [l3] at H2
+  rw [l4] at H1
   have H4: a * f x + b * f y = f x + b * (f' x) (y - x) - b * ε := by rw [H3]; ring
   have l5: b* (f' x) (y - x) = (f' x) (x' - x):= by
     have h5: (x' - x) = b • (y - x)  := by
       calc
         x' - x = -(x - x'):= Eq.symm (neg_sub x x')
         _ = - (b • (x - y)):= by rw [point_proportion a_nonneg b_nonneg sum_a_b x'rfl]
-        _ = -(b • x - b • y):= by rw[smul_sub]
-        _ = b • y - b • x:= by simp only[neg_sub]
-        _ = b • (y - x):= by rw[smul_sub]
+        _ = b • (y - x):= by rw [smul_sub, smul_sub, neg_sub]
     rw [h5, lnmp b]
   rw [l5] at H4
-  rw [H4] at H2
+  rw [l3, H4] at H2
   have H6: f x + (f' x) (x' - x) - ε * b / 2 ≤ f x + (f' x) (x' - x) - b * ε := le_trans H1 H2
-  have H7: - ε * b / 2 ≤ - b * ε := by linarith
-  have H8: - ε * b / 2 + b * ε ≤ 0 := by linarith
-  have H9: ε *b /2 = - ε * b / 2 + b * ε := by ring
-  have blt: 0 < b:= by apply lt_min; apply b1pos; apply zero_lt_one
-  have H10: ε * b ≤ 0:= by linarith
-  have H11: ε ≤ 0:= nonpos_of_mul_nonpos_left H10 blt
-  rw [← H9] at H8; linarith
+  have H7: ε * b ≤ 0:= by linarith
+  have H8: ε ≤ 0:= nonpos_of_mul_nonpos_left H7 (lt_min b1pos zero_lt_one)
+  linarith
 
 theorem first_order_condition_inverse {f: E → ℝ} {f' : E → (E →L[ℝ] ℝ)}
   {s : Set E} (h : ∀ x ∈ s, HasFDerivAt f (f' x) x)(h₁: Convex ℝ s)
-  (h₂: ∀ (x : E), x ∈ s → ∀ (y : E), y ∈ s → f x + f' x (y - x) ≤ f y): ConvexOn ℝ s f := by
+  (h₂: ∀ (x : E), x ∈ s → ∀ (y : E), y ∈ s → f x + f' x (y - x) ≤ f y) : ConvexOn ℝ s f := by
   rw [ConvexOn]; constructor
   apply h₁; intro x xs y ys a b anonneg bnonneg sumab
   let x' := a • x + b • y
@@ -203,14 +189,14 @@ theorem first_order_condition_inverse {f: E → ℝ} {f' : E → (E →L[ℝ] �
   have x'rfl_comm : x' = b • y + a • x := by rw [add_comm]
   have sumba : b + a = 1 := by rw [add_comm]; exact sumab
   specialize h x'
-  have x1s: x' ∈ s:= by
+  have x1s: x' ∈ s := by
     rw [convex_iff_segment_subset] at h₁
     specialize h₁ xs ys
     rw [segment_subset_iff] at h₁
     exact h₁ a b anonneg bnonneg sumab
   have H1: f x' + f' x' (x - x') ≤ f x := h₂ x' x1s x xs
   have H2: f x' + f' x' (y - x') ≤ f y := h₂ x' x1s y ys
-  have lnmp: ∀ c: ℝ , f' x' (c • (y - x))= c * (f' x' (y - x)) := by
+  have lnmp: ∀ c : ℝ , f' x' (c • (y - x))= c * (f' x' (y - x)) := by
     intro c; rw [map_smul]; rfl
   have H: a • (f x' + (f' x') (x - x')) + b • (f x' + (f' x') (y - x')) = f x' := by
     have l1: a • (f x' + (f' x') (x - x')) + b • (f x' + (f' x') (y - x'))
@@ -219,30 +205,19 @@ theorem first_order_condition_inverse {f: E → ℝ} {f' : E → (E →L[ℝ] �
         add_comm (a • (f' x') (x - x')), ← add_assoc, add_smul]
     have l2: b • (f' x') (y - x') = (a * b) * (f' x') (y - x):= by
       rw [point_proportion bnonneg anonneg sumba x'rfl_comm, lnmp a]
-      calc
-        b • (a * (f' x') (y - x)) = b * (a * (f' x') (y - x)):= by rfl
-        _ = b * a * (f' x') (y - x):= by rw [mul_assoc]
-        _ = (a * b) * (f' x') (y - x):= by simp[mul_comm]
+      rw [mul_assoc]; simp [mul_comm]; ring
     have l3_1: x - x' = (- b) • (y - x):= by
       rw [point_proportion anonneg bnonneg sumab x'rfl]
-      calc
-        b • (x - y) = b • x - b • y:= by rw [smul_sub]
-        _ = (-b) • (-x) - b • y:= by simp only [smul_neg, neg_smul, neg_neg]
-        _ = (-b) • (-x) + (-b) • y:= by simp only [smul_neg, neg_smul, neg_neg]; rw [sub_eq_add_neg]
-        _ = (-b) • (-x + y):= by rw [smul_add]
-        _ = (-b) • (y - x):= by rw[neg_add_eq_sub x y]
-    have l3: a • (f' x') (x - x') = - (a * b) * (f' x') (y - x):= by
+      rw [smul_sub, smul_sub, neg_smul, sub_eq_neg_add]; simp
+    have l3: a • (f' x') (x - x') = - (a * b) * (f' x') (y - x) := by
       rw [l3_1, lnmp (- b)]
-      calc
-        a • ((-b) * (f' x') (y - x))= a * ((-b) * (f' x') (y - x)):= by rfl
-        _ = a * (-b) * (f' x') (y - x):= by rw [mul_assoc]
-        _ = (-a * b) * (f' x') (y - x):= by simp only [mul_neg, map_sub, neg_mul]
-        _ = -(a * b) * (f' x') (y - x):= by simp only [neg_mul, map_sub]
+      simp [mul_assoc]
     rw [l1, sumab, one_smul, l2, l3]
     simp only [map_sub, neg_mul, neg_add_cancel_right]
-  have h1: a • (f x' + (f' x') (x - x')) ≤ a • f x:= mul_le_mul_of_nonneg_left H1 anonneg
-  have h2: b • (f x' + (f' x') (y - x')) ≤ b • f y:= mul_le_mul_of_nonneg_left H2 bnonneg
-  have H3: a • (f x' + (f' x') (x - x')) + b • (f x' + (f' x') (y - x')) ≤ a • f x + b • f y:= add_le_add h1 h2
+  have h1: a • (f x' + (f' x') (x - x')) ≤ a • f x := mul_le_mul_of_nonneg_left H1 anonneg
+  have h2: b • (f x' + (f' x') (y - x')) ≤ b • f y := mul_le_mul_of_nonneg_left H2 bnonneg
+  have H3: a • (f x' + (f' x') (x - x')) + b • (f x' + (f' x') (y - x'))
+      ≤ a • f x + b • f y := add_le_add h1 h2
   rw [H] at H3
   apply H3
 

@@ -103,6 +103,9 @@ https://leanprover-community.github.io/get_started.html
 - [Nocedal, Jorge, and Stephen J. Wright, eds. Numerical optimization. New York, NY: Springer New York, 1999.](https://link.springer.com/chapter/10.1007/0-387-22742-3_18)
 - [Nesterov, Yurii. Lectures on convex optimization. Vol. 137. Berlin: Springer, 2018.](https://link.springer.com/book/10.1007/978-3-319-91578-4)
 
+# The Branch
+Since Lean 4 has different versions, our code need to update to fit the corresponding version. Please check the lean-toolchain file to see the Lean 4 version for each branch.
+The Main Branch is for leanprover/lean4:v4.3.0 and the lean4v4.5.0-rc1 branch is for leanprover/lean4:v4.5.0-rc1.
 
 # The Team
 We are a team of undergraduate and graduate students at the Beijing International Center for Mathematical Research (BICMR) of Peking University, under the supervision of Professor Zaiwen Wen.

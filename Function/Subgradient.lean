@@ -8,7 +8,7 @@ import Mathlib.Topology.Basic
 import Mathlib.Order.Filter.Extr
 import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
-import Analysis.Convex_Function
+import Function.Convex_Function
 
 /-!
 # Subgradient of convex functions

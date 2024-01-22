@@ -58,7 +58,6 @@ https://leanprover-community.github.io/get_started.html
 - Gradient_Descent.lean: convergence rate of gradient descent algorithm for smooth convex functions.
 - Gradient_Descent_Strongly_Convex.lean: convergence rate of gradient descent algorithm for smooth strongly convex functions.
 - Nesterov_Smooth.lean: convergence rate of Nesterov accelerated gradient descent algorithm for smooth convex functions.
-- Subgradient_method.lean: convergence rate of subgradient method with different kinds of step size.
 
 ## Example
 - ConvexPerspectiveFraction.lean: convexity preservation of perspective transformations and linear fractional transformations.

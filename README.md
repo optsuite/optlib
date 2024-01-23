@@ -53,6 +53,7 @@ https://leanprover-community.github.io/get_started.html
 
 ## Optimality
 - Optimality_Condition_of_Unconstrained_Problem.lean: first order optimality conditions for unconstrained optimization problems.
+- Unconstrained_Problem.lean : the definition of an unconstrained optimization problem, the local minima, the global minima and the stationary point; the first order conditions for a local minima; the additional properties of the stationary point and local minima corresponding to convex unconstrained optimization problem.
 
 ## Algorithm
 - Gradient_Descent.lean: convergence rate of gradient descent algorithm for smooth convex functions.

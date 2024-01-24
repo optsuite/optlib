@@ -210,8 +210,8 @@ section GradientProperties
 
 theorem hasGradientAtFilter_iff_isLittleO :
     HasGradientAtFilter f f' x L ↔
-    (fun x' : F => f x' - f x - ⟪f', x' - x⟫) =o[L] fun x' => x' - x :=
-  hasFDerivAtFilter_iff_isLittleO ..
+    (fun x' : F => f x' - f x - ⟪f', x' - x⟫) =o[L] fun x' => x' - x := by
+  rfl
 
 theorem hasGradientWithinAt_iff_isLittleO :
     HasGradientWithinAt f f' s x ↔

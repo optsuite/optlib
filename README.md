@@ -50,6 +50,7 @@ https://leanprover-community.github.io/get_started.html
 - QuasiConvex_First_Order.lean: first order conditions for quasi-convex functions.
 - StronglyConvex.lean: the properties of strongly convex functions. (Part of this has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Convex/Strong.lean)
 - Subgradient.lean: the basic definitions and the properties of subgradient.
+- Proximal.lean: the basic definitions and the properties of proximal operator
 
 ## Optimality
 - Optimality_Condition_of_Unconstrained_Problem.lean: first order optimality conditions for unconstrained optimization problems.

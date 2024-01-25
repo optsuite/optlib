@@ -13,6 +13,10 @@ https://leanprover-community.github.io/get_started.html
 
 ## How to use the code in this repository
 
+- Before downloading your code, please check the lean-toolchain file to see the Lean 4 version for each branch.
+The Main Branch is for leanprover/lean4:v4.3.0 and the lean4v4.5.0-rc1 branch is for leanprover/lean4:v4.5.0-rc1.
+Please check your Lean4 version and see if they are matched.
+
 - Take downloading the `Analysis` folder from the `mathematics_in_lean` directory as an example:
 
 1. Identify the local directory where the Lean software can run, and open this directory with VScode (such as `mathematics_in_lean`).
@@ -33,6 +37,8 @@ https://leanprover-community.github.io/get_started.html
    ```
     The complete code can be referred to in the corresponding section of the `lakefile.lean` file.
 5. At this point, you can call the locally written Lean files across directories and also run the corresponding proof parts of the code in Lean.
+
+- If anything goes wrong, please feel free to contact Chenyi Li through email (lichenyi@stu.pku.edu.cn).
 
 # What we have done
 

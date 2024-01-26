@@ -6,10 +6,10 @@ Authors: Chenyi Li, Shengyang Xu
 import Mathlib.Topology.Semicontinuous
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Analysis.Calculation
-import Analysis.Subgradient
-import Analysis.Optimality_Condition_of_Unconstrained_Problem
-import Analysis.Lsmooth
-import Analysis.Stongly
+import Function.Subgradient
+import Optimality.Optimality_Condition_of_Unconstrained_Problem
+import Function.Lsmooth
+import Function.StonglyConvex
 
 /-!
  proximal operator

@@ -116,7 +116,7 @@ Since Lean 4 has different versions, our code needs to update to fit the corresp
 The Main Branch is for leanprover/lean4:v4.3.0 and the lean4v4.5.0-rc1 branch is for leanprover/lean4:v4.5.0-rc1.
 
 # The Team
-We are a team of undergraduate and graduate students at the Beijing International Center for Mathematical Research (BICMR) of Peking University, under the supervision of Professor Zaiwen Wen.
+We are a group of scholars and students with a keen interest in mathematical formalization.
 
 ## Members
 

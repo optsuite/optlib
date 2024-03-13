@@ -12,7 +12,7 @@ section descent_lemma
 
 variable {E : Type*} [NormedAddCommGroup E]
 
-variable {f : E → ℝ} {g : ℕ → E}
+variable {xm : E} {f : E → ℝ} {g : ℕ → E}
 
 open Set Finset
 

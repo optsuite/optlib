@@ -158,7 +158,7 @@ section Basic_properties
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-variable {f : E → ℝ} {g : E} {x : E} {s : Set E}
+variable {f : E → ℝ} {g : E} {x y : E} {s : Set E}
 
 variable (hf : ConvexOn ℝ s f) (hc : ContinuousOn f (interior s))
 

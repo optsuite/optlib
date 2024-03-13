@@ -1,0 +1,39 @@
+name: Build docs
+on:
+  push:
+    branches:
+      - "main"
+jobs:
+  build:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+          lfs: true
+      - name: Install Lean
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s - -y --default-toolchain `cat ./lean-toolchain`
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+      - run: |
+          lake -Kenv=CI_BUILD exe cache get && lake -Kenv=CI_BUILD build && lake -Kenv=CI_BUILD build Convex:docs
+      - name: Fix permissions
+        run: |
+          chmod -c -R +rX "./.lake/build/doc/" | while read line; do
+            echo "::warning title=Invalid file permissions automatically fixed::$line"
+          done
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./.lake/build/doc/
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

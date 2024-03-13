@@ -75,7 +75,7 @@ section derivative
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-variable {f : E → ℝ} {l a : ℝ} {f' : E → (E →L[ℝ] ℝ)} {f'' : E → E →L[ℝ] E →L[ℝ] ℝ}
+variable {x : E} {f : E → ℝ} {l a : ℝ} {f' : E → (E →L[ℝ] ℝ)} {f'' : E → E →L[ℝ] E →L[ℝ] ℝ}
 
 theorem deriv_function_comp_segment (x y : E) (h₁ : ∀ x₁ : E, HasFDerivAt f (f' x₁) x₁) :
     ∀ t₀ : ℝ , HasDerivAt (fun t : ℝ ↦ f (x + t • (y - x)))

@@ -27,7 +27,7 @@ section FirstOrderCondition
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-variable {f : E → ℝ} {f' : E → (E →L[ℝ] ℝ)} {x y x': E}
+variable {f : E → ℝ} {f' : E → (E →L[ℝ] ℝ)} {x y x': E} {s : Set E}
 
 private lemma point_proportion {a b: ℝ} (_ : 0 ≤ a) (_ : 0 ≤ b) (sumab: a + b = 1)
   (hpoint : x' = a • x + b • y) :  x - x' =  b • (x - y) := by
@@ -201,7 +201,7 @@ open Set InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-variable {f : E → ℝ} {f' : E → E} {s : Set E}
+variable {x : E} {f : E → ℝ} {f' : E → E} {s : Set E}
 
 theorem Convex_first_order_condition' (h : HasGradientAt f (f' x) x) (hf : ConvexOn ℝ s f)
     (xs : x ∈ s) : ∀ (y : E), y ∈ s → f x + inner (f' x) (y - x) ≤ f y := by

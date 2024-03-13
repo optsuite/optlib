@@ -399,7 +399,7 @@ instance {f h : E → ℝ} {f' : E → E} {x0 : E} [p : Nesterov_second_fix_step
     intro k;rw [p.γeq]; constructor
     · by_cases hk : k = 0
       · rw [hk]; simp
-      simp [hk]; apply div_pos (by positivity) (by positivity)
+      simp [hk]; positivity
     · by_cases hk : k = 0
       rw [hk]; simp; norm_num; push_neg at hk
       simp [hk]; rw [div_le_iff (by positivity)]; simp [hk]

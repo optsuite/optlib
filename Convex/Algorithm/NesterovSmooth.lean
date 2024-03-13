@@ -21,7 +21,7 @@ class Nesterov (f : E → ℝ) (f' : E → E) (γ : ℕ+ → ℝ) (initial_point
   (update2 : ∀ (k : ℕ+), x k = y k - (1 / l.1) • (f' (y k)))
   (update3 : ∀ (k : ℕ+), v k = x (k - 1) + (1 / (γ k)) • (x k - x (k - 1)))
   (hl : l > 0) (smooth : LipschitzWith l f')
-  (initial1 : γ 1 = (1 : ℝ)) (initial2 : v 0 = intitial_point)
+  (initial1 : γ 1 = (1 : ℝ)) (initial2 : v 0 = initial_point)
 
 variable {f : E → ℝ} {f' : E → E} {xm x₀: E} {γ : ℕ+ → ℝ } {alg : Nesterov f f' γ x₀}
 

@@ -3,7 +3,7 @@ Copyright (c) 2023 Chenyi Li, Ziyu Wang, Zaiwen Wen. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Ziyu Wang, Zaiwen Wen
 -/
-import Function.Lsmooth
+import Convex.Function.Lsmooth
 /-!
   the convergence of the gradient method for the convex function
 -/
@@ -78,7 +78,7 @@ noncomputable section gradient_descent
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-class Gradient_Descent (f : E → ℝ) (f' : E → E) (initial_x : E) :=
+class GradientDescent (f : E → ℝ) (f' : E → E) (initial_x : E) :=
   (x : ℕ → E) (a : ℕ → ℝ) (l : NNReal)
   (diff : ∀ x₁, HasGradientAt f (f' x₁) x₁) (smooth : LipschitzWith l f')
   (update : ∀ k : ℕ, x (k + 1) = x k - a k • f' (x k))
@@ -91,7 +91,7 @@ class Gradient_Descent_fix_stepsize (f : E → ℝ) (f' : E → E) (initial_x : 
   (hl : l > (0 : ℝ)) (step₁ : a > 0) (initial : x 0 = initial_x)
 
 instance {f : E → ℝ} {f' : E → E} {x₀ : E} [p : Gradient_Descent_fix_stepsize f f' x₀] :
-    Gradient_Descent f f' x₀ where
+    GradientDescent f f' x₀ where
   x := p.x
   diff := p.diff
   a := fun _ ↦ p.a

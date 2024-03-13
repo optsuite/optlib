@@ -7,8 +7,8 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Calculus.Gradient.Basic
-import Function.Convex_Function
-import Analysis.Lemmas
+import Convex.Function.ConvexFunction
+import Convex.Analysis.Lemmas
 
 /- Cao Zhipeng, HUST ; Yu Penghao, PKU-/
 

@@ -5,7 +5,7 @@ Author: Hongjia Chen, Chenyi Li, Wanyi He, Zaiwen Wen
 -/
 import Mathlib.Analysis.Normed.Group.Basic
 import Mathlib.Data.Fintype.Order
-import Function.Subgradient
+import Convex.Function.Subgradient
 
 /-!
 # Convergence of Subgradient method

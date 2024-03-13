@@ -9,8 +9,8 @@ import Mathlib.Order.Filter.Extr
 import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Data.Real.Sign
-import Function.Banach_Subgradient
-import Function.Convex_Function
+import Convex.Function.BanachSubgradient
+import Convex.Function.ConvexFunction
 
 /-!
 # Subgradient of convex functions

@@ -3,7 +3,7 @@ Copyright (c) 2023 Chenyi Li, Ziyu Wang, Zaiwen Wen. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Ziyu Wang, Zaiwen Wen
 -/
-import Function.Lsmooth
+import Convex.Function.Lsmooth
 /-!
   the nesterov method for convex smooth functions
   need to be modiefied to work for nonconvex functions and gradient

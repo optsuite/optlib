@@ -6,8 +6,8 @@ Authors: Chenyi Li, Ziyu Wang, Penghao Yu, Zhipeng Cao, Shengyang Xu, Zaiwen Wen
 
 import Mathlib.Analysis.Convex.Function
 import Mathlib.Analysis.Calculus.MeanValue
-import Analysis.Calculation
-import Analysis.Lemmas
+import Convex.Analysis.Calculation
+import Convex.Analysis.Lemmas
 
 /-!
   This file mainly concentrates on the differentiable convex function and its properties.

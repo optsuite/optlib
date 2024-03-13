@@ -3,7 +3,7 @@ Copyright (c) 2024 Yuxuan Wu, Chenyi Li. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Yuxuan Wu, Chenyi Li
 -/
-import Function.Proximal
+import Convex.Function.Proximal
 import Mathlib.Algebra.Order.Field.Basic
 
 local notation "⟪" alg.x ", " y "⟫" => @inner ℝ _ _ alg.x y

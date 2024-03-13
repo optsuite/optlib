@@ -6,8 +6,8 @@ Authors: Chenyi Li, Ziyu Wang, Yuxuan Wu, Junda Ying,
 -/
 import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Optimality.Optimality_Condition_of_Unconstrained_Problem
-import Analysis.Lemmas
+import Convex.Optimality.OptimalityConditionOfUnconstrainedProblem
+import Convex.Analysis.Lemmas
 
 /-!
   This file mainly concentrates on the properties of the L smooth function.
@@ -22,6 +22,7 @@ import Analysis.Lemmas
       (∇ f(x) - ∇ f(y)) ^ T(x- y) ≥ 1 / l * ‖∇ f(x) - ∇ f(y)‖ ^ 2 ∀ x, y ∈ ℝ^n.
   Some relative lemmas are also contained
 -/
+
 section
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

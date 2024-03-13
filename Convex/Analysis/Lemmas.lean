@@ -5,7 +5,7 @@ Authors: Chenyi Li
 -/
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Defs
-import Analysis.Calculation
+import Convex.Analysis.Calculation
 
 section continuous
 

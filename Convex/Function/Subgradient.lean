@@ -9,8 +9,8 @@ import Mathlib.Order.Filter.Extr
 import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Data.Real.Sign
-import Function.Banach_Subgradient
-import Function.Convex_Function
+import Convex.Function.BanachSubgradient
+import Convex.Function.ConvexFunction
 
 /-!
 # Subgradient of convex functions
@@ -158,7 +158,7 @@ section Basic_properties
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-variable {f : E → ℝ} {g : E} {x : E} {s : Set E}
+variable {f : E → ℝ} {g : E} {x y : E} {s : Set E}
 
 variable (hf : ConvexOn ℝ s f) (hc : ContinuousOn f (interior s))
 

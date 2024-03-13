@@ -3,7 +3,7 @@ Copyright (c) 2024 Shengyang Xu, Chenyi Li. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Shengyang Xu, Chenyi Li
 -/
-import Function.Proximal
+import Convex.Function.Proximal
 
 section method
 

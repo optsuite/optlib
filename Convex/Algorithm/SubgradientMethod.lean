@@ -5,7 +5,7 @@ Author: Hongjia Chen, Chenyi Li, Wanyi He, Zaiwen Wen
 -/
 import Mathlib.Analysis.Normed.Group.Basic
 import Mathlib.Data.Fintype.Order
-import Function.Subgradient
+import Convex.Function.Subgradient
 
 /-!
 # Convergence of Subgradient method
@@ -403,9 +403,7 @@ theorem subgradient_method_diminishing_step_size
         (fun i => (alg.a i) ^ 2) / (2 * (Finset.range (b + 1)).sum alg.a) < ε / 2 := by
       by_cases hG : ↑alg.G = 0
       · use 0; intro b _ ; rw[hG]; simp
-        apply div_pos
-        · apply εpos
-        · simp
+        positivity
       · have hpos': (NNReal.toReal alg.G) ^ 2 > 0 :=by
           apply (sq_pos_iff (NNReal.toReal alg.G)).mpr; simp[hG]
         let s := {x | |x| < ε / (2 * ↑alg.G ^ 2)}

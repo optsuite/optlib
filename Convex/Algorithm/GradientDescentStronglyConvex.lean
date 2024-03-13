@@ -5,8 +5,8 @@ Authors: Chenyi Li, Ziyu Wang, Yuxuan Wu, Shengyang Xu
 -/
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Convex.Strong
-import Function.StronglyConvex
-import Algorithm.Gradient_Descent
+import Convex.Function.StronglyConvex
+import Convex.Algorithm.GradientDescent
 
 /-!
   the convergence of gradient descent method for strongly convex function
@@ -211,5 +211,5 @@ lemma gradient_method_strong_convex (hm : m > 0) (min : IsMinOn f univ xm)
     _ = (1 - alg.a * (2 * m * alg.l / (m + alg.l))) ^ (q + 1) * ‖x₀ - xm‖ ^ 2 := by
         simp; left; rw [pow_succ]
     _ = (1 - alg.a * (2 * m * alg.l / (m + alg.l))) ^ Nat.succ q * ‖x₀ - xm‖ ^ 2 := by simp
-#check gradient_method_strong_convex
+
 end Strongly_Convex_Gradient_Descent

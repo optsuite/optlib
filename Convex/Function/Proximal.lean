@@ -5,12 +5,12 @@ Authors: Shengyang Xu, Chenyi Li
 -/
 import Mathlib.Topology.Semicontinuous
 import Mathlib.Analysis.Convex.Basic
-import Analysis.Calculation
-import Function.Subgradient
-import Function.Lsmooth
-import Function.StronglyConvex
-import Analysis.Lemmas
-import Function.Minima_ClosedFunction
+import Convex.Analysis.Calculation
+import Convex.Function.Subgradient
+import Convex.Function.Lsmooth
+import Convex.Function.StronglyConvex
+import Convex.Analysis.Lemmas
+import Convex.Function.MinimaClosedFunction
 
 /-!
  proximal operator

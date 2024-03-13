@@ -3,7 +3,7 @@ Copyright (c) 2024 Yuxuan Wu, Chenyi Li. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Yuxuan Wu, Chenyi Li
 -/
-import Function.Proximal
+import Convex.Function.Proximal
 
 local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 

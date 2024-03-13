@@ -1,4 +1,5 @@
 # optlib
+
 We aim to formalize the broad area of **mathematical optimization** including convex analysis, convex optimization, nonlinear programming, integer programming and etc in Lean4. Related topics include but are not limited to the definition and properties of convex and nonconvex functions, optimality conditions, convergence of various algorithms.
 
 More topics related to computational mathematics such as numerical linear algebra and numerical analysis will be included in the future.
@@ -6,16 +7,16 @@ More topics related to computational mathematics such as numerical linear algebr
 # Installation
 
 - A comprehensive installation guide in Chinese:
-[http://faculty.bicmr.pku.edu.cn/~wenzw/formal/index.html](http://faculty.bicmr.pku.edu.cn/~wenzw/formal/index.html)
+  [http://faculty.bicmr.pku.edu.cn/~wenzw/formal/index.html](http://faculty.bicmr.pku.edu.cn/~wenzw/formal/index.html)
 
 - Download guide provided by the official Lean team:
-https://leanprover-community.github.io/get_started.html
+  https://leanprover-community.github.io/get_started.html
 
 ## How to use the code in this repository
 
 - Before downloading your code, please check the lean-toolchain file to see the Lean 4 version for each branch.
-The Main Branch is for leanprover/lean4:v4.3.0 and the lean4v4.5.0-rc1 branch is for leanprover/lean4:v4.5.0-rc1.
-Please check your Lean4 version and see if they are matched.
+  The Main Branch is for leanprover/lean4:v4.3.0 and the lean4v4.5.0-rc1 branch is for leanprover/lean4:v4.5.0-rc1.
+  Please check your Lean4 version and see if they are matched.
 
 - Take downloading the `Analysis` folder from the `mathematics_in_lean` directory as an example:
 
@@ -35,7 +36,7 @@ Please check your Lean4 version and see if they are matched.
         -- add any library configuration options here
     }
    ```
-    The complete code can be referred to in the corresponding section of the `lakefile.lean` file.
+   The complete code can be referred to in the corresponding section of the `lakefile.lean` file.
 5. At this point, you can call the locally written Lean files across directories and also run the corresponding proof parts of the code in Lean.
 
 - If anything goes wrong, please feel free to contact Chenyi Li through email (lichenyi@stu.pku.edu.cn).
@@ -43,27 +44,31 @@ Please check your Lean4 version and see if they are matched.
 # What we have done
 
 ## Analysis
+
 - Basic.lean: the definition and basic properties of the gradient of a function. (This has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Calculus/Gradient/Basic.lean)
 - Calculation.lean: the properties of the gradient of a function, including the chain rule, the product rule.
-- Gradient_div.lean: the quotient rule of the gradient.
+- GradientDiv.lean: the quotient rule of the gradient.
 - Lemmas.lean: useful lemmas such as the mean-value theorem and the taylor's expansion.
 
 ## Function
+
 - ClosedFunction.lean: the basic definitions and the properties of closed functions. (This has been merged into mathlib)
-- Convex_Function.lean: the properties of convex functions.
+- ConvexFunction.lean: the properties of convex functions.
 - Lsmooth.lean: the properties of L-smooth functions.
-- Minima_ClosedFunction.lean: Weierstrass theorem for closed functions.
+- MinimaClosedFunction.lean: Weierstrass theorem for closed functions.
 - QuasiConvex_First_Order.lean: first order conditions for quasi-convex functions.
 - StronglyConvex.lean: the properties of strongly convex functions. (Part of this has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Convex/Strong.lean)
-- Banach_Subgradient.lean: the basic definitions of subgradient on a banach space.
+- BanachSubgradient.lean: the basic definitions of subgradient on a banach space.
 - Subgradient.lean: the basic definitions and the properties of subgradient.
 - Proximal.lean: the basic definitions and the properties of proximal operator
 
 ## Optimality
-- Optimality_Condition_of_Unconstrained_Problem.lean: first order optimality conditions for unconstrained optimization problems.
+
+- OptimalityConditionOfUnconstrainedProblem.lean: first order optimality conditions for unconstrained optimization problems.
 
 ## Algorithm
-- Gradient_Descent.lean: convergence rate of gradient descent algorithm for smooth convex functions.
+
+- GradientDescent.lean: convergence rate of gradient descent algorithm for smooth convex functions.
 - Gradient_Descent_Strongly_Convex.lean: convergence rate of gradient descent algorithm for smooth strongly convex functions.
 - Nesterov_Smooth.lean: convergence rate of Nesterov accelerated gradient descent algorithm for smooth convex functions.
 - Subgradient_method.lean: convergence rate of subgradient method with different choices of stepsize for nonsmooth convex functions.
@@ -95,7 +100,7 @@ Please check your Lean4 version and see if they are matched.
 - Nesterov Accelerated Method for Smooth Functions (Done)
 - Line Search Methods
 - Subgradient Methods
-- Proximal Gradient Methods 
+- Proximal Gradient Methods
 - Nesterov Accelerated Method for Non-smooth Functions
 - ADMM Methods
 - ......
@@ -103,12 +108,14 @@ Please check your Lean4 version and see if they are matched.
 ## Many other things to be added ...
 
 # References
+
 - [H. Liu, J. Hu, Y. Li, Z. Wen, Optimization: Modeling, Algorithm and Theory (in Chinese)](http://faculty.bicmr.pku.edu.cn/~wenzw/optbook.html)
 - [Rockafellar, R. Tyrrell, and Roger J-B. Wets. Variational analysis. Vol. 317. Springer Science & Business Media, 2009.](https://link.springer.com/book/10.1007/978-3-642-02431-3)
 - [Nocedal, Jorge, and Stephen J. Wright, eds. Numerical optimization. New York, NY: Springer New York, 1999.](https://link.springer.com/chapter/10.1007/0-387-22742-3_18)
 - [Nesterov, Yurii. Lectures on convex optimization. Vol. 137. Berlin: Springer, 2018.](https://link.springer.com/book/10.1007/978-3-319-91578-4)
 
 # The Team
+
 We are a group of scholars and students with a keen interest in mathematical formalization.
 
 ## Members
@@ -118,13 +125,14 @@ We are a group of scholars and students with a keen interest in mathematical for
 - Ziyu Wang, School of Mathematical Sciences, Peking University, CHINA (wangziyu-edu@stu.pku.edu.cn)
 
 ## Other Contributors
+
 - Undergraduate students from Peking University:
 
-   Hongjia Chen, Wanyi He, Yuxuan Wu, Shengyang Xu, Junda Ying, Penghao Yu, ...
+  Hongjia Chen, Wanyi He, Yuxuan Wu, Shengyang Xu, Junda Ying, Penghao Yu, ...
 
 - Undergraduate students from Summer Seminar on Mathematical Formalization and Theorem Proving, BICMR, Peking University, 2023:
 
-    Zhipeng Cao, Yiyuan Chen, Heying Wang, Zuokai Wen, Mingquan Zhang, Ruichong Zhang, ... 
+  Zhipeng Cao, Yiyuan Chen, Heying Wang, Zuokai Wen, Mingquan Zhang, Ruichong Zhang, ...
 
 # Copyright
 

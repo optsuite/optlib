@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors:
 -/
 import Mathlib.Analysis.Convex.Quasiconvex
-import Function.Convex_Function
+import Convex.Function.ConvexFunction
 
 open InnerProductSpace
 

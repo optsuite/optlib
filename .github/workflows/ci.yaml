@@ -1,0 +1,23 @@
+name: Build
+permissions:
+  contents: write
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - "*"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - name: Install Lean
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s - -y --default-toolchain `cat ./lean-toolchain`
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+      - run: lake exe cache get && lake build

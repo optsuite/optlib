@@ -21,10 +21,6 @@ lean_lib «Algorithm» {
   -- add any library configuration options here
 }
 
-lean_lib «Example» {
-  -- add any library configuration options here
-}
-
 lean_lib «Optimality» {
   -- add any library configuration options here
 }

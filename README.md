@@ -82,12 +82,12 @@ will download the source of the convex library. After editing those files, you c
 - Second Order Conditions for Convex Functions
 - Definition and Properties of Strongly Convex Functions (Done)
 - Definition and Properties of L-smooth Functions (Done)
-- Definition and Properties of Subgradients
+- Definition and Properties of Subgradients (Done)
 - ......
 
 ### Optimality Conditions
 
-- First Order Conditions for Constrained and Unconstrained Methods
+- First Order Conditions for Constrained and Unconstrained Methods 
 - Second Order Conditions for Constrained and Unconstrained Methods
 - KKT conditions
 - ......
@@ -95,11 +95,10 @@ will download the source of the convex library. After editing those files, you c
 ### Convergence of Optimization Algorithms
 
 - Gradient Descent for Convex and Strongly Convex Functions (Done)
-- Nesterov Accelerated Method for Smooth Functions (Done)
 - Line Search Methods
-- Subgradient Methods
-- Proximal Gradient Methods
-- Nesterov Accelerated Method for Non-smooth Functions
+- Subgradient Methods (Done)
+- Proximal Gradient Methods (Done)
+- Nesterov Acceleration Method (Done)
 - ADMM Methods
 - ......
 

@@ -46,33 +46,30 @@ Please check your Lean4 version and see if they are matched.
 - Basic.lean: the definition and basic properties of the gradient of a function. (This has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Calculus/Gradient/Basic.lean)
 - Calculation.lean: the properties of the gradient of a function, including the chain rule, the product rule.
 - Gradient_div.lean: the quotient rule of the gradient.
-- Taylor.lean: the local expansion of a differentiable function.
+- Lemmas.lean: useful lemmas such as the mean-value theorem and the taylor's expansion.
 
 ## Function
-- ClosedFunction.lean: the basic definitions and the properties of closed functions.
+- ClosedFunction.lean: the basic definitions and the properties of closed functions. (This has been merged into mathlib)
 - Convex_Function.lean: the properties of convex functions.
 - Lsmooth.lean: the properties of L-smooth functions.
 - Minima_ClosedFunction.lean: Weierstrass theorem for closed functions.
 - QuasiConvex_First_Order.lean: first order conditions for quasi-convex functions.
 - StronglyConvex.lean: the properties of strongly convex functions. (Part of this has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Convex/Strong.lean)
+- Banach_Subgradient.lean: the basic definitions of subgradient on a banach space.
 - Subgradient.lean: the basic definitions and the properties of subgradient.
 - Proximal.lean: the basic definitions and the properties of proximal operator
 
 ## Optimality
 - Optimality_Condition_of_Unconstrained_Problem.lean: first order optimality conditions for unconstrained optimization problems.
-- Unconstrained_Problem.lean : the definition of an unconstrained optimization problem, the local minima, the global minima and the stationary point; the first order conditions for a local minima; the additional properties of the stationary point and local minima corresponding to convex unconstrained optimization problem.
 
 ## Algorithm
 - Gradient_Descent.lean: convergence rate of gradient descent algorithm for smooth convex functions.
 - Gradient_Descent_Strongly_Convex.lean: convergence rate of gradient descent algorithm for smooth strongly convex functions.
 - Nesterov_Smooth.lean: convergence rate of Nesterov accelerated gradient descent algorithm for smooth convex functions.
-
-## Example
-- ConvexPerspectiveFraction.lean: convexity preservation of perspective transformations and linear fractional transformations.
-- GeneralizedInequality.lean: partial order respected to proper cones.
-- Normexamples.lean: examples of norm ball and norm cone and their convexity.
-- Polyhedron.lean: the definition and convexity of polyhedrons.
-- SymPosde.lean: convex conicity of symmetric matrices, semi-positive definite matrices and positive definite matrices.
+- Subgradient_method.lean: convergence rate of subgradient method with different choices of stepsize for nonsmooth convex functions.
+- Proximal_Gradient.lean: convergence rate of the proximal gradient method for composite optimization problems.
+- Nesterov_Acceleration_first.lean: convergence rate of the first version of Nesterov acceleration method for composite optimization problems.
+- Nesterov_Acceleration_second.lean: convergence rate of the second version of Nesterov acceleration method for composite optimization problems.
 
 # What we plan to do
 
@@ -111,10 +108,6 @@ Please check your Lean4 version and see if they are matched.
 - [Nocedal, Jorge, and Stephen J. Wright, eds. Numerical optimization. New York, NY: Springer New York, 1999.](https://link.springer.com/chapter/10.1007/0-387-22742-3_18)
 - [Nesterov, Yurii. Lectures on convex optimization. Vol. 137. Berlin: Springer, 2018.](https://link.springer.com/book/10.1007/978-3-319-91578-4)
 
-# The Branch
-Since Lean 4 has different versions, our code needs to update to fit the corresponding version. Please check the lean-toolchain file to see the Lean 4 version for each branch.
-The Main Branch is for leanprover/lean4:v4.3.0 and the lean4v4.5.0-rc1 branch is for leanprover/lean4:v4.5.0-rc1.
-
 # The Team
 We are a group of scholars and students with a keen interest in mathematical formalization.
 
@@ -135,6 +128,6 @@ We are a group of scholars and students with a keen interest in mathematical for
 
 # Copyright
 
-Copyright (c) 2023 Chenyi Li, Ziyu Wang, Zaiwen Wen. All rights reserved.
+Copyright (c) 2024 Chenyi Li, Ziyu Wang, Zaiwen Wen. All rights reserved.
 
 Released under Apache 2.0 license as described in the file LICENSE.

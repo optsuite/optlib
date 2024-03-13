@@ -8,6 +8,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Calculus.Gradient.Basic
 import Function.Convex_Function
+import Analysis.Lemmas
 
 /- Cao Zhipeng, HUST ; Yu Penghao, PKU-/
 
@@ -84,52 +85,6 @@ lemma div_div_mul (h₁ : a / b ≤ c) (h₂ : 0 < a) (h₃ : 0 < b) (h₄ : 0 <
   apply Iff.mpr (div_le_div_iff h₄ h₂)
   rw [one_mul]
   apply this
-
-theorem ContinuousAt_Convergence (h : ContinuousAt f x) : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ),
-    ∀ (x' : E), ‖x - x'‖ ≤ δ → ‖f x' - f x‖ ≤ ε:= by
-  rw [continuousAt_def] at h
-  intro ε epos
-  let A := Metric.ball (f x) ε
-  specialize h A (Metric.ball_mem_nhds (f x) epos)
-  rw [Metric.mem_nhds_iff] at h
-  rcases h with ⟨δ, dpos, h⟩
-  use (δ /2); constructor
-  exact half_pos dpos
-  intro x' x1le
-  have H1: x' ∈ Metric.ball x δ := by
-    rw [Metric.ball, Set.mem_setOf, dist_comm, dist_eq_norm_sub]
-    apply lt_of_le_of_lt x1le
-    exact half_lt_self dpos
-  exact LT.lt.le (h H1)
-
-theorem Convergence_ContinuousAt (h: ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E),
-    ‖x - x'‖ ≤ δ → ‖f x' - f x‖ ≤ ε) :
-  ContinuousAt f x := by
-  rw [continuousAt_def]
-  intro A amem
-  rw [Metric.mem_nhds_iff] at amem
-  rcases amem with ⟨ε, epos, bmem⟩
-  specialize h (ε / 2) (half_pos epos)
-  rcases h with ⟨δ , dpos, h⟩
-  rw [Metric.mem_nhds_iff]
-  use δ; constructor
-  exact dpos
-  rw [Set.subset_def]
-  intro x' x1mem
-  have : ‖x - x'‖ ≤ δ := by
-    rw [Metric.ball, Set.mem_setOf, dist_comm, dist_eq_norm_sub] at x1mem
-    exact LT.lt.le x1mem
-  specialize h x' this
-  have H1: f x' ∈  Metric.ball (f x) ε := by
-    rw [Metric.ball, Set.mem_setOf, dist_eq_norm_sub]
-    apply lt_of_le_of_lt h (half_lt_self epos)
-  exact bmem H1
-
-theorem ContinuousAt_iff_Convergence: ContinuousAt f x ↔ ∀ ε > (0 : ℝ),
-    ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ → ‖f x' - f x‖ ≤ ε:= by
-  constructor
-  apply ContinuousAt_Convergence
-  apply Convergence_ContinuousAt
 
 theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : ℝ)):
     HasGradientAt (fun y => (1 : ℝ) / (f y)) (- ((1 : ℝ) / (f x) ^ (2 : ℕ)) • grad) x := by

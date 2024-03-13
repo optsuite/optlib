@@ -60,7 +60,7 @@ theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs
       _= (1 : ℝ) • x - a • x - b • y:= by
         rw [one_smul]
       _= b • (x - y) := by
-        rw [← sub_smul 1 a]; simp[sum_a_b]; rw[smul_sub b x y]
+        rw [← sub_smul 1 a]; simp [a, b, sum_a_b]; rw[smul_sub b x y]
   have h01 : x' - x =  b • (y - x) :=by
     rw [← neg_inj, ← smul_neg, neg_sub, neg_sub]; exact h10
   have h1 : ‖x - x'‖ = ‖b • (x - y)‖ := by
@@ -86,7 +86,7 @@ theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs
       have l11: f x + (f' x) (x' - x) - f x'= -(f x' - f x - (f' x) (x' - x)):= by
         ring
       rw [l11]
-      apply neg_le_abs_self
+      apply neg_le_abs
     have l2: f x + (f' x) (x' - x) - f x' ≤ ε * ‖x - x'‖:= by
       apply le_trans l1 converge
     linarith

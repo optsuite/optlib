@@ -3,10 +3,11 @@ Copyright (c) 2023 Wanyi He. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Wanyi He
 -/
-import Function.ClosedFunction
 import Mathlib.Analysis.Convex.Basic
 import Mathlib.Topology.MetricSpace.Basic
 import Mathlib.Topology.MetricSpace.Bounded
+import Mathlib.Topology.Semicontinuous
+import Mathlib.Topology.Sequences
 
 /-!
   the Weierstrass theorem
@@ -81,7 +82,7 @@ theorem IsMinOn.of_isCompact_preimage {y : F}
     rw [tendsto_congr xkeq]
     apply Tendsto.comp cfx (StrictMono.tendsto_atTop mono)
   have inepi : (x', sInf {f x | x ∈ (f ⁻¹' Set.Iic y)}) ∈ {p : E × F | f p.1 ≤ p.2} :=
-    (IsClosed.isSeqClosed (LowerSemicontinuous.IsClosed_epigraph hf))
+    (IsClosed.isSeqClosed (LowerSemicontinuous.isClosed_epigraph hf))
       (fun n => Eq.le (by rfl)) (Tendsto.prod_mk_nhds cxk cfxk)
   use x'; intro xx _
   apply le_of_eq_of_le
@@ -92,6 +93,7 @@ variable [PseudoMetricSpace E] [ProperSpace E]
 
 /- If a premiage of `f` is nonempty and compact,
   then its minimum point set `{x | IsMinOn f univ x}` is compact -/
+  
 theorem IsCompact_isMinOn_of_isCompact_preimage {y : F}
     (h1 : (f ⁻¹' Set.Iic y).Nonempty) (h2 : IsCompact (f ⁻¹' Set.Iic y)) :
     IsCompact {x | IsMinOn f univ x} := by

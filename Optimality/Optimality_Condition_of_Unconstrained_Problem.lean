@@ -3,11 +3,12 @@ Copyright (c) 2023 Chenyi Li. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Zaiwen Wen
 -/
-import Analysis.Calculation
 import Mathlib.Analysis.Convex.Basic
 import Mathlib.Analysis.Calculus.MeanValue
-import Function.Convex_Function
 import Mathlib.Analysis.InnerProductSpace.Positive
+import Analysis.Calculation
+import Analysis.Lemmas
+import Function.Convex_Function
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 variable {x xm : E} {f : E → ℝ} {f' : E → E} {s : Set E}
@@ -22,102 +23,6 @@ def DescentDirection (d : E) (x : E) (_ : HasGradientAt f (f' x) x) : Prop :=
   inner (f' x) d < (0 : ℝ)
 
 /-
-  If f is continuous at x, then for any positive ε, there exists a positive δ such that
-  for any point y within a distance of δ from x, the distance between f(y) and f(x) is less than ε.
--/
-lemma continuous (h : ContinuousAt f x) : ∀ ε > 0, ∃ δ > 0, ∀ (y : E), ‖y - x‖ < δ
-    → ‖f y - f x‖ < ε := by
-  rw [continuousAt_def] at h
-  intro ε epos
-  let A := Metric.ball (f x) ε
-  specialize h A (Metric.ball_mem_nhds (f x) epos)
-  rw [Metric.mem_nhds_iff] at h
-  rcases h with ⟨δ, dpos, h⟩
-  use (δ / 2); constructor
-  exact half_pos dpos
-  intro x' x1le
-  have H1: x' ∈ Metric.ball x δ := by
-    rw [Metric.ball, Set.mem_setOf, dist_comm, dist_eq_norm_sub, norm_sub_rev]
-    apply lt_trans x1le
-    linarith
-  exact h H1
-
-/-
-  For any function f : E → ℝ, where E is a InnerProduct space, and for any point x in E and vector p in E,
-  if f has a gradient at every point in its domain, then there exists a real number t such that t is
-  greater than 0 and less than 1, and f(x + p) is equal to f(x) plus the inner product of the gradient of
-  f at (x + t * p) with p.
--/
-lemma expansion (hf : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
-    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner (f' (x + t • p)) p := by
-  let g := fun r : ℝ ↦ f (x + r • p)
-  let g' := fun r : ℝ ↦ (inner (f' (x + r • p)) p : ℝ)
-  have h1 : ∀ r , HasDerivAt g (g' r) r := by
-    let h := fun r : ℝ ↦ x + r • p
-    have : g = f ∘ h := by rfl
-    rw [this]; intro r
-    have : inner (f' (x + r • p)) p = toDual ℝ E (f' (x + r • p)) p := rfl
-    simp; rw [this]; apply HasFDerivAt.comp_hasDerivAt
-    · apply hasGradientAt_iff_hasFDerivAt.mp
-      exact hf (x + r • p)
-    · apply HasDerivAt.const_add
-      have ht: HasDerivAt (fun x : ℝ ↦ x) 1 r := hasDerivAt_id' r
-      have : HasDerivAt (fun r : ℝ ↦ r • p) ((1 : ℝ) • p) r := by
-        apply HasDerivAt.smul_const ht p
-      rw [one_smul] at this; exact this
-  have e1 : f (x + p) = g 1 := by simp []
-  have e2 : f x = g 0 := by simp []
-  have e3 : ∀ t, inner (f' (x + t • p)) p = g' t := by simp []
-  rw [e1, e2]
-  have : ∃ c ∈ Set.Ioo 0 1, g' c = (g 1 - g 0) / (1 - 0) := by
-    apply exists_hasDerivAt_eq_slope g g' (by norm_num)
-    · have : ∀ x ∈ Icc 0 1, HasDerivAt g (g' x) x := by
-        intro x _
-        exact (h1 x)
-      exact HasDerivAt.continuousOn this
-    · simp [h1]
-  rcases this with ⟨c, ⟨c1, c2⟩, h2⟩
-  use c
-  constructor; exact c1;
-  constructor; exact c2;
-  rw [e3 c]; simp [h2]
-
-lemma general_expansion (x p : E) (hf : ∀ y ∈ Metric.closedBall x ‖p‖, HasGradientAt f (f' y) y) :
-    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner (f' (x + t • p)) p := by
-  let g := fun r : ℝ ↦ f (x + r • p)
-  let g' := fun r : ℝ ↦ (inner (f' (x + r • p)) p : ℝ)
-  have h1 : ∀ r ∈ Icc 0 1, HasDerivAt g (g' r) r := by
-    let h := fun r : ℝ ↦ x + r • p
-    have : g = f ∘ h := by rfl
-    rw [this]; intro r hr
-    have : inner (f' (x + r • p)) p = toDual ℝ E (f' (x + r • p)) p := rfl
-    simp; rw [this]; apply HasFDerivAt.comp_hasDerivAt
-    · apply hasGradientAt_iff_hasFDerivAt.mp
-      have : x + r • p ∈ Metric.closedBall x ‖p‖ := by
-        simp; simp at hr; rw [norm_smul, r.norm_eq_abs, abs_of_nonneg hr.1];
-        rcases hr with ⟨_, hr2⟩
-        apply mul_le_of_le_one_left (norm_nonneg p) hr2
-      exact hf (x + r • p) this
-    · apply HasDerivAt.const_add
-      have : HasDerivAt (fun r : ℝ ↦ r • p) ((1 : ℝ) • p) r := by
-        apply HasDerivAt.smul_const (hasDerivAt_id' r) p
-      rw [one_smul] at this; exact this
-  have e1 : f (x + p) = g 1 := by simp []
-  have e2 : f x = g 0 := by simp []
-  have e3 : ∀ t, inner (f' (x + t • p)) p = g' t := by simp []
-  rw [e1, e2]
-  have : ∃ c ∈ Set.Ioo 0 1, g' c = (g 1 - g 0) / (1 - 0) := by
-    apply exists_hasDerivAt_eq_slope g g' (by norm_num)
-    · exact HasDerivAt.continuousOn h1
-    · intro x hx; apply h1 x
-      rcases hx with ⟨hx1, hx2⟩; constructor <;> linarith
-  rcases this with ⟨c, ⟨c1, c2⟩, h2⟩
-  use c
-  constructor; exact c1;
-  constructor; exact c2;
-  rw [e3 c]; simp [h2]
-
-/-
   For any vector d, there does not exist a descent direction for the function f
   at the minimum point xm.
 -/
@@ -129,14 +34,14 @@ theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
   have : ∃ t : ℝ , f (xm + t • d) < f xm := by
     have h₁ : ∃ T : ℝ , T > 0 ∧ (∀ a ∈ Icc (- T) T, inner (f' (xm + a • d)) d < (0 : ℝ)) := by
       let g := fun r : ℝ ↦ (inner (f' (xm + r • d)) d : ℝ)
-      have hg0 : g 0 = inner (f' xm) d := by simp
+      have hg0 : g 0 = inner (f' xm) d := by simp [g]
       have hc : ContinuousOn g univ := by
-        simp
+        simp [g]
         apply ContinuousOn.inner
         · apply ContinuousOn.comp hfc
           · apply ContinuousOn.add continuousOn_const
             apply ContinuousOn.smul continuousOn_id continuousOn_const
-          · simp only [maps_univ_to, mem_univ, forall_const]
+          · simp
         · exact continuousOn_const
       have hu : ∃ u < (0 : ℝ) , inner (f' xm) d ≤  u := by
         use (inner (f' xm) d / 2)
@@ -210,7 +115,7 @@ theorem first_order_convex (hf : ∀ x : E, HasGradientAt f (f' x) x) (hcon : Co
     (hfm : f' xm = 0) : IsMinOn f univ xm := by
   have : ∀ y , f y ≥ f xm + inner (f' xm) (y - xm) := by
     intro y
-    apply first_order_condition' (hf xm) hcon (by trivial)
+    apply Convex_first_order_condition' (hf xm) hcon (by trivial)
     · trivial
   intro y
   dsimp; specialize this y

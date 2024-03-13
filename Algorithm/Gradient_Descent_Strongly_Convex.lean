@@ -5,10 +5,9 @@ Authors: Chenyi Li, Ziyu Wang, Yuxuan Wu, Shengyang Xu
 -/
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Convex.Strong
-import Analysis.Calculation
-import Function.Lsmooth
-import Function.Convex_Function
 import Function.StronglyConvex
+import Algorithm.Gradient_Descent
+
 /-!
   the convergence of gradient descent method for strongly convex function
 -/
@@ -17,21 +16,21 @@ section Strongly_Convex_Gradient_Descent
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-variable {f : E → ℝ} {l m : ℝ} {f' : E → E} {xm x₀: E} {point : ℕ → E}
-variable {a : ℝ} {x y : E} {mp : 0 < m}
+variable {f : E → ℝ} {m : ℝ} {f' : E → E} {xm x₀ : E} {x : ℕ → E}
+variable {a : ℝ} {x y : E} {l : NNReal}
 
 open Set
 
-theorem Strong_convex_Lipschitz_smooth (hsc: StrongConvexOn univ m f)
-    (hf : ∀ x, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' univ l) (hl : l > 0):
+theorem Strong_convex_Lipschitz_smooth (hsc: StrongConvexOn univ m f) (mp : m > 0)
+    (hf : ∀ x, HasGradientAt f (f' x) x) (h₂ : LipschitzWith l f') (hl : l > (0 : ℝ)):
     inner (f' x - f' y) (x - y) ≥ m * l / (m + l) * ‖x - y‖ ^ 2
-      + 1 / (m + l) * ‖f' x - f' y‖ ^ 2 := by
+    + 1 / (m + l) * ‖f' x - f' y‖ ^ 2 := by
   rw [StrongConvexOn, UniformConvexOn] at hsc
   rcases hsc with ⟨cov, hsc⟩
   let phi : E → ℝ := fun x ↦ l / 2 * ‖x‖ ^ 2 - f x
   have convphi : ConvexOn ℝ univ phi := by
-    apply lipschitz_to_convex
-    apply cov; simp; apply hf; show LipschitzOn f' univ l; apply h₂; apply hl
+    apply lipschitz_to_lnorm_sub_convex
+    apply cov; simp; apply hf; rw [← lipschitzOn_univ] at h₂; apply h₂; apply hl
   let g : E → ℝ := fun x ↦ f x - m / 2 * ‖x‖ ^ 2
   let g' : E → E := fun x ↦ f' x - m • x
   let h : E → ℝ := fun x ↦ (l - m) / 2 * ‖x‖ ^ 2 - g x
@@ -45,7 +44,7 @@ theorem Strong_convex_Lipschitz_smooth (hsc: StrongConvexOn univ m f)
       use cov
   have convh : ConvexOn ℝ univ h := by
     have (x : E) : h x = phi x := by
-        field_simp; rw [← sub_add, sub_mul]; ring_nf
+        field_simp [phi, h]; ring_nf
     rw [ConvexOn]; use cov; intro x xin y yin a b apos bpos absum1
     rw [this, this, this]
     rw [ConvexOn] at convphi
@@ -57,7 +56,7 @@ theorem Strong_convex_Lipschitz_smooth (hsc: StrongConvexOn univ m f)
     let alpha : E := f' x - f' y
     let beta : E := x - y
     have eq2 : g' x - g' y = alpha - m • beta := by
-      simp; rw [smul_sub]; rw [← sub_add, ← sub_add]; simp
+      simp [g']; rw [smul_sub]; rw [← sub_add, ← sub_add]; simp
       rw [sub_right_comm]
     rw [eq2] at eq1
     have eq3 (u v : E) : inner (u - m • v) v ≥ 1 / (l - m) * ‖u - m • v‖ ^ 2
@@ -91,9 +90,9 @@ theorem Strong_convex_Lipschitz_smooth (hsc: StrongConvexOn univ m f)
       use cov; simp; apply hf; simp; simp
     have eq2 : inner alpha beta ≥ 1 / l * ‖alpha‖ ^ 2 := by
       show inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2
-      apply lipschitz_to_lower hf h₂ hl
+      apply lipschitz_to_lower hf h₂
       apply StrictConvexOn.convexOn; apply StrongConvexOn.strictConvexOn
-      rw [StrongConvexOn, UniformConvexOn]; use cov; apply mp
+      rw [StrongConvexOn, UniformConvexOn]; use cov; apply mp; apply hl
     rw [ge_iff_le] at eq1
     rw [ge_iff_le] at eq2
     have mlpos : 0 < m + l := by linarith
@@ -116,95 +115,101 @@ theorem Strong_convex_Lipschitz_smooth (hsc: StrongConvexOn univ m f)
     show inner alpha beta ≥ m * l / (m + l) * ‖beta‖ ^ 2 + 1 / (m + l) * ‖alpha‖ ^ 2
     apply eq3; apply eq2; apply eq1
 
-lemma lipschitz_derivxm_eq_zero (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (h₂ : LipschitzOn f' univ l)
-    (min: IsMinOn f Set.univ xm) (hl: l > 0) : f' xm = 0 := by
+lemma lipschitz_derivxm_eq_zero (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
+    (h₂ : LipschitzWith l f') (min: IsMinOn f Set.univ xm) (hl: l > (0 : ℝ)) : f' xm = 0 := by
   have eq1 : ∀ x : E, 1 / (2 * l) * ‖f' x‖ ^ 2 ≤ f x - f xm := by
-    apply lipschitz_minima h₁ h₂ min
+    apply lipschitz_minima_lower_bound h₁ h₂ min hl
   specialize eq1 xm
   field_simp at eq1
-  have _ : 0 < 2 * l := by linarith
+  have _ : (0 : ℝ) < 2 * l := by linarith
   have eq3 : 0 ≤ ‖f' xm‖ ^ 2 / (2 * l) := by
     apply div_nonneg; simp; linarith
   have eq4 : ‖f' xm‖ ^ 2 / (2 * l) = 0 := by linarith
   field_simp at eq4; exact eq4
 
-lemma gradient_method_strong_convex (hsc: StrongConvexOn univ m f)
-    (hf : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (h₃ : LipschitzOn f' univ l) (hl: l > 0)
-    (step₁: a ≤ 2 / (m + l)) (step₂ : a > 0) (initial : point 0 = x₀) (min: IsMinOn f univ xm)
-    (update: ∀ (k : ℕ), point (k + 1) = point k - a • (f' (point k))):
-    ∀ k : ℕ , ‖point k - xm‖ ^ 2 ≤ (1 - a * (2 * m * l / (m + l))) ^ k * ‖x₀ - xm‖ ^ 2 := by
+variable (hsc: StrongConvexOn univ m f) {alg : Gradient_Descent_fix_stepsize f f' x₀}
+
+lemma gradient_method_strong_convex (hm : m > 0) (min : IsMinOn f univ xm)
+    (step₂ : alg.a ≤ 2 / (m + alg.l)) : ∀ k : ℕ , ‖alg.x k - xm‖ ^ 2 ≤ (1 - alg.a *
+    (2 * m * alg.l / (m + alg.l))) ^ k * ‖x₀ - xm‖ ^ 2 := by
+  have : LipschitzWith alg.l f' := alg.smooth
+  have : alg.l > (0 : ℝ) := alg.hl
   have reduction : ∀ k : ℕ ,
-    ‖point (k + 1) - xm‖ ^ 2 ≤ (1 - a * (2 * m * l / (m + l))) * ‖point k - xm‖ ^ 2 := by
+    ‖alg.x (k + 1) - xm‖ ^ 2 ≤ (1 - alg.a * (2 * m * alg.l / (m + alg.l)))
+    * ‖alg.x k - xm‖ ^ 2 := by
       intro k
-      rw [update k]
+      rw [alg.update k]
       calc
-      _ = ‖point k - xm - a • f' (point k)‖ ^ 2 := by
+      _ = ‖alg.x k - xm - alg.a • f' (alg.x k)‖ ^ 2 := by
         rw [sub_right_comm]
-      _ = ‖point k - xm‖ ^ 2 - 2 * a * inner (point k - xm) (f' (point k))
-        + a ^ 2 * ‖f' (point k)‖ ^ 2 := by
+      _ = ‖alg.x k - xm‖ ^ 2 - 2 * alg.a * inner (alg.x k - xm) (f' (alg.x k))
+        + alg.a ^ 2 * ‖f' (alg.x k)‖ ^ 2 := by
         rw [norm_sub_sq_real, inner_smul_right]
         ring_nf; rw [norm_smul]; simp; rw [mul_pow, sq_abs]
-      _ ≤ (1 - a * (2 * m * l / (m + l))) * ‖point k - xm‖ ^ 2
-        + a * (a - 2 / (m + l)) * ‖f' (point k)‖ ^ 2 := by
-        have : inner (point k - xm) (f' (point k)) ≥ m * l / (m + l) * ‖point k - xm‖ ^ 2
-          + 1 / (m + l) * ‖f' (point k)‖ ^ 2 := by
-          have eq1 : f' (point k) = f' (point k) - f' (xm) := by
+      _ ≤ (1 - alg.a * (2 * m * alg.l / (m + alg.l))) * ‖alg.x k - xm‖ ^ 2
+        + alg.a * (alg.a - 2 / (m + alg.l)) * ‖f' (alg.x k)‖ ^ 2 := by
+        have : inner (alg.x k - xm) (f' (alg.x k)) ≥
+            m * alg.l / (m + alg.l) * ‖alg.x k - xm‖ ^ 2
+            + 1 / (m + alg.l) * ‖f' (alg.x k)‖ ^ 2 := by
+          have eq1 : f' (alg.x k) = f' (alg.x k) - f' xm := by
             apply eq_sub_of_add_eq; simp
-            apply lipschitz_derivxm_eq_zero hf h₃ min hl
+            apply lipschitz_derivxm_eq_zero alg.diff alg.smooth min this
           rw [eq1, real_inner_comm]
-          apply Strong_convex_Lipschitz_smooth; apply mp; apply hsc
-          apply hf; apply h₃; apply hl
+          apply Strong_convex_Lipschitz_smooth; apply hsc; apply hm;
+          apply alg.diff; apply alg.smooth; apply alg.hl
         rw [sub_mul, one_mul, mul_sub, sub_mul, ← add_comm_sub, ← pow_two]
         apply add_le_add_right
-        rw [sub_eq_add_neg, sub_sub]; rw [sub_eq_add_neg (‖point k - xm‖ ^ 2)]
+        rw [sub_eq_add_neg, sub_sub]; rw [sub_eq_add_neg (‖alg.x k - xm‖ ^ 2)]
         apply add_le_add_left; apply neg_le_neg
         calc
           _ =
-            2 * a * ((m * l / (m + l)) * ‖point k - xm‖ ^ 2 + (1 / (m + l)) * ‖f' (point k)‖ ^ 2) := by
-              field_simp; rw [mul_add, mul_comm a 2, ← mul_assoc, ← mul_assoc, mul_comm a 2]
+            2 * alg.a * ((m * alg.l / (m + alg.l)) * ‖alg.x k - xm‖ ^ 2 +
+                (1 / (m + alg.l)) * ‖f' (alg.x k)‖ ^ 2) := by
+              field_simp; rw [mul_add, mul_comm alg.a 2, ← mul_assoc, ← mul_assoc, mul_comm alg.a 2]
               ring_nf
-          _ ≤ 2 * a * inner (point k - xm) (f' (point k)) := by
+          _ ≤ 2 * alg.a * inner (alg.x k - xm) (f' (alg.x k)) := by
             rw [ge_iff_le] at this
-            have twoapos : 0 < 2 * a := by linarith
+            have twoapos : 0 < 2 * alg.a := by linarith [alg.step₁]
             rw [mul_le_mul_left twoapos]; apply this
-      _ ≤ (1 - a * (2 * m * l / (m + l))) * ‖point k - xm‖ ^ 2 := by
+      _ ≤ (1 - alg.a * (2 * m * alg.l / (m + alg.l))) * ‖alg.x k - xm‖ ^ 2 := by
         simp
-        have eq2 : a * (a - 2 / (m + l)) ≤ 0 := by
+        have eq2 : alg.a * (alg.a - 2 / (m + alg.l)) ≤ 0 := by
           rw [← neg_le_neg_iff, mul_comm, ← neg_mul]; simp; apply mul_nonneg
-          linarith; linarith
-        have eq3 : 0 ≤ ‖f' (point k)‖ ^ 2 := by simp
+          linarith; linarith [alg.step₁]
+        have eq3 : 0 ≤ ‖f' (alg.x k)‖ ^ 2 := by simp
         apply mul_nonpos_of_nonpos_of_nonneg eq2 eq3
-  have eq : 0 ≤ (1 - a * (2 * m * l / (m + l))) := by
-    have : 0 < m + l := by linarith
+  have eq : 0 ≤ (1 - alg.a * (2 * m * alg.l / (m + alg.l))) := by
+    have : 0 < m + alg.l := by linarith
     field_simp; rw [div_nonneg_iff]; left
     constructor
     · simp
       calc
-        a * (2 * m * l) ≤ 2 / (m + l) * (2 * m * l) := by
-          rw [mul_le_mul_right]; linarith; field_simp; linarith
-        _ ≤ (m + l) ^ 2 / (m + l) := by
+        alg.a * (2 * m * alg.l) ≤ 2 / (m + alg.l) * (2 * m * alg.l) := by
+          rw [mul_le_mul_right]; linarith [step₂, alg.step₁];
+          apply mul_pos <;> linarith
+        _ ≤ (m + alg.l) ^ 2 / (m + alg.l) := by
           field_simp; rw [div_le_div_right this]
           ring_nf
           calc
-            _ ≤ m * l * 4 + (m - l) ^ 2 := by
+            _ ≤ m * alg.l * 4 + (m - alg.l) ^ 2 := by
               simp; apply sq_nonneg
-            _ = m * l * 2 + m ^ 2 + l ^ 2 := by ring_nf
-        _ = (m + l) := by
+            _ = m * alg.l * 2 + m ^ 2 + alg.l ^ 2 := by ring_nf
+        _ = (m + alg.l) := by
           rw [pow_two]; simp
     · linarith
   intro k
   induction' k with q IH1
-  · simp; rw [initial]
+  · simp; rw [alg.initial]
   · calc
-    _ = ‖point (q + 1) - xm‖ ^ 2 := by simp
-    _ ≤ (1 - a * (2 * m * l / (m + l))) * ‖point q - xm‖ ^ 2 := by
+    _ = ‖alg.x (q + 1) - xm‖ ^ 2 := by simp
+    _ ≤ (1 - alg.a * (2 * m * alg.l / (m + alg.l))) * ‖alg.x q - xm‖ ^ 2 := by
       apply reduction
-    _ ≤ (1 - a * (2 * m * l / (m + l))) *
-      (1 - a * (2 * m * l / (m + l))) ^ q * ‖x₀ - xm‖ ^ 2 := by
+    _ ≤ (1 - alg.a * (2 * m * alg.l / (m + alg.l))) *
+      (1 - alg.a * (2 * m * alg.l / (m + alg.l))) ^ q * ‖x₀ - xm‖ ^ 2 := by
         rw [mul_assoc _ _ (‖x₀ - xm‖ ^ 2)]
         apply mul_le_mul_of_nonneg_left; apply IH1; apply eq
-    _ = (1 - a * (2 * m * l / (m + l))) ^ (q + 1) * ‖x₀ - xm‖ ^ 2 := by
+    _ = (1 - alg.a * (2 * m * alg.l / (m + alg.l))) ^ (q + 1) * ‖x₀ - xm‖ ^ 2 := by
         simp; left; rw [pow_succ]
-    _ = (1 - a * (2 * m * l / (m + l))) ^ Nat.succ q * ‖x₀ - xm‖ ^ 2 := by simp
-
+    _ = (1 - alg.a * (2 * m * alg.l / (m + alg.l))) ^ Nat.succ q * ‖x₀ - xm‖ ^ 2 := by simp
+#check gradient_method_strong_convex
 end Strongly_Convex_Gradient_Descent

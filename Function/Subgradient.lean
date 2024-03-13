@@ -8,6 +8,8 @@ import Mathlib.Topology.Basic
 import Mathlib.Order.Filter.Extr
 import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
+import Mathlib.Data.Real.Sign
+import Function.Banach_Subgradient
 import Function.Convex_Function
 
 /-!
@@ -38,18 +40,15 @@ The insight comes from the first order condition of convex function.
 
 open Filter Topology Set InnerProductSpace
 
+local notation gradient "∇*" => (toDualMap ℝ _) gradient
 
-noncomputable section
+local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
 variable {f : E → ℝ} {g : E} {x : E} {s : Set E}
 
-set_option quotPrecheck false
-
-local notation gradient "∇*" => (toDualMap ℝ _) gradient
-
-local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
+noncomputable section
 
 /-- Subgradient of functions --/
 def HasSubgradientAt (f : E → ℝ) (g x : E) : Prop :=
@@ -76,13 +75,116 @@ theorem hasSubgradientWithinAt_univ :
 theorem HasSubgradientAt.hasSubgradientWithinAt :
     HasSubgradientAt f g x → HasSubgradientWithinAt f g s x := fun h y _ => h y
 
+theorem SubderivAt_SubderivWithinAt :
+    SubderivAt f x = SubderivWithinAt f univ x := by
+  simp only [SubderivAt, SubderivWithinAt, hasSubgradientWithinAt_univ]
+
+theorem HasSubgradientAt_HasBanachSubgradientAt {f : E → ℝ} {g : E} {x : E} :
+    HasSubgradientAt f g x ↔ Banach_HasSubgradientAt f (toDual ℝ E g) x := by
+  constructor
+  · intro h z
+    unfold HasSubgradientAt at h
+    obtain hz := h z
+    simp; rw [← inner_sub_right]; linarith
+  intro h z
+  unfold Banach_HasSubgradientAt at h
+  obtain hz := h z; simp at hz
+  rw [inner_sub_right]; linarith
+
+theorem HasBanachSubgradientAt_HasSubgradientAt {f : E → ℝ} {g : E →L[ℝ] ℝ} {x : E} :
+    Banach_HasSubgradientAt f g x ↔ HasSubgradientAt f ((toDual ℝ E).symm g) x := by
+  constructor
+  · intro h z
+    unfold Banach_HasSubgradientAt at h
+    obtain hz := h z
+    simp; rw [← ContinuousLinearMap.map_sub]; linarith
+  intro h z
+  unfold HasSubgradientAt at h
+  obtain hz := h z; simp at hz
+  rw [ContinuousLinearMap.map_sub]; linarith
+
+theorem HasSubgradientWithinAt_HasBanachSubgradientWithinAt {f : E → ℝ} {g : E} {x : E} :
+    HasSubgradientWithinAt f g s x ↔ Banach_HasSubgradientWithinAt f (toDual ℝ E g) s x := by
+  constructor
+  · intro h z hz
+    unfold HasSubgradientAt at h
+    obtain hz := h z hz
+    simp; rw [← inner_sub_right]; linarith
+  intro h z hz
+  unfold Banach_HasSubgradientAt at h
+  obtain hz := h z hz; simp at hz
+  rw [inner_sub_right]; linarith
+
+theorem HasBanachSubgradientWithinAt_HasSubgradientWithinAt {f : E → ℝ} {g : E →L[ℝ] ℝ} {x : E} :
+    Banach_HasSubgradientWithinAt f g s x ↔ HasSubgradientWithinAt f ((toDual ℝ E).symm g) s x := by
+  constructor
+  · intro h z hz
+    unfold Banach_HasSubgradientAt at h
+    obtain hz := h z hz
+    simp; rw [← ContinuousLinearMap.map_sub]; linarith
+  intro h z hz
+  unfold HasSubgradientAt at h
+  obtain hz := h z hz; simp at hz
+  rw [ContinuousLinearMap.map_sub]; linarith
+
+end
+
+/-! ### Congruence properties of the `Subderiv` -/
+section congr
+
+variable {f₁ f₂ : E → ℝ} {t s : Set E}
+
+theorem SubderivAt.congr (h : f₁ = f₂) : SubderivAt f₁ x = SubderivAt f₂ x := by
+  congr; ext g; rw [h]
+
+theorem SubderivWithinAt.congr (h : ∀ y ∈ s, f₁ y = f₂ y) (hf : f₁ x = f₂ x):
+    SubderivWithinAt f₁ s x = SubderivWithinAt f₂ s x := by
+  congr; ext g;
+  exact ⟨fun hg y ys => by rw [← h y ys, ← hf]; exact hg y ys,
+            fun hg y ys => by rw [h y ys, hf]; exact hg y ys⟩
+
+theorem SubderivWithinAt.congr_of_mem (xs : x ∈ s) (h : ∀ y ∈ s, f₁ y = f₂ y) :
+    SubderivWithinAt f₁ s x = SubderivWithinAt f₂ s x := congr h (h x xs)
+
+theorem SubderivAt.congr_mono (h : ∀ y ∈ s, f₁ y = f₂ y) (hx : f₁ x = f₂ x) (h₁ : t ⊆ s) :
+    SubderivWithinAt f₁ t x = SubderivWithinAt f₂ t x :=
+  SubderivWithinAt.congr (fun y a => h y (h₁ a)) hx
+
+end congr
+
 /-! ### Basic properties about `Subderiv` -/
 
 section Basic_properties
 
-variable (hf : ConvexOn ℝ s f)
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+
+variable {f : E → ℝ} {g : E} {x : E} {s : Set E}
+
+variable (hf : ConvexOn ℝ s f) (hc : ContinuousOn f (interior s))
 
 open Bornology
+
+/- The subderiv of `f` at interior point `x` is a nonempty set -/
+theorem SubderivWithinAt.Nonempty : ∀ x ∈ interior s, (SubderivWithinAt f s x).Nonempty := by
+  intro x hx
+  obtain h := Banach_SubderivWithinAt.Nonempty hf hc hx
+  unfold Set.Nonempty at h ⊢
+  rcases h with ⟨g, hg⟩; unfold Banach_SubderivWithinAt at hg
+  simp at hg
+  rw [HasBanachSubgradientWithinAt_HasSubgradientWithinAt] at hg;
+  use (toDual ℝ E).symm g; unfold SubderivWithinAt
+  simp [hg]
+
+theorem SubderivAt.nonempty (hf : ConvexOn ℝ univ f) (hc : ContinuousOn f univ) :
+    ∀ x, Nonempty (SubderivAt f x) := by
+  intro x
+  rw [SubderivAt_SubderivWithinAt]
+  have : x ∈ interior univ := by simp
+  rw [← interior_univ] at hc
+  obtain h := SubderivWithinAt.Nonempty hf hc x this
+  simp [h]
+  rcases h with ⟨a, ha⟩
+  exact ⟨a, ha⟩
 
 /-- The subderiv of `f` at `x` is a closed set. --/
 theorem SubderivAt.isClosed : ∀ x, IsClosed (SubderivAt f x) := by
@@ -111,10 +213,10 @@ theorem SubderivAt.convex : ∀ x, Convex ℝ (SubderivAt f x) := by
   intro g₁ h1 g₂ h2 a b lea leb abeq y
   have ineq1 : a • f y ≥ a • f x + a • ⟪g₁, y - x⟫ := by
     rw [← smul_add]
-    apply smul_le_smul_of_nonneg (h1 y) lea
+    apply smul_le_smul_of_nonneg_left (h1 y) lea
   have ineq2 : b • f y ≥ b • f x + b • inner g₂ (y - x) := by
     rw [← smul_add]
-    apply smul_le_smul_of_nonneg (h2 y) leb
+    apply smul_le_smul_of_nonneg_left (h2 y) leb
   have eq : (a • f x + a • inner g₁ (y - x)) + (b • f x + b • inner g₂ (y - x))
       = f x + inner (a • g₁ + b • g₂) (y - x) := by
     rw [add_add_add_comm, ← Eq.symm (Convex.combo_self abeq (f x))]
@@ -130,10 +232,10 @@ theorem SubderivWithinAt.convex : ∀ x ∈ s, Convex ℝ (SubderivWithinAt f s 
   intro g₁ h1 g₂ h2 a b lea leb abeq y ys
   have ineq1 : a • f y ≥ a • f x + a • ⟪g₁, y - x⟫ := by
     rw [← smul_add]
-    apply smul_le_smul_of_nonneg (h1 y ys) lea
+    apply smul_le_smul_of_nonneg_left (h1 y ys) lea
   have ineq2 : b • f y ≥ b • f x + b • inner g₂ (y - x) := by
     rw [← smul_add]
-    apply smul_le_smul_of_nonneg (h2 y ys) leb
+    apply smul_le_smul_of_nonneg_left (h2 y ys) leb
   have eq : (a • f x + a • inner g₁ (y - x)) + (b • f x + b • inner g₂ (y - x))
       = f x + inner (a • g₁ + b • g₂) (y - x) := by
     rw [add_add_add_comm, ← Eq.symm (Convex.combo_self abeq (f x))]
@@ -155,20 +257,20 @@ end Basic_properties
 
 /-! ### Calculation of `Subderiv` -/
 
-section calculation
+section equivalence
 
 open Pointwise
 
 /-- Subderiv of differentiable convex functions --/
-theorem SubderivWithinAt_eq_gradient {f' : E → E} (hx : x ∈ interior s)
-    (hf : ConvexOn ℝ s f) (h : HasGradientAt f (f' x) x) :
-    SubderivWithinAt f s x = {f' x} := by
+theorem SubderivWithinAt_eq_gradient {f'x : E} (hx : x ∈ interior s)
+    (hf : ConvexOn ℝ s f) (h : HasGradientAt f (f'x) x) :
+    SubderivWithinAt f s x = {f'x} := by
   obtain h' := hasGradientAt_iff_hasFDerivAt.mp h
-  let g := f' x
+  let g := f'x
   rw [Set.eq_singleton_iff_nonempty_unique_mem]
   constructor
   · use g; intro y ys
-    apply first_order_condition' h hf (interior_subset hx) y ys
+    apply Convex_first_order_condition' h hf (interior_subset hx) y ys
   intro g' hg'; by_contra neq
   apply not_le_of_lt (norm_sub_pos_iff.mpr neq)
   let v := g' - g; obtain vneq := sub_ne_zero.mpr neq
@@ -250,22 +352,18 @@ theorem SubderivWithinAt_eq_FDeriv {f' : E → (E →L[ℝ] ℝ)} (hx : x ∈ in
   apply SubderivWithinAt_eq_gradient hx hf
   exact h'
 
-/-- Subderivatives of the sum of two functions is a subset of the sum of the
-subderivatives of the two functions --/
-theorem SubderivAt.add_subset {f₁ f₂ : E → ℝ} :
-    ∀ (x : E), SubderivAt f₁ x + SubderivAt f₂ x ⊆ SubderivAt (f₁ + f₂) x := by
-  intro x y hy y'
-  obtain ⟨y₁, y₂, hy₁, hy₂, eq⟩ := Set.mem_add.mpr hy
-  have eq' : y₁ + y₂ = y := eq
-  have : (f₁ + f₂) y' ≥ (f₁ x + ⟪y₁, y' - x⟫) + (f₂ x + ⟪y₂, y' - x⟫) :=
-    add_le_add (hy₁ y') (hy₂ y')
-  rwa [add_add_add_comm, ← inner_add_left, eq'] at this
-  
-end calculation
+theorem SubderivAt_eq_gradient {f'x : E}
+    (hf : ConvexOn ℝ univ f) (h : HasGradientAt f (f'x) x) :
+    SubderivAt f x = {f'x} := by
+  rw [SubderivAt_SubderivWithinAt]
+  apply SubderivWithinAt_eq_gradient _ hf h
+  · simp only [interior_univ, mem_univ]
+
+end equivalence
 
 /-! ### Optimality Theory for Unconstrained Nondifferentiable Problems -/
 
-section
+section optimality_theory
 
 theorem HasSubgradientAt_zero_of_isMinOn (h : IsMinOn f univ x) : HasSubgradientAt f 0 x :=
   fun y => le_of_le_of_eq' (h trivial) (by rw [inner_zero_left, add_zero])
@@ -291,5 +389,325 @@ theorem isMinOn_of_HasSubgradentWithinAt_zero (h : HasSubgradientWithinAt f 0 s 
 theorem HasSubgradientWithinAt_zero_iff_isMinOn :
     HasSubgradientWithinAt f 0 s x ↔ IsMinOn f s x :=
   ⟨isMinOn_of_HasSubgradentWithinAt_zero, HasSubgradientWithinAt_zero_of_isMinOn⟩
+
+end optimality_theory
+
+/-! ### Computing `Subderiv` -/
+
+section computation
+
+open Pointwise
+
+variable {f : E → ℝ} {g : E} {x : E} {s : Set E}
+
+/-- Multiplication by a Positive Scalar--/
+theorem HasSubgradientAt.pos_smul {c : ℝ} (h : HasSubgradientAt f g x) (hc : 0 < c) :
+    HasSubgradientAt (c • f) (c • g) x := by
+  intro y; rw [inner_smul_left]
+  have ineq : c * f y ≥ c * (f x + inner g (y - x)) := (mul_le_mul_left hc).mpr (h y)
+  have eq : c * (f x + inner g (y - x)) = c * f x + c * inner g (y - x) :=
+    mul_add c (f x) (inner g (y - x))
+  exact Eq.trans_le (id eq.symm) ineq
+
+theorem SubderivAt.pos_smul {c : ℝ} (hc : 0 < c) :
+    SubderivAt (c • f) x = c • (SubderivAt f x) := by
+  ext g
+  constructor
+  · intro hg; use (c⁻¹ • g)
+    constructor
+    · intro y;
+      have neq : c ≠ 0 :=  ne_of_gt hc
+      calc
+        f y = c⁻¹ * (c * f y) := (eq_inv_mul_iff_mul_eq₀ neq).mpr rfl
+        _ ≥ c⁻¹ * (c * f x + inner g (y - x)) :=
+          mul_le_mul_of_nonneg_left (hg y) (inv_nonneg.mpr (le_of_lt hc))
+        _ = f x + inner (c⁻¹ • g) (y - x) := by
+          rw [mul_add, inner_smul_left, ← ((eq_inv_mul_iff_mul_eq₀ neq).mpr rfl)]
+          rfl
+    exact smul_inv_smul₀ (ne_of_gt hc) g
+  rintro ⟨gg, hgg, eq⟩; intro y
+  calc
+    c * f y ≥ c * (f x + inner gg (y - x)) := (mul_le_mul_left hc).mpr (hgg y)
+    _ = c * f x + c * inner gg (y - x) := mul_add c (f x) (inner gg (y - x))
+    _ = c * f x + inner (c • gg) (y - x) := by
+      rw [inner_smul_left]; exact rfl
+    _ = c * f x + inner g (y - x) := by rw [← eq]
+
+/-- Subderivatives of the sum of two functions is a subset of the sum of the
+subderivatives of the two functions --/
+theorem SubderivAt.add_subset {f₁ f₂ : E → ℝ} :
+    ∀ (x : E), SubderivAt f₁ x + SubderivAt f₂ x ⊆ SubderivAt (f₁ + f₂) x := by
+  intro x y hy y'
+  obtain ⟨y₁, hy₁, y₂, hy₂, eq⟩ := Set.mem_add.mpr hy
+  have eq' : y₁ + y₂ = y := eq
+  have : (f₁ + f₂) y' ≥ (f₁ x + ⟪y₁, y' - x⟫) + (f₂ x + ⟪y₂, y' - x⟫) :=
+    add_le_add (hy₁ y') (hy₂ y')
+  rwa [add_add_add_comm, ← inner_add_left, eq'] at this
+
+private lemma Continuous_epi_open {f₁ : E → ℝ} (hcon : ContinuousOn f₁ univ) :
+    IsOpen {(x, y) : E × ℝ | y > f₁ x} := by
+  let t := (fun p : E × ℝ => p.fst) ⁻¹' univ
+  have h1 : IsOpen t := IsOpen.preimage continuous_fst isOpen_univ
+  have h2 : ContinuousOn (fun p : (E × ℝ) => f₁ p.fst) t :=
+    ContinuousOn.comp (t := univ) hcon continuousOn_fst (fun _ a => a)
+  have : {(x, y) : E × ℝ | y > f₁ x} = {(x, y) : E × ℝ | x ∈ univ ∧ y > f₁ x} := by
+    ext z; simp
+  rw [this]
+  apply ContinuousOn.isOpen_inter_preimage (h2.prod continuousOn_snd) h1 isOpen_lt_prod
+
+private lemma leq_tendsto_zero {a : ℝ} (h : ∀ t > 0, 0 < a + t) : 0 ≤ a := by
+  by_contra h'; push_neg at h';
+  specialize h (- a / 2) (by linarith)
+  linarith
+
+theorem SubderivAt.add {f₁ f₂ : E → ℝ} (h₁ : ConvexOn ℝ univ f₁) (h₂: ConvexOn ℝ univ f₂)
+    (hcon : ContinuousOn f₁ univ):
+    ∀ (x : E), SubderivAt f₁ x + SubderivAt f₂ x = SubderivAt (f₁ + f₂) x := by
+  intro x₀
+  apply Subset.antisymm (SubderivAt.add_subset x₀)
+  rw [SubderivAt, SubderivAt, SubderivAt, Set.subset_def]
+  intro g hg
+  rw [Set.mem_setOf] at hg; rw [Set.mem_add]
+  let S₁ := {(x, y) : E × ℝ | y > f₁ (x + x₀) - f₁ x₀ - inner g x}
+  let S₂ := {(x, y) : E × ℝ | y ≤ f₂ x₀ - f₂ (x + x₀)}
+
+  have hs1 : Convex ℝ S₁ := by
+    rw [convex_iff_forall_pos]; intro i hi j hj a b ha hb hab
+    rw [Set.mem_setOf] at hi hj ⊢; simp at hi hj ⊢
+    rw [← mul_lt_mul_iff_of_pos_left ha] at hi
+    rw [← mul_lt_mul_iff_of_pos_left hb] at hj
+    rw [inner_add_right, inner_smul_right, inner_smul_right, ← sub_sub]
+    have : x₀ = (1 : ℝ) • x₀ := by simp only [one_smul]
+    have : a • i.1 + b • j.1 + x₀ = a • (i.1 + x₀) + b • (j.1 + x₀) := by
+      nth_rw 1 [this]; rw [smul_add, smul_add, ← hab, add_smul];
+      rw [← add_assoc, ← add_assoc]; simp; rw [add_assoc, add_comm (b • j.1), ← add_assoc]
+    have : f₁ (a • i.1 + b • j.1 + x₀) ≤ a * f₁ (i.1 + x₀) + b * f₁ (j.1 + x₀) := by
+      rw [this]
+      rw [convexOn_iff_forall_pos] at h₁; rcases h₁ with ⟨_, h₁⟩
+      specialize @h₁ (i.1 + x₀) (by trivial) (j.1 + x₀) (by trivial) a b ha hb hab
+      simp at h₁; simp; linarith
+    apply lt_of_lt_of_le' (b := a * f₁ (i.1 + x₀) + b * f₁ (j.1 + x₀) -
+        f₁ x₀ - a * ⟪g, i.1⟫_ℝ - b * ⟪g, j.1⟫_ℝ)
+    · have : f₁ x₀ = (1 : ℝ) • (f₁ x₀) := by simp
+      rw [this, ← hab, add_smul, ← sub_sub, smul_eq_mul, smul_eq_mul]; linarith
+    · simp [this];
+  have hs2 : Convex ℝ S₂ := by
+    rw [convex_iff_forall_pos]; intro i hi j hj a b ha hb hab
+    rw [Set.mem_setOf] at hi hj ⊢; simp at hi hj ⊢
+    rw [← mul_le_mul_iff_of_pos_left ha] at hi
+    rw [← mul_le_mul_iff_of_pos_left hb] at hj
+    have : x₀ = (1 : ℝ) • x₀ := by simp only [one_smul]
+    have : a • i.1 + b • j.1 + x₀ = a • (i.1 + x₀) + b • (j.1 + x₀) := by
+      nth_rw 1 [this]; rw [smul_add, smul_add, ← hab, add_smul];
+      rw [← add_assoc, ← add_assoc]; simp; rw [add_assoc, add_comm (b • j.1), ← add_assoc]
+    have ineq : f₂ (a • i.1 + b • j.1 + x₀) ≤ a * f₂ (i.1 + x₀) + b * f₂ (j.1 + x₀) := by
+      rw [this]
+      rw [convexOn_iff_forall_pos] at h₂; rcases h₂ with ⟨_, h₂⟩
+      specialize @h₂ (i.1 + x₀) (by trivial) (j.1 + x₀) (by trivial) a b ha hb hab
+      simp at h₂; simp; linarith
+    have eq : f₂ x₀ = a * f₂ x₀ + b * f₂ x₀ := by rw [← add_mul, hab, one_mul]
+    obtain hh := sub_le_sub_left ineq (a * f₂ x₀ + b * f₂ x₀)
+    have eq' : a * (f₂ x₀ - f₂ (i.1 + x₀)) + b * (f₂ x₀ - f₂ (j.1 + x₀)) =
+      a * f₂ x₀ + b * f₂ x₀ - (a * f₂ (i.1 + x₀) + b * f₂ (j.1 + x₀)) := by ring
+    rw [← eq'] at hh; rw [eq]
+    apply le_trans (add_le_add hi hj) hh
+  have hint : Disjoint S₁ S₂ := by
+    rw [disjoint_iff]; by_contra joint
+    obtain ⟨⟨x, y⟩, ⟨hp1, hp2⟩⟩ := nmem_singleton_empty.mp joint
+    rw [Set.mem_setOf] at hp1 hp2
+    specialize hg (x + x₀); simp only [add_sub_cancel x x₀] at hg
+    apply not_le_of_gt ?_ hg
+    obtain ineq := add_lt_add_of_le_of_lt hp2 (neg_lt_neg hp1)
+    simp only [add_neg_self, neg_sub] at ineq
+    have hh : ∀ x : E, (f₁ + f₂) x = f₁ x + f₂ x := fun x => rfl
+    apply lt_of_sub_pos
+    have eq : f₂ x₀ - f₂ (x + x₀) + (⟪g, x⟫_ℝ - (f₁ (x + x₀) - f₁ x₀)) =
+      f₁ x₀ + f₂ x₀ + ⟪g, x⟫_ℝ - (f₁ (x + x₀) + f₂ (x + x₀)) := by ring
+    rwa [hh x₀, hh (x + x₀), ← eq]
+  have hso : IsOpen S₁ := by
+    apply Continuous_epi_open (f₁ := fun x ↦ f₁ (x + x₀) - f₁ x₀ - inner g x)
+    apply ContinuousOn.sub
+    · apply ContinuousOn.sub
+      · apply ContinuousOn.comp (g := f₁) (f := fun x ↦ x + x₀) (t := univ) hcon
+        · apply ContinuousOn.add continuousOn_id continuousOn_const
+        · simp
+      apply continuousOn_const
+    apply ContinuousOn.inner continuousOn_const continuousOn_id
+
+  obtain ⟨f, c, ⟨hsl, hsr⟩⟩ := geometric_hahn_banach_open hs1 hso hs2 hint
+  have eq : ∃ a : E, ∃ b : ℝ, ∀ (p : E × ℝ), f p = inner a p.1 + b * p.2 := by
+    let f1 := ContinuousLinearMap.comp f (ContinuousLinearMap.inl ℝ E ℝ)
+    let f2 := ContinuousLinearMap.comp f (ContinuousLinearMap.inr ℝ E ℝ)
+    use (toDual ℝ E).symm f1
+    use (toDual ℝ ℝ).symm f2
+    intro p
+    have : ((toDual ℝ ℝ).symm f2) * p.2 = inner (((toDual ℝ ℝ).symm f2)) p.2 := by
+      simp [f2]
+    have : ((toDual ℝ ℝ).symm f2) * p.2 = f2 p.2 := by
+      rw [this]
+      simp only [toDual_symm_apply, ContinuousLinearMap.coe_comp', Function.comp_apply,
+        ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply]
+    rw [this]; simp [f1, f2]
+    have : (p.1, (0 : ℝ)) + ((0 : E), p.2) = p := by simp
+    nth_rw 1 [← this]; rw [ContinuousLinearMap.map_add]
+  rcases eq with ⟨a, b, hab⟩
+
+  have hin : (0, 0) ∈ S₂ := by rw [Set.mem_setOf]; simp
+  obtain hc0 := hsr (0, 0) hin
+  rw [hab (0, 0)] at hc0; simp at hc0
+  have hin1 : ∀ t > 0, (0, t) ∈ S₁ := by
+    intro t ht; rw [Set.mem_setOf]; simp; linarith
+  have htp : ∀ t > 0, b * t < c := by
+      intro t ht; obtain hin1 := hin1 t ht
+      specialize hsl (0, t) hin1; specialize hab (0, t); simp at hab
+      linarith
+  have ceq0 : c = 0 := by
+    by_contra hc; push_neg at hc; have hc : c < 0 := lt_of_le_of_ne hc0 hc
+    by_cases hb : b ≥ 0
+    · specialize htp 1 (by linarith); rw [mul_one] at htp
+      linarith
+    push_neg at hb
+    have pos : (c / (2 * b)) > 0 := by
+      apply div_pos_of_neg_of_neg hc (by linarith)
+    specialize (htp (c / (2 * b)) pos); field_simp [hb] at htp
+    have eq : b * c / (2 * b) = c / 2 := by
+      ring_nf; simp; field_simp [hb]
+      rw [mul_div_right_comm, div_self (by linarith), one_mul]
+    rw [eq] at htp; linarith
+  have bleq0 : b < 0 := by
+    rw [ceq0] at htp
+    specialize htp 1 (by linarith); rw [mul_one] at htp; linarith
+  let hata := - (1 / b) • a
+
+  have g1 : g + hata ∈ {g | HasSubgradientAt f₁ g x₀} := by
+    rw [Set.mem_setOf]; unfold HasSubgradientAt; intro x
+    simp [hata]
+    have hin1 : ∀ t > 0, (x - x₀, f₁ x - f₁ x₀ - ⟪g, x - x₀⟫_ℝ + t) ∈ S₁ := by
+      intro t ht
+      rw [Set.mem_setOf]; simp; exact ht
+    have ineq : ∀ t > 0, 0 < b⁻¹ * ⟪a, x - x₀⟫_ℝ + f₁ x - f₁ x₀ - ⟪g, x - x₀⟫_ℝ + t := by
+      intro t ht
+      specialize hsl (x - x₀, f₁ x - f₁ x₀ - ⟪g, x - x₀⟫_ℝ + t) (hin1 t ht)
+      rw [ceq0, hab (x - x₀, f₁ x - f₁ x₀ - ⟪g, x - x₀⟫_ℝ + t)] at hsl; simp at hsl
+      obtain ineq := (mul_lt_mul_left_of_neg (inv_lt_zero.mpr bleq0)).mpr hsl
+      simp at ineq
+      rw [mul_add, ← mul_assoc, inv_mul_cancel (ne_of_lt bleq0), one_mul] at ineq
+      rw [← add_assoc, add_sub, add_sub] at ineq; exact ineq
+    rw [inner_add_left, inner_neg_left, real_inner_smul_left]
+    rw [← add_assoc]; simp
+    have : b⁻¹ * ⟪a, x - x₀⟫_ℝ + f₁ x - f₁ x₀ - ⟪g, x - x₀⟫_ℝ ≥ 0 := leq_tendsto_zero ineq
+    linarith
+  have g2 : - hata ∈ {g | HasSubgradientAt f₂ g x₀} := by
+    rw [Set.mem_setOf]; unfold HasSubgradientAt; intro x
+    simp [hata];
+    have hin2 : (x - x₀, f₂ x₀ - f₂ x) ∈ S₂ := by rw [Set.mem_setOf]; simp
+    specialize hsr (x - x₀, f₂ x₀ - f₂ x) hin2
+    rw [ceq0, hab (x - x₀, f₂ x₀ - f₂ x)] at hsr; simp at hsr
+    obtain ineq := (mul_le_mul_left_of_neg (inv_lt_zero.mpr bleq0)).mpr hsr
+    rw [mul_add, ← real_inner_smul_left, mul_zero, ← mul_assoc,
+        inv_mul_cancel (ne_of_lt bleq0), one_mul] at ineq
+    linarith
+  use (g + hata); constructor; exact g1
+  use (- hata); constructor; exact g2; simp
+
+end computation
+
+/-! ### Examples of `Subderiv` -/
+
+section
+
+theorem SubderivAt_of_norm_at_zero : SubderivAt (fun (x : E) => ‖x‖) 0 = {g | ‖g‖ ≤ 1} := by
+  ext g
+  constructor
+  · intro hg; by_contra h
+    have hg' : ‖g‖ > 1 := not_le.mp h
+    specialize hg g
+    simp only [sub_zero, norm_zero, zero_add, real_inner_self_eq_norm_mul_norm] at hg
+    have : ‖g‖ * ‖g‖ > 1 * ‖g‖ := mul_lt_mul_of_pos_right hg' (by linarith)
+    simp only [one_mul] at this
+    apply not_lt.mpr hg this
+  intro hg y
+  calc
+    ‖(0 : E)‖ + inner g (y - 0) = inner g y := by simp only [norm_zero, zero_add, sub_zero]
+    _ ≤ ‖g‖ * ‖y‖ := real_inner_le_norm g y
+    _ ≤ 1 * ‖y‖ := mul_le_mul_of_nonneg_right hg (norm_nonneg y)
+    _ = ‖y‖ := by simp only [one_mul]
+
+theorem SubderivAt_abs (x : ℝ) :
+    SubderivAt abs x = if x = 0 then Icc (-1) 1 else {Real.sign x} := by
+  rw [eq_ite_iff]
+  by_cases h : x = 0
+  · left;
+    constructor
+    · exact h
+    have h2 : Icc (-1 : ℝ) 1 = {g | ‖g‖ ≤ 1} := by
+      ext y; simp only [Icc, mem_setOf, norm]
+      have : |y| ≤ 1 ↔ -1 ≤ y ∧ y ≤ 1 := by apply abs_le
+      exact (Iff.symm this)
+    rw [h2, h]
+    apply SubderivAt_of_norm_at_zero
+  right
+  constructor
+  · exact h
+  ext g
+  constructor
+  · intro hg
+    by_cases hx : x > 0
+    · by_contra gne
+      by_cases glt : g < 1
+      · specialize hg 0
+        have ineq : (0 : ℝ) < 0 := by
+          calc
+            0 ≥ x + g * (-x):= by
+              simp only [abs_zero, zero_sub, abs_pos_of_pos, abs_of_pos hx] at hg
+              have : inner g (-x) = g * (-x)  := by rfl
+              rwa [this] at hg
+            _ = x * (1 - g) := by ring
+            _ > 0 := mul_pos hx (by linarith)
+        exact LT.lt.false ineq
+      specialize hg (x + 1)
+      have : x + 1 > 0 := by linarith
+      simp only [abs_of_pos hx, abs_of_pos this, add_le_add_iff_left, add_sub_cancel'] at hg
+      apply glt
+      have h1: g ≤ 1 := by
+        calc
+          g = inner g 1 := by simp
+          _ ≤ 1 := hg
+      simp only [Real.sign_of_pos hx] at gne
+      exact Ne.lt_of_le gne h1
+    have hx : x < 0 := Ne.lt_of_le h (not_lt.mp hx)
+    rw [Real.sign_of_neg hx]
+    by_contra gne
+    by_cases glt : g < -1
+    · specialize hg (x - 1)
+      have : x - 1 < 0 := by linarith
+      simp only [abs_of_neg this, abs_of_neg hx, abs_zero, zero_sub] at hg
+      have : -g ≤ 1 := by
+        calc
+          -g = inner g (x - 1 - x) := by simp
+          _ ≤ 1 := by linarith [hg]
+      linarith
+    specialize hg 0
+    have eq1 : inner g (-x) = g * (-x) := rfl
+    have eq2 : -x + g * -x = -x * (1 + g) := by ring
+    simp only [abs_zero, zero_sub, abs_of_neg hx, eq1, eq2] at hg
+    have : -x * (1 + g) > 0 := by
+      apply mul_pos (by linarith)
+      have : g > -1 := Ne.lt_of_le' gne (not_lt.mp glt)
+      linarith
+    linarith
+  intro hg y
+  by_cases hx : x > 0
+  · simp only [Real.sign_of_pos hx] at hg
+    calc
+      |x| + inner g (y - x) = x + inner 1 (y - x) := by rw [abs_of_pos hx, hg]
+      _ = y := by simp
+      _ ≤ |y| := le_abs_self y
+  have hx : x < 0 := Ne.lt_of_le h (not_lt.mp hx)
+  simp only [Real.sign_of_neg hx] at hg
+  calc
+    |x| + inner g (y - x) = -x + inner (-1) (y - x) := by rw [abs_of_neg hx, hg]
+    _ = -y := by simp; ring
+    _ ≤ |y| := neg_le_abs y
 
 end

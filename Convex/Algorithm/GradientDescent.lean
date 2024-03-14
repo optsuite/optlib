@@ -48,7 +48,7 @@ lemma mono_sum_prop_primal' (mono : ∀ k : ℕ, f (g (k + 1)) ≤ f (g k)):
   intro n
   have h : (n + 1) * f (g (n.succ + 1)) / (↑n + 1 + 1)
         ≤ (Finset.range n.succ).sum (fun (k : ℕ) ↦ f (g (k + 1))) / (↑n + 1 + 1) :=
-    div_le_div_of_le (by linarith) (mono_sum_prop_primal mono (n.succ - 1))
+    div_le_div_of_nonneg_right (mono_sum_prop_primal mono (n.succ - 1)) (by linarith)
   calc
     _ = ((Finset.range (n.succ)).sum (fun (k : ℕ) ↦ f (g (k + 1)))) / (n.succ + 1)
         + f (g (n.succ + 1)) / (n.succ + 1) := by rw [Finset.sum_range_succ, add_div]
@@ -248,7 +248,7 @@ lemma gradient_method (hfun: ConvexOn ℝ Set.univ f) (step₂ : alg.a ≤ 1 / a
       _ ≤ (Finset.range (k + 1)).sum (fun (k : ℕ) ↦ f (alg.x (k + 1)) - f xm) / (k + 1) :=
         sum_prop_1
       _ ≤ 1 / (2 * alg.a) * (‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2) / (k + 1) :=
-        div_le_div_of_le tt1 sum_prop
+        div_le_div_of_nonneg_right sum_prop tt1
       _ = 1 / (2 * (k + 1) * alg.a) * (‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2) := by simp; ring_nf
   have t₃ : ‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2 ≤  ‖x₀ - xm‖ ^ 2 := by simp
   exact le_mul_of_le_mul_of_nonneg_left h t₃ (by linarith)

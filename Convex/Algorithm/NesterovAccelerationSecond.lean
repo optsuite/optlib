@@ -17,7 +17,7 @@ import Mathlib.Algebra.Order.Field.Basic
 
 -/
 
-local notation "⟪" alg.x ", " y "⟫" => @inner ℝ _ _ alg.x y
+local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 
 section Nesterov_acceleration
 
@@ -396,7 +396,7 @@ instance {f h : E → ℝ} {f' : E → E} {x0 : E} [p : Nesterov_second_fix_step
   cond := by
     intro n; rw [p.teq n, p.teq (n + 1), p.γeq n, p.γeq (n + 1)]; field_simp [p.hl]
     rw [← div_div, ← div_div, ← div_div]
-    repeat apply div_le_div_of_le (by positivity)
+    repeat apply div_le_div_of_nonneg_right _ (by positivity)
     rw [pow_two, ← mul_assoc, mul_div_assoc, div_self, mul_one]
     · calc
         _ = n ^ 2 + (2 : ℝ) * n := by ring_nf

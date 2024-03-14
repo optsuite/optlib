@@ -76,7 +76,7 @@ theorem proximal_gradient_method_converge : ∀ (k : ℕ+),
       _ ≤ f x - alg.t * inner (f' x) (Gt x) + alg.t / 2 * ‖Gt x‖ ^ 2 := by
         apply add_le_add_left
         apply mul_le_mul_of_nonneg_right
-        apply div_le_div_of_le (by norm_num) _
+        apply div_le_div_of_nonneg_right _ (by norm_num)
         calc
           alg.t ^ 2 * alg.L ≤ alg.t * (1 / alg.L) * alg.L := by
             rw [pow_two]; apply mul_le_mul_of_nonneg_right

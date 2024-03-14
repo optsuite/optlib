@@ -115,7 +115,7 @@ theorem Banach_SubderivWithinAt.Nonempty (hc : ContinuousOn f (interior s)) (hx 
   let h := - (1 / u) • g.1
   have : ∀ (x : E), ‖h x‖ ≤ ((1 / u) * ‖φ‖) * ‖x‖ := by
     intro x; field_simp [h];  simp only [abs_of_pos hu0]
-    apply div_le_div_of_le (by linarith)
+    apply div_le_div_of_nonneg_right _ (by linarith)
     calc
       |φ (x, 0)| = ‖φ (x, 0)‖ := rfl
       _  ≤ ‖φ‖ * ‖(x , (0 : ℝ))‖ := ContinuousLinearMap.le_opNorm φ (x, 0)

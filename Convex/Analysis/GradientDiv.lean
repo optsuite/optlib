@@ -10,19 +10,18 @@ import Mathlib.Analysis.Calculus.Gradient.Basic
 import Convex.Function.ConvexFunction
 import Convex.Analysis.Lemmas
 
-/- Cao Zhipeng, HUST ; Yu Penghao, PKU-/
-
 /-!
 # Gradient.division
 
 ## Main results
 
 This file contains the division parts of gradient, which can't be found in `fderiv`.
+
 As the functions discussed in this file are restricted to `E → ℝ `
+
 Two main theorems are formalized in this file
 * `HasGradientAt.one_div`, shows the gradient at `x` of `1 / f x` where `f x ≠ 0`.
-* `HasGradientAt.div`, shows the gradient at `x` of `f x / g x` where `g x ≠ 0`.\
-need to update and modify
+* `HasGradientAt.div`, shows the gradient at `x` of `f x / g x` where `g x ≠ 0`.
 -/
 
 variable (a b c d : ℝ)

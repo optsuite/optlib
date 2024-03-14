@@ -6,6 +6,17 @@ Authors: Yuxuan Wu, Chenyi Li
 import Convex.Function.Proximal
 import Mathlib.Algebra.Order.Field.Basic
 
+/-!
+# NesterovAccelerationSecond
+
+## Main results
+
+  This file mainly concentrates on the second version of Nesterov algorithm for composite optimization problems.
+
+  We prove the O(1 / k ^ 2) rate for this algorithm.
+
+-/
+
 local notation "⟪" alg.x ", " y "⟫" => @inner ℝ _ _ alg.x y
 
 section Nesterov_acceleration

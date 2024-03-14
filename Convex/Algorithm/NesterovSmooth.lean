@@ -4,9 +4,16 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Ziyu Wang, Zaiwen Wen
 -/
 import Convex.Function.Lsmooth
+
 /-!
-  the nesterov method for convex smooth functions
-  need to be modiefied to work for nonconvex functions and gradient
+# NesterovSmooth
+
+## Main results
+
+  This file mainly concentrates on the Nesterov algorithm for smooth convex optimization problems.
+
+  We prove the O(1 / k ^ 2) rate for this algorithm.
+
 -/
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 

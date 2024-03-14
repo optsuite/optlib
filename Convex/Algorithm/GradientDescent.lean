@@ -4,8 +4,17 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Ziyu Wang, Zaiwen Wen
 -/
 import Convex.Function.Lsmooth
+
 /-!
-  the convergence of the gradient method for the convex function
+# GradientDescent
+
+## Main results
+
+  This file mainly concentrates on the Gradient Descent algorithm for
+  smooth convex optimization problems.
+
+  We prove the O(1 / k) rate for this algorithm.
+
 -/
 
 section descent_lemma

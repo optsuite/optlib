@@ -8,7 +8,15 @@ import Mathlib.Data.Fintype.Order
 import Convex.Function.Subgradient
 
 /-!
-# Convergence of Subgradient method
+# SubgradientMethod
+
+## Main results
+
+  This file mainly concentrates on the subgradient algorithm for
+  unconstrained nonsmooth optimization problems.
+
+  We prove the convergence rate with different kinds of step size.
+
 -/
 
 open Filter Topology Set InnerProductSpace Finset

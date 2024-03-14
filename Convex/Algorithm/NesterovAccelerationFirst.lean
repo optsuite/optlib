@@ -5,6 +5,17 @@ Authors: Yuxuan Wu, Chenyi Li
 -/
 import Convex.Function.Proximal
 
+/-!
+# NesterovAccelerationFirst
+
+## Main results
+
+  This file mainly concentrates on the first version of Nesterov algorithm for composite optimization problems.
+
+  We prove the O(1 / k ^ 2) rate for this algorithm.
+
+-/
+
 local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 
 section Nesterov_first

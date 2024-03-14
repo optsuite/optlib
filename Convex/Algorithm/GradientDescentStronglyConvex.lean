@@ -9,7 +9,15 @@ import Convex.Function.StronglyConvex
 import Convex.Algorithm.GradientDescent
 
 /-!
-  the convergence of gradient descent method for strongly convex function
+# GradientDescentStronglyConvex
+
+## Main results
+
+  This file mainly concentrates on the Gradient Descent algorithm for
+  smooth strongly convex optimization problems.
+
+  We prove the O(ρ^k) rate for this algorithm.
+
 -/
 
 section Strongly_Convex_Gradient_Descent

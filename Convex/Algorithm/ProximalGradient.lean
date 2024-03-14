@@ -5,6 +5,18 @@ Authors: Shengyang Xu, Chenyi Li
 -/
 import Convex.Function.Proximal
 
+/-!
+# ProximalGradient
+
+## Main results
+
+  This file mainly concentrates on the proximal gradient algorithm for
+  composite optimization problems.
+
+  We prove the O(1 / k) rate for this algorithm.
+
+-/
+
 section method
 
 open Set

@@ -10,17 +10,32 @@ import Convex.Optimality.OptimalityConditionOfUnconstrainedProblem
 import Convex.Analysis.Lemmas
 
 /-!
-  This file mainly concentrates on the properties of the L smooth function.
-  Firstly, we proof the second order upper bound theorem, i.e.
-    Let f be a Lipschitz smooth function defined on a convex set s. f is l-Lipschitz smooth on s.
+# Lsmooth
+
+## Main results
+
+This file mainly concentrates on the properties of the L smooth function.
+
+The main theorem is given as:
+
+* We proof the second order upper bound theorem, i.e.
+
+  Let f be a Lipschitz smooth function defined on a convex set s. f is l-Lipschitz smooth on s.
+
     f(y) ≤ f(x) + ∇ f(x)^T (y-x) + 1 / 2 * ‖y - x‖ ^ 2 ∀ x, y ∈ s.
-  Then we proof the properties of a convex l-Lipschitz smooth function
-    Let f be a differentiable convex function defined on ℝ^n,
-    then the following statement is equivalent
-      f is l - Lipschitz smooth on ℝ^n.
-      g(x) = 1 / 2 * ‖x‖ ^ 2 - f(x)  is convex .
-      (∇ f(x) - ∇ f(y)) ^ T(x- y) ≥ 1 / l * ‖∇ f(x) - ∇ f(y)‖ ^ 2 ∀ x, y ∈ ℝ^n.
-  Some relative lemmas are also contained
+
+* We proof the properties of a convex l-Lipschitz smooth function
+
+  Let f be a differentiable convex function defined on ℝ^n, then the following statement is equivalent
+
+    (a) f is l - Lipschitz smooth on ℝ^n.
+
+    (b) g(x) = 1 / 2 * ‖x‖ ^ 2 - f(x)  is convex .
+
+    (c) (∇ f(x) - ∇ f(y)) ^ T(x- y) ≥ 1 / l * ‖∇ f(x) - ∇ f(y)‖ ^ 2 ∀ x, y ∈ ℝ^n.
+
+* Some relative lemmas are also contained
+
 -/
 
 section

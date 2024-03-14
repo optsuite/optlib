@@ -10,14 +10,24 @@ import Convex.Analysis.Calculation
 import Convex.Analysis.Lemmas
 
 /-!
-  This file mainly concentrates on the differentiable convex function and its properties.
-  Let f be a smooth function defined on a convex set s. Then the following statement is equivalent
-    f is convex on s.
-    (first order condition) f(y) ≥ f(x) + ∇ f(x)^T (y-x) ∀ x, y ∈ s.
-    (monotonic of gradient) (∇ f(x) - ∇ f(y))^T (x-y) ≥ 0  ∀ x, y ∈ s.
+# ConvexFunction
+
+## Main results
+
+This file mainly concentrates on the differentiable convex function and its properties.
+
+The main theorem is given as:
+
+Let f be a smooth function defined on a convex set s. Then the following statement is equivalent
+
+  (a)  f is convex on s.
+
+  (b)  (first order condition) f(y) ≥ f(x) + ∇ f(x)^T (y-x) ∀ x, y ∈ s.
+
+  (c)  (monotonic of gradient) (∇ f(x) - ∇ f(y))^T (x-y) ≥ 0  ∀ x, y ∈ s.
+
   Besides we also proof the corresponding properties for strict convex function.
-  Note that in this file, if we do not assume f has gradient, the assumption on the space
-  is that E is NormedAddCommGroup E and NormedSpace ℝ E
+
 -/
 open InnerProductSpace
 

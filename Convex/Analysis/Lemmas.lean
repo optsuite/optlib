@@ -7,6 +7,20 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Convex.Analysis.Calculation
 
+/-!
+# Lemmas
+
+## Main results
+
+This file contains the following parts of basic properties of continuous and differentiable lemmas
+* the equivalent definition of continuous functions
+* the equivalent definition of fderiv and gradient
+* the deriv of composed function on a segment
+* the gradient of special functions with inner product and norm
+* the taylor expansion of a differentiable function locally
+* the langrange interpolation of a differentiable function
+-/
+
 section continuous
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

@@ -6,8 +6,6 @@ Authors: Chenyi Li, Zaiwen Wen
 import Mathlib.Analysis.Convex.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Positive
-import Convex.Analysis.Calculation
-import Convex.Analysis.Lemmas
 import Convex.Function.ConvexFunction
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
@@ -66,7 +64,7 @@ theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
           specialize hT2 a this
           simp at hT2
           rw [abs_lt] at hT2
-          rcases hT2 with ⟨hs1, hs2⟩
+          rcases hT2 with ⟨_, hs2⟩
           rw [sub_lt_iff_lt_add] at hs2
           apply lt_trans hs2
           · linarith

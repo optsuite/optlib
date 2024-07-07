@@ -25,10 +25,11 @@ This file contains the following parts of gradient.
 -/
 
 noncomputable section
+set_option checkBinderAnnotations false
 
 open Topology InnerProductSpace Set
 
-variable {𝕜 F : Type*} [IsROrC 𝕜]
+variable {𝕜 F : Type*} [RCLike 𝕜]
 
 variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
@@ -113,6 +114,10 @@ theorem HasGradientWithinAt.const_smul' (h : HasGradientWithinAt f f' s x) :
 theorem HasGradientAt.const_smul' (h : HasGradientAt f f' x) :
     HasGradientAt (fun x => c • f x) (c • f') x := by
   exact HasGradientAt.const_smul h c
+
+theorem gradient_const_smul' (h : DifferentiableAt ℝ f x) (c : ℝ) :
+    ∇ (fun y => c • f y) x = c • ∇ f x :=
+  (h.hasGradientAt.const_smul c).gradient
 
 end ConstSmul
 

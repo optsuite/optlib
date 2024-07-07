@@ -9,6 +9,8 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Convex.Analysis.Calculation
 import Convex.Analysis.Lemmas
 
+set_option linter.unusedVariables false
+
 /-!
 # ConvexFunction
 
@@ -29,6 +31,7 @@ Let f be a smooth function defined on a convex set s. Then the following stateme
   Besides we also proof the corresponding properties for strict convex function.
 
 -/
+
 open InnerProductSpace
 
 noncomputable section
@@ -102,7 +105,8 @@ theorem Convex_first_order_condition {s : Set E}
       apply min_le_left
       exact h₃
     have h4: b1 * ‖x - y‖ = δ := by
-      rw[div_mul_cancel]
+      simp [b1]
+      rw [div_mul_cancel₀]
       apply ne_of_gt h₃
     rw[← h4]
     apply h3
@@ -114,7 +118,7 @@ theorem Convex_first_order_condition {s : Set E}
         ring
       rw [this]
       apply neg_le_abs
-    have l2: f x + (f' x) (x' - x) - f x'≤ e1 * ‖x - x'‖ := by
+    have _: f x + (f' x) (x' - x) - f x'≤ e1 * ‖x - x'‖ := by
       apply le_trans l1 converge
     linarith
   have H3: f y = f x + (f' x) (y - x) - ε := by simp only [ε, map_sub, sub_sub_cancel]
@@ -124,7 +128,7 @@ theorem Convex_first_order_condition {s : Set E}
       e1 * (b * ‖x - y‖) = ε / (2 * ‖x - y‖) * (b * ‖x - y‖):= by rfl
       _ = ((ε / 2) / ‖x - y‖) *(b * ‖x - y‖):= by ring
       _ = ((ε / 2) / ‖x - y‖) * ‖x - y‖ * b := by rw[mul_comm b, mul_assoc]
-      _ = (ε / 2) * b := by rw [div_mul_cancel]; apply ne_of_gt h₃
+      _ = (ε / 2) * b := by rw [div_mul_cancel₀]; apply ne_of_gt h₃
       _ = ε * b / 2 := by ring
   rw [l4] at H1; rw [smul_eq_mul, smul_eq_mul] at cxf
   have H4: a * f x + b * f y = f x + b * (f' x) (y - x) - b * ε := by rw [H3]; ring
@@ -211,7 +215,7 @@ open Set InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-variable {x : E} {f : E → ℝ} {f' : E → E} {s : Set E}
+variable {f : E → ℝ} {f' : E → E} {s : Set E} {x : E}
 
 theorem Convex_first_order_condition' (h : HasGradientAt f (f' x) x) (hf : ConvexOn ℝ s f)
     (xs : x ∈ s) : ∀ (y : E), y ∈ s → f x + inner (f' x) (y - x) ≤ f y := by
@@ -240,8 +244,7 @@ theorem Convex_monotone_gradient' (hfun: ConvexOn ℝ s f) (h : ∀ x ∈ s, Has
   have equiv : ∀ x y : E, inner (f' x - f' y) (x - y) = (g x - g y) (x - y) := by
     intro x y
     rw [← InnerProductSpace.toDual_apply]
-    simp only [ContinuousLinearMap.strongUniformity_topology_eq, map_sub,
-      ContinuousLinearMap.coe_sub', Pi.sub_apply, toDual_apply, g]
+    simp only [map_sub, ContinuousLinearMap.coe_sub', Pi.sub_apply, toDual_apply, g]
   intro x hx y hy
   rw [equiv]
   exact Convex_monotone_gradient hfun h' x hx  y hy
@@ -281,7 +284,7 @@ theorem monotone_gradient_convex' (h₁ : Convex ℝ s) (hf : ∀ x ∈ s, HasGr
         rw [smul_sub, add_sub, sub_smul, one_smul, add_sub_right_comm]
       rw [e4]
       apply convex_iff_forall_pos.mp h₁ xs ys (by linarith) (by linarith) (by norm_num)
-    rw [add_sub_cancel', inner_smul_right] at hh
+    rw [add_sub_cancel_left, inner_smul_right] at hh
     exact (mul_nonneg_iff_of_pos_left ht1).mp hh
   have h2 : ∃ c ∈ Set.Ioo 0 1, g' c = (g 1 - g 0) / (1 - 0) := by
     apply exists_hasDerivAt_eq_slope

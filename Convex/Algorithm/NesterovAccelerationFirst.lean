@@ -62,7 +62,7 @@ theorem Nesterov_first_converge : ∀ k, f (alg.x (k + 1)) + h (alg.x (k + 1)) -
       h (alg.x (k + 1)) = (1 / alg.t k) * (alg.t k * h (alg.x (k + 1))
           + ⟪alg.y k - alg.x (k + 1) - (alg.t k) • (f' (alg.y k)), z - alg.x (k + 1)⟫
           - ⟪alg.y k - alg.x (k + 1) - (alg.t k) • (f' (alg.y k)), z - alg.x (k + 1)⟫) := by
-        rw [add_sub_cancel, ← mul_assoc, one_div_mul_cancel]; simp
+        rw [← add_sub, sub_self, add_zero, ← mul_assoc, one_div_mul_cancel]; simp
         linarith [(alg.tbound k).1]
       _ ≤ (1 / alg.t k) * (alg.t k * h z
           - ⟪alg.y k - alg.x (k + 1) - (alg.t k) • (f' (alg.y k)), z - alg.x (k + 1)⟫) := by
@@ -142,7 +142,7 @@ theorem Nesterov_first_converge : ∀ k, f (alg.x (k + 1)) + h (alg.x (k + 1)) -
       _ = (alg.γ k) * (1 / alg.t k) * ⟪alg.x (k + 1) - alg.y k, xm - alg.x (k + 1)⟫ +
           (1 - alg.γ k) * (1 / alg.t k) * ⟪alg.x (k + 1) - alg.y k, alg.x k - alg.x (k + 1)⟫ +
           1 / (2 * alg.t k) * ‖alg.x (k + 1) - alg.y k‖ ^ 2 := by
-        rw [mul_add, mul_add, add_add_add_comm, ← add_mul, add_sub_cancel'_right]
+        rw [mul_add, mul_add, add_add_add_comm, ← add_mul, add_sub_cancel]
         rw [smul_eq_mul, smul_eq_mul, ← mul_assoc, ← mul_assoc, one_mul]
       _ = 1 / (alg.t k) * ⟪alg.x (k + 1) - alg.y k,
           (1 - alg.γ k) • (alg.x k) + (alg.γ k) • xm - alg.x (k + 1)⟫ +
@@ -194,7 +194,7 @@ theorem Nesterov_first_converge : ∀ k, f (alg.x (k + 1)) + h (alg.x (k + 1)) -
           (‖alg.y k - (1 - alg.γ k) • (alg.x k) - (alg.γ k) • xm‖ ^ 2
           - ‖alg.x (k + 1) - (1 - alg.γ k) • (alg.x k) - (alg.γ k) • xm‖ ^ 2) := φieq3
       _ = (alg.γ k) ^ 2 / (2 * alg.t k) * (‖v k - xm‖ ^ 2 - ‖v (k + 1) - xm‖ ^ 2) := by
-        rw [eq k, add_sub_cancel', ← smul_sub, mul_sub, mul_sub, norm_smul, mul_pow, norm_eq_abs]
+        rw [eq k, add_sub_cancel_left, ← smul_sub, mul_sub, mul_sub, norm_smul, mul_pow, norm_eq_abs]
         rw [sq_abs, mul_left_comm, ← mul_assoc, mul_one_div]
         have h9 : 1 / (2 * alg.t k) * ‖alg.x (k + 1)
             - (1 - alg.γ k) • alg.x k - alg.γ k • xm‖ ^ 2 =
@@ -276,7 +276,7 @@ theorem Nesterov_first_converge : ∀ k, f (alg.x (k + 1)) + h (alg.x (k + 1)) -
           apply add_le_add_right; rw [mul_le_mul_left]; simp; linarith [φieq3]
           linarith [alg.tbound 0]
         _ = ‖alg.x 0 - xm‖ ^ 2 := by
-          rw [add_sub_cancel, mul_add, ← mul_assoc]; ring_nf
+          rw [← add_sub, sub_self, add_zero, mul_add, ← mul_assoc]; ring_nf
           rw [mul_inv_cancel, one_mul, one_mul, alg.oriy, norm_sub_rev (alg.x 1) xm]
           rw [add_comm (⟪alg.x 1 - alg.x 0, xm - alg.x 1⟫ * 2), mul_comm, ← norm_add_sq_real]
           simp; rw [norm_sub_rev]; linarith [alg.tbound 0]
@@ -353,7 +353,7 @@ theorem Nesterov_first_fix_stepsize_converge:
     _ ≤ 2 * alg.l / (k + 2) ^ 2 * ‖x0 - xm‖ ^ 2 := by
       apply mul_le_mul_of_nonneg_right; rw [alg.γeq k, alg.teq k]; field_simp
       rw [pow_two, add_comm]; rw [mul_comm ((k + 2 : ℝ) ^ 2), ← div_div, div_le_div_right]
-      rw [mul_rotate, mul_div_cancel]
+      rw [mul_rotate, ← mul_div, div_self, mul_one]
       simp; field_simp; apply sq_nonneg
 
 end Nesterov_first_fix_stepsize

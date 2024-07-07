@@ -93,7 +93,7 @@ variable [PseudoMetricSpace E] [ProperSpace E]
 
 /- If a premiage of `f` is nonempty and compact,
   then its minimum point set `{x | IsMinOn f univ x}` is compact -/
-  
+
 theorem IsCompact_isMinOn_of_isCompact_preimage {y : F}
     (h1 : (f ⁻¹' Set.Iic y).Nonempty) (h2 : IsCompact (f ⁻¹' Set.Iic y)) :
     IsCompact {x | IsMinOn f univ x} := by
@@ -130,7 +130,7 @@ theorem isMinOn_unique {x y : E} (hx : IsMinOn f univ x) (hy : IsMinOn f univ y)
   by_contra neq
   have : (0 : 𝕜) < (1 : 𝕜) := one_pos
   obtain ⟨a, lta, alt⟩ := exists_between this
-  have eqone : a + (1 - a) = 1 := add_sub_cancel'_right a 1
+  have eqone : a + (1 - a) = 1 := add_sub_cancel a 1
   have lta' : 0 < 1 - a := sub_pos_of_lt alt
   have h : f (a • x + (1 - a) • y) < f y := by
     apply Eq.trans_gt (max_eq_right (hx trivial))

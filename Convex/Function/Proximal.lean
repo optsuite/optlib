@@ -5,12 +5,12 @@ Authors: Shengyang Xu, Chenyi Li
 -/
 import Mathlib.Topology.Semicontinuous
 import Mathlib.Analysis.Convex.Basic
-import Convex.Analysis.Calculation
 import Convex.Function.Subgradient
 import Convex.Function.Lsmooth
 import Convex.Function.StronglyConvex
-import Convex.Analysis.Lemmas
 import Convex.Function.MinimaClosedFunction
+
+set_option linter.unusedVariables false
 
 /-!
  proximal operator
@@ -753,4 +753,3 @@ theorem proximal_add_sq (a : E) {l : ℝ} (lpos : 0 < l) (f : E → ℝ):
     linarith [cond]; simp; linarith
 
 end properties
-

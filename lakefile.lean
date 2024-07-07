@@ -2,12 +2,12 @@ import Lake
 open Lake DSL
 
 package «convex» where
-  leanOptions :=
-    #[ ⟨`pp.unicode.fun, true⟩
-     , ⟨`pp.proofs.withType, false⟩
-     , ⟨`autoImplicit, false⟩
-     , ⟨`relaxedAutoImplicit, false⟩
-     ]
+  leanOptions := #[
+    ⟨`pp.unicode.fun, true⟩,
+    ⟨`pp.proofs.withType, false⟩,
+    ⟨`autoImplicit, false⟩,
+    ⟨`relaxedAutoImplicit, false⟩
+  ]
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git"

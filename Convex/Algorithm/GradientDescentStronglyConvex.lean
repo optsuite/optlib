@@ -84,7 +84,7 @@ theorem Strong_convex_Lipschitz_smooth (hsc: StrongConvexOn univ m f) (mp : m > 
       calc
         _ ≤ ((m + l) * inner u v) / (m + l) := by
           rw [div_le_div_right]; apply h0; apply mlpos
-        _ = inner u v := by field_simp; rw [mul_comm]
+        _ = inner u v := by field_simp
       apply coef
     show inner alpha beta ≥ m * l / (m + l) * ‖beta‖ ^ 2 + 1 / (m + l) * ‖alpha‖ ^ 2
     apply eq3
@@ -217,7 +217,7 @@ lemma gradient_method_strong_convex (hm : m > 0) (min : IsMinOn f univ xm)
         rw [mul_assoc _ _ (‖x₀ - xm‖ ^ 2)]
         apply mul_le_mul_of_nonneg_left; apply IH1; apply eq
     _ = (1 - alg.a * (2 * m * alg.l / (m + alg.l))) ^ (q + 1) * ‖x₀ - xm‖ ^ 2 := by
-        simp; left; rw [pow_succ]
+        simp; left; rw [pow_succ, pow_mul_comm']
     _ = (1 - alg.a * (2 * m * alg.l / (m + alg.l))) ^ Nat.succ q * ‖x₀ - xm‖ ^ 2 := by simp
 
 end Strongly_Convex_Gradient_Descent

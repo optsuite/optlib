@@ -7,6 +7,11 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Convex.Analysis.Calculation
 
+section continuous
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {f : E → ℝ} {f' : E → (E →L[ℝ] ℝ)} {x y x' : E}
+
 /-!
 # Lemmas
 
@@ -21,15 +26,6 @@ This file contains the following parts of basic properties of continuous and dif
 * the langrange interpolation of a differentiable function
 -/
 
-section continuous
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-variable {f : E → ℝ} {f' : E → (E →L[ℝ] ℝ)} {x y x' : E}
-
-/-
-  If f is continuous at x, then for any positive ε, there exists a positive δ such that
-  for any point y within a distance of δ from x, the distance between f(y) and f(x) is less than ε.
--/
 theorem ContinuousAt_Convergence (h : ContinuousAt f x) : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ),
     ∀ (x' : E), ‖x - x'‖ ≤ δ → ‖f x' - f x‖ ≤ ε:= by
   rw [continuousAt_def] at h
@@ -89,7 +85,7 @@ section derivative
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-variable {x : E} {f : E → ℝ} {l a : ℝ} {f' : E → (E →L[ℝ] ℝ)} {f'' : E → E →L[ℝ] E →L[ℝ] ℝ}
+variable {f : E → ℝ} {l a : ℝ} {f' : E → (E →L[ℝ] ℝ)} {f'' : E → E →L[ℝ] E →L[ℝ] ℝ} {x : E}
 
 theorem deriv_function_comp_segment (x y : E) (h₁ : ∀ x₁ : E, HasFDerivAt f (f' x₁) x₁) :
     ∀ t₀ : ℝ , HasDerivAt (fun t : ℝ ↦ f (x + t • (y - x)))
@@ -287,8 +283,8 @@ lemma sub_normsquare_gradient (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) (m : 
   . apply hf x xs
   . have u := HasGradientAt.const_smul (gradient_norm_sq_eq_two_self x) (m / 2)
     simp at u
-    rw [smul_smul, div_mul_cancel] at u
-    apply u; norm_num
+    rw [smul_smul, div_mul_cancel_of_invertible] at u
+    apply u
 
 /-
 If the function f is first-order continuously differentiable, then

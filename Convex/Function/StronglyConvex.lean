@@ -5,9 +5,8 @@ Authors: Chenyi Li, Ziyu Wang
 -/
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Convex.Strong
-import Convex.Analysis.Calculation
 import Convex.Function.Lsmooth
-import Convex.Function.ConvexFunction
+
 /-!
   the properties of strongly convex function and gradient descent method
   for strongly convex function
@@ -136,10 +135,10 @@ theorem Strong_Convex_second_lower (hsc: StrongConvexOn s m f)
   have : m = m / 2 * 2 := by simp
   nth_rw 1 [this] at foc
   rw [← smul_smul, inner_smul_left, two_smul] at foc
-  simp only [map_div₀, IsROrC.conj_to_real, map_ofNat] at foc
-  rw [sub_add, ← mul_sub, ← inner_sub_left, ← sub_sub, sub_right_comm, add_sub_cancel] at foc
+  simp [map_div₀, map_ofNat] at foc
+  rw [sub_add, ← mul_sub, ← inner_sub_left, ← sub_sub, sub_right_comm,← add_sub x, add_sub_cancel] at foc
   have : x - y = - (y - x) := by simp
   rw [this, inner_neg_left, mul_neg, sub_neg_eq_add, real_inner_self_eq_norm_sq] at foc
-  apply foc
+  linarith
 
 end Strongly_Convex

@@ -103,7 +103,6 @@ lemma one_iter (hfun : ConvexOn ℝ Set.univ f) (hg : ∀ (k : ℕ+), γ k = 2 /
       _ = alg.l * inner (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1)) +
             ((γ k) • xm)- alg.x k) + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by rw [this]
   intro k
-  have lzero:  0 < k + (1 : ℝ) := Nat.cast_add_one_pos k
   have hz : γ k ≥ (0 : ℝ) := by
     rw [hg k]
     apply div_nonneg (by norm_num); linarith

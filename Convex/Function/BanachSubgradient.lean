@@ -188,7 +188,7 @@ theorem Banach_SubderivWithinAt.Nonempty (hc : ContinuousOn f (interior s)) (hx 
       _ ≤ ((n : ℝ) / (n + 1)) * a.2 + ((1 : ℝ) / (n + 1)) * f x := by linarith
       _ = (an n).2 := rfl
     have c1 : Tendsto (fun (n : ℕ) => ((n : ℝ) / (n + 1))) atTop (nhds 1) :=
-      tendsto_coe_nat_div_add_atTop 1
+      tendsto_natCast_div_add_atTop 1
     have c2 : Tendsto (fun (n : ℕ) => ((1 : ℝ) / (n + 1))) atTop (nhds 0) :=
       tendsto_one_div_add_atTop_nhds_zero_nat
     have can1 : Tendsto (fun n => (an n).1) atTop (nhds a.1) := by

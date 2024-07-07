@@ -75,7 +75,7 @@ theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs
       apply min_le_left
       exact h₃
     have h4: b1 * ‖x - y‖= δ := by
-      rw[div_mul_cancel]
+      rw[div_mul_cancel₀]
       apply ne_of_gt h₃
     rw[← h4]
     apply h3
@@ -87,7 +87,7 @@ theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs
         ring
       rw [l11]
       apply neg_le_abs
-    have l2: f x + (f' x) (x' - x) - f x' ≤ ε * ‖x - x'‖:= by
+    have _ : f x + (f' x) (x' - x) - f x' ≤ ε * ‖x - x'‖:= by
       apply le_trans l1 converge
     linarith
   have H2: f x' ≤ f x := by
@@ -108,14 +108,14 @@ theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs
   have : ε = (f' x) (y - x) / (2 * ‖x - y‖) :=by
     rfl
   have h''' : (f' x) (y - x) =2 * ε * ‖x - y‖ :=by
-    rw [this,mul_assoc,mul_comm,mul_assoc,mul_comm ‖x - y‖ 2,div_mul_cancel]
+    rw [this,mul_assoc,mul_comm,mul_assoc,mul_comm ‖x - y‖ 2,div_mul_cancel₀]
     linarith
   rw [h'''] at H1
   have : b * (2 * ε * ‖x - y‖) - b * ε * ‖x - y‖ = b * ε * ‖x - y‖ :=by
    rw [←mul_assoc,←mul_assoc,mul_comm b 2,mul_assoc 2 b,mul_assoc 2]
    linarith
   rw [←add_sub,this] at H1
-  have sily: b * ε * ‖x - y‖ ≤ 0 :=by
+  have _ : b * ε * ‖x - y‖ ≤ 0 :=by
     linarith [H1, H2]
   have true: b * ε * ‖x - y‖ > 0 :=by
     positivity

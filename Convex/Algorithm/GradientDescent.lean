@@ -54,11 +54,7 @@ lemma mono_sum_prop_primal' (mono : ∀ k : ℕ, f (g (k + 1)) ≤ f (g k)):
         + f (g (n.succ + 1)) / (n.succ + 1) := by rw [Finset.sum_range_succ, add_div]
     _ ≥ n.succ * f (g (n.succ + 1)) / (n.succ + 1)
         + f (g (n.succ + 1)) / (n.succ + 1) := by simp; exact h
-    _ = f (g (n + 2)) * (n.succ + 1) / (n.succ + 1) := by
-      rw [← add_div]; simp
-      rw [Nat.succ_eq_add_one n, add_assoc n 1 1, one_add_one_eq_two]
-      field_simp ; ring_nf
-    _ = f (g (n + 2)) := by field_simp
+    _ = f (g (n + 2)) := by field_simp; ring_nf
 
 -- the sumation property of the gradient method
 lemma mono_sum_prop (mono : ∀ k: ℕ, f (g (k + 1)) ≤ f (g k)):
@@ -146,10 +142,9 @@ lemma convex_lipschitz (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
         · simp;
           calc l / 2 * a * a = (l * a) * (a / 2) := by ring_nf
                 _  ≤ 1 * (a / 2) := by
-                  apply mul_le_mul_of_le_of_le _ (by linarith) _ (by linarith)
+                  apply mul_le_mul_of_le_of_le _ (by linarith) (by positivity) (by linarith)
                   · exact (le_div_iff ha₂).mp ha₁
-                  · linarith [mul_pos h₂ ha₂]
-                _  = -a / 2 + a := by ring_nf
+                _  = - a / 2 + a := by ring_nf
         · exact sq_nonneg ‖f' x‖
     _ = f x - a / 2 *  ‖f' x‖ ^ 2 := by ring_nf
 
@@ -237,7 +232,7 @@ lemma gradient_method (hfun: ConvexOn ℝ Set.univ f) (step₂ : alg.a ≤ 1 / a
                 + 1 / (2 * alg.a) * (‖alg.x (j + 1) - xm‖ ^ 2 - ‖alg.x (j + 2) - xm‖ ^ 2) := by
               rw [add_sub_right_comm]; linarith
           _ = 1 / (2 * alg.a) * (‖x₀ - xm‖ ^ 2 - ‖alg.x (j.succ + 1) - xm‖ ^ 2)  := by
-              ring_nf; simp; left; rw [Nat.succ_eq_add_one j]; ring_nf
+              ring_nf; simp; left; ring_nf
   obtain sum_prop_1 := mono_sum_prop mono
   specialize sum_prop_1 k
   specialize sum_prop k
@@ -250,7 +245,6 @@ lemma gradient_method (hfun: ConvexOn ℝ Set.univ f) (step₂ : alg.a ≤ 1 / a
       _ ≤ 1 / (2 * alg.a) * (‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2) / (k + 1) :=
         div_le_div_of_nonneg_right sum_prop tt1
       _ = 1 / (2 * (k + 1) * alg.a) * (‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2) := by simp; ring_nf
-  have t₃ : ‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2 ≤  ‖x₀ - xm‖ ^ 2 := by simp
-  exact le_mul_of_le_mul_of_nonneg_left h t₃ (by linarith)
+  exact le_mul_of_le_mul_of_nonneg_left h (by simp) (by linarith)
 
 end gradient_descent

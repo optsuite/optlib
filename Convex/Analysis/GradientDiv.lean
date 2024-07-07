@@ -7,7 +7,7 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Calculus.Gradient.Basic
-import Convex.Function.ConvexFunction
+import Convex.Function.Convex_Function
 import Convex.Analysis.Lemmas
 
 /-!

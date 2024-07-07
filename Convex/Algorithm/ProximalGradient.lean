@@ -109,7 +109,7 @@ theorem proximal_gradient_method_converge : ∀ (k : ℕ+),
       _ = φ z + inner (Gt x) (x - z) - alg.t / 2 * ‖Gt x‖ ^ 2 := by
         rw [← inner_smul_right, sub_sub, ← inner_add_right]
         rw [inner_sub_left, ← sub_add, add_rotate, ← add_comm_sub, ← add_sub]
-        rw [add_sub_cancel, add_rotate, inner_add_right, ← neg_sub x z]
+        rw [← add_sub, sub_self, add_zero, add_rotate, inner_add_right, ← neg_sub x z]
         rw [inner_neg_right, ← sub_sub, sub_neg_eq_add, add_comm _ (inner (Gt x) (x - z))]
         rw [add_comm _ (inner (Gt x) (x - z)), ← add_sub _ (φ z), ← add_sub, add_assoc]
         rw [add_assoc, add_left_cancel_iff]

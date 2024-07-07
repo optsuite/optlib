@@ -17,7 +17,7 @@ import Mathlib.Algebra.Order.Field.Basic
 
 -/
 
-local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
+local notation "⟪" alg.x ", " y "⟫" => @inner ℝ _ _ alg.x y
 
 section Nesterov_acceleration
 
@@ -53,13 +53,14 @@ theorem Nesterov_second_convergence :
     intro k; obtain h1 := alg.update2 k
     rw [prox_iff_subderiv] at h1
     have upd2 := @SubderivAt.pos_smul _ _ _ ((alg.t k / alg.γ k) • h) (alg.y k) (alg.γ k) (alg.γbound k).1
-    rw [← smul_assoc, smul_eq_mul, mul_div, mul_comm, mul_div_cancel] at upd2
+    rw [← smul_assoc, smul_eq_mul, mul_div, mul_comm, ← mul_div, div_self, mul_one] at upd2
     rw [upd2]
     use (alg.y (↑k - 1) - (alg.t ↑k / alg.γ ↑k) • f' (alg.z k) - alg.y ↑k)
     constructor
     . exact h1
     . simp
-      rw [sub_right_comm, smul_sub, ← smul_assoc, smul_eq_mul, mul_div, mul_comm, mul_div_cancel]
+      rw [sub_right_comm, smul_sub, ← smul_assoc, smul_eq_mul]
+      rw [mul_div, mul_comm, ← mul_div, div_self, mul_one]
       linarith [(alg.γbound k).1]
     linarith [(alg.γbound k).1]
     apply ConvexOn.smul
@@ -105,7 +106,7 @@ theorem Nesterov_second_convergence :
     intro w k
     rw [← mul_div_right_comm, ← mul_div, ← mul_sub]
     apply (mul_le_mul_right (bsc1 k)).mp
-    rw [mul_comm, ← mul_assoc, div_mul_cancel]
+    rw [mul_comm, ← mul_assoc, div_mul, div_self, div_one]
     rw [mul_assoc]
     nth_rw 3 [mul_comm]
     rw [← mul_assoc, mul_div_left_comm, div_self, mul_one]
@@ -176,7 +177,7 @@ theorem Nesterov_second_convergence :
         have ax : (1 - alg.γ ↑k) • alg.x (↑k - 1) + alg.γ ↑k • alg.y ↑k - alg.z k =
             (1 - alg.γ k) • (alg.x (k - 1) - alg.z k) + alg.γ k • (alg.y k - alg.z k) := by
           rw [smul_sub, smul_sub, sub_add_eq_add_sub, ← add_sub_assoc, sub_sub, ← add_smul]
-          simp only [add_sub_cancel'_right, one_smul]
+          simp
         rw [ax]
         nth_rw 1 [inner_add_right]
         rw [inner_smul_right, inner_smul_right, mul_add, mul_add]
@@ -237,11 +238,11 @@ theorem Nesterov_second_convergence :
             ← sub_add_eq_add_sub, sub_self, zero_add]
         rw [← inner_sub_right, ← sub_add, (sub_add_eq_add_sub _ xm _), sub_add_cancel]
         rw [inner_sub_left, mul_sub, ← sub_add, sub_add_eq_add_sub, inner_smul_left, conj_trivial]
-        rw [← mul_assoc, div_mul_cancel, ← mul_add, ← inner_add_right]
+        rw [← mul_assoc, div_mul, div_self, div_one, ← mul_add, ← inner_add_right]
         rw [sub_add_sub_cancel, sub_self, inner_zero_right, mul_zero, zero_sub]
         rw [inner_smul_left, conj_trivial, ← mul_assoc, div_mul_eq_mul_div, ← pow_two]
         have ax : alg.γ ↑k ^ 2 / alg.t ↑k = alg.γ ↑k ^ 2 / (2 * alg.t ↑k) * 2 := by
-          rw [div_mul, mul_comm, mul_div_cancel]
+          rw [div_mul, mul_comm, ← mul_div, div_self, mul_one]
           norm_num
         rw [ax, ← sub_eq_neg_add, mul_assoc, ← mul_sub]
         apply mul_eq_mul_left_iff.mpr
@@ -251,7 +252,7 @@ theorem Nesterov_second_convergence :
         rw [inner_neg_left, sub_neg_eq_add, ← inner_add_right, smul_sub,
             add_comm, add_sub, sub_add]
         nth_rw 2 [two_smul]
-        rw [add_sub_cancel]
+        rw [← add_sub, sub_self, add_zero]
         have sqsub : ∀ a b : E, ‖a‖ ^ 2 - ‖b‖ ^ 2 = ⟪- a - b, b - a⟫ := by
           intro a b
           rw [neg_sub_left, ← neg_sub a b, add_comm, inner_neg_left, inner_neg_right, neg_neg]
@@ -300,7 +301,7 @@ theorem Nesterov_second_convergence :
           linarith [(alg.γbound (k + 1)).1]
           linarith [(alg.γbound (k + 1)).1]
         have ine := (mul_le_mul_iff_of_pos_right ax).mpr hieqmajor
-        rw [mul_comm, mul_right_comm, ← div_div, mul_div, div_mul_cancel,
+        rw [mul_comm, mul_right_comm, ← div_div, mul_div, div_mul_cancel₀,
             div_right_comm, div_self, mul_sub (1 / 2) _] at ine
         apply ine
         symm
@@ -314,9 +315,7 @@ theorem Nesterov_second_convergence :
       + 1 / 2 * ‖alg.y (k + 1) - xm‖ ^ 2 ≤
       alg.t 1 / (alg.γ 1 ^ 2) * (φ (alg.x 1) - φ xm) + 1 / 2 * ‖alg.y 1 - xm‖ ^ 2 := by
     induction' k with k ik
-    . simp only [Nat.zero_eq]
-      apply le_of_eq
-      simp
+    . simp
     have ine := decrease (Nat.toPNat' (k + 1))
     simp only [Nat.toPNat'_coe, add_pos_iff, zero_lt_one, or_true, ↓reduceIte] at ine
     apply le_trans ine
@@ -332,7 +331,7 @@ theorem Nesterov_second_convergence :
     linarith [(alg.γbound (n + 1)).1]
     linarith [(alg.γbound (n + 1)).1]
   apply (mul_le_mul_iff_of_pos_left (ax (k))).mp
-  rw [← mul_assoc, mul_div, div_mul_cancel, ← div_div, div_right_comm, div_self]
+  rw [← mul_assoc, mul_div, div_mul_cancel₀, ← div_div, div_right_comm, div_self]
   simp only [PNat.one_coe, le_refl, tsub_eq_zero_of_le] at hieqmajor
   rw [alg.oriγ, sub_self, zero_mul, sub_zero] at hieqmajor
   calc
@@ -347,7 +346,7 @@ theorem Nesterov_second_convergence :
       rw [zero_add] at ax
       have ieq := (mul_le_mul_iff_of_pos_left ax).mpr hieqmajor
       apply (add_le_add_iff_right (-(1 / 2 * ‖alg.y 1 - xm‖ ^ 2))).mp
-      rw [← zero_sub, add_sub, add_sub, add_zero, add_zero, add_sub_cancel]
+      rw [← zero_sub, add_sub, add_sub, add_zero, add_zero, ← add_sub, sub_self, add_zero]
       apply le_trans ieq
       rw [alg.oriγ]
       rw [one_pow, div_one, ← mul_assoc, mul_div, mul_one, ← div_div, div_right_comm, div_self]

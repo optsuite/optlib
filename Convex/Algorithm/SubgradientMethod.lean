@@ -91,10 +91,10 @@ theorem Lipschitz_to_bounded_subgradient (h : LipschitzWith G f ) :
     apply ne_of_gt (lt_of_le_of_lt _ h₃)
     simp only [NNReal.zero_le_coe]
   have hl : inner g (y - x) = ‖g‖ := by
-    rw[hy ,add_comm,add_sub_cancel, inner_smul_right, inner_self_eq_norm_sq_to_K]
+    rw[hy ,add_comm, ← add_sub, sub_self, add_zero, inner_smul_right, inner_self_eq_norm_sq_to_K]
     field_simp; apply pow_two
   rw [hl] at hy₂
-  have h₄: f y - f x ≥ ‖g‖ := by
+  have _ : f y - f x ≥ ‖g‖ := by
     calc
       _ ≥ f x + ‖g‖ - f x := by apply sub_le_sub_right hy₂
       _ = ‖g‖:= by ring
@@ -255,7 +255,7 @@ theorem subgradient_method_fix_step_size {t : ℝ}
     _ = 2 * ((↑k + 1) * t) * (‖x₀ - xm‖ ^ 2 / (2 * (↑k + 1) * t) + ↑alg.G ^ 2 * t / 2) := by
       field_simp; ring
 
-/-- convergence with fixed ‖x^{i+1}-x^{i}‖ --/
+/-- convergence with fixed $‖x^{i+1}-x^{i}‖$ --/
 theorem subgradient_method_fixed_distance {s : ℝ}
    (ha' : ∀ (n : ℕ), alg.a n * ‖alg.g n‖ = s) (hs : s > 0):
     ∀ (k : ℕ) ,(sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x}) - (f xm)
@@ -412,8 +412,8 @@ theorem subgradient_method_diminishing_step_size
       by_cases hG : ↑alg.G = 0
       · use 0; intro b _ ; rw[hG]; simp
         positivity
-      · have hpos': (NNReal.toReal alg.G) ^ 2 > 0 :=by
-          apply (sq_pos_iff (NNReal.toReal alg.G)).mpr; simp[hG]
+      · have hpos': (NNReal.toReal alg.G) ^ 2 > 0 := by
+          apply (sq_pos_iff).mpr; simp[hG]
         let s := {x | |x| < ε / (2 * ↑alg.G ^ 2)}
         have c₁ : ∀ x_1 ∈ s, x_1 ∈ s := by simp
         have c₂ : ∀ x_1 ∈ s, ∃ ε, 0 < ε ∧ ∀ (x_2 : ℝ), dist x_2 x_1 < ε → x_2 ∈ s := by
@@ -434,7 +434,7 @@ theorem subgradient_method_diminishing_step_size
                 field_simp; ring
               _ < (ε / (2 * ↑alg.G ^ 2) + ε / (2 * ↑alg.G ^ 2)) / 2 := by
                 apply (mul_lt_mul_left zero_lt_two).mp
-                rw [mul_div_cancel', mul_div_cancel']
+                rw [mul_div_cancel₀, mul_div_cancel₀]
                 simp [hx₁]; simp; simp
               _ = ε / (2 * ↑alg.G ^ 2) := by field_simp; ring
         have c₃ : 0 ∈ s := by

@@ -135,11 +135,11 @@ section congr
 variable {f₁ f₂ : E → ℝ} {t s : Set E}
 
 theorem SubderivAt.congr (h : f₁ = f₂) : SubderivAt f₁ x = SubderivAt f₂ x := by
-  congr; ext g; rw [h]
+  ext g; rw [h]
 
 theorem SubderivWithinAt.congr (h : ∀ y ∈ s, f₁ y = f₂ y) (hf : f₁ x = f₂ x):
     SubderivWithinAt f₁ s x = SubderivWithinAt f₂ s x := by
-  congr; ext g;
+  ext g
   exact ⟨fun hg y ys => by rw [← h y ys, ← hf]; exact hg y ys,
             fun hg y ys => by rw [h y ys, hf]; exact hg y ys⟩
 
@@ -250,7 +250,7 @@ theorem subgradientAt_mono {u v : E} {f : E → ℝ}
   specialize hu y; specialize hv x
   have ineq1 : ⟪u, x - y⟫ ≥ f x - f y := by
     rw [congrArg (inner u) (Eq.symm (neg_sub y x)), inner_neg_right]; linarith
-  have ineq2 : inner v (x - y) ≤ f x - f y := Iff.mpr le_sub_iff_add_le' hv
+  have _ : inner v (x - y) ≤ f x - f y := Iff.mpr le_sub_iff_add_le' hv
   rw [inner_sub_left]; linarith
 
 end Basic_properties
@@ -286,13 +286,13 @@ theorem SubderivWithinAt_eq_gradient {f'x : E} (hx : x ∈ interior s)
     · exact pos
     intro t _ ht; rw [dist_eq_norm] at ht; rw [dist_eq_norm]
     have : dist (x + t • v) x < δ := by
-      rw [dist_eq_norm, add_sub_cancel', norm_smul, ← (sub_zero t)]
+      rw [dist_eq_norm, add_sub_cancel_left, norm_smul, ← (sub_zero t)]
       apply lt_of_lt_of_eq ((mul_lt_mul_right (norm_sub_pos_iff.mpr neq)).mpr ht)
       rw [mul_assoc, inv_mul_cancel (norm_ne_zero_iff.mpr vneq), mul_one]
     specialize hδ this; rw [dist_eq_norm] at hδ
     have eq1 : ‖‖x + t • v - x‖⁻¹‖ = ‖t • v‖⁻¹ := by
-      rw [add_sub_cancel', norm_inv, norm_norm]
-    have eq2 : (g ∇*) (x + t • v - x) = ⟪g, t • v⟫ := by rw [add_sub_cancel']; exact rfl
+      rw [add_sub_cancel_left, norm_inv, norm_norm]
+    have eq2 : (g ∇*) (x + t • v - x) = ⟪g, t • v⟫ := by rw [add_sub_cancel_left]; exact rfl
     have eq3 : ‖(f (x + t • v) - f x - ⟪g, t • v⟫) * ‖t • v‖⁻¹ - 0‖ =
       ‖f (x + t • v) - f x - ⟪g, t • v⟫‖ * ‖t • v‖⁻¹ := by
         rw [sub_zero, norm_mul, norm_inv, norm_norm]
@@ -313,11 +313,11 @@ theorem SubderivWithinAt_eq_gradient {f'x : E} (hx : x ∈ interior s)
   have mems : x + t • v ∈ s := by
     apply ballmem
     rw [mem_ball_iff_norm, sub_zero] at tball
-    rw [mem_ball_iff_norm, add_sub_cancel', norm_smul]
+    rw [mem_ball_iff_norm, add_sub_cancel_left, norm_smul]
     have : ‖t‖ * ‖v‖ < ε * ‖v‖⁻¹ * ‖v‖ := by
       apply (mul_lt_mul_right (norm_sub_pos_iff.mpr neq)).mpr tball
     rwa [mul_assoc, inv_mul_cancel (norm_ne_zero_iff.mpr vneq), mul_one] at this
-  obtain ineq1 := hg' (x + t • v); rw [add_sub_cancel'] at ineq1
+  obtain ineq1 := hg' (x + t • v); rw [add_sub_cancel_left] at ineq1
   have eq1 : ‖v‖ = (⟪g', t • v⟫ - ⟪g, t • v⟫) * ‖t • v‖⁻¹ := by
     have eq2 : ‖v‖ = ⟪v, v⟫ * ‖v‖⁻¹ := by
       rw [real_inner_self_eq_norm_sq]
@@ -515,7 +515,7 @@ theorem SubderivAt.add {f₁ f₂ : E → ℝ} (h₁ : ConvexOn ℝ univ f₁) (
     rw [disjoint_iff]; by_contra joint
     obtain ⟨⟨x, y⟩, ⟨hp1, hp2⟩⟩ := nmem_singleton_empty.mp joint
     rw [Set.mem_setOf] at hp1 hp2
-    specialize hg (x + x₀); simp only [add_sub_cancel x x₀] at hg
+    specialize hg (x + x₀); rw [← add_sub, sub_self, add_zero] at hg
     apply not_le_of_gt ?_ hg
     obtain ineq := add_lt_add_of_le_of_lt hp2 (neg_lt_neg hp1)
     simp only [add_neg_self, neg_sub] at ineq
@@ -667,7 +667,7 @@ theorem SubderivAt_abs (x : ℝ) :
         exact LT.lt.false ineq
       specialize hg (x + 1)
       have : x + 1 > 0 := by linarith
-      simp only [abs_of_pos hx, abs_of_pos this, add_le_add_iff_left, add_sub_cancel'] at hg
+      simp only [abs_of_pos hx, abs_of_pos this, add_le_add_iff_left, add_sub_cancel_left] at hg
       apply glt
       have h1: g ≤ 1 := by
         calc

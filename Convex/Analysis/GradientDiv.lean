@@ -7,7 +7,7 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Calculus.Gradient.Basic
-import Convex.Function.Convex_Function
+import Convex.Function.ConvexFunction
 import Convex.Analysis.Lemmas
 
 /-!
@@ -68,10 +68,10 @@ lemma Simplifying₂ (h₁ : a ≠ 0) (h₂ : 0 ≤ c) :
     have : d * |a * a * a| / (4 * (c + 1)) = (d * |a * a * a| / 4) / (c + 1):= by
       exact div_mul_eq_div_div (d * |a * a * a|) _ _
     rw [mul_comm, this]
-    apply div_mul_cancel
+    apply div_mul_cancel₀
     linarith
   have l₄ : |2| / |a * a * a| * b * |a * a * a| = |2| * b := by
-    rw [mul_comm (|2| / |a * a * a|), mul_assoc, div_mul_cancel, mul_comm]
+    rw [mul_comm (|2| / |a * a * a|), mul_assoc, div_mul_cancel₀, mul_comm]
     simp only [ne_eq, abs_eq_zero, mul_eq_zero, or_self]
     apply h₁
   rw [Real.norm_eq_abs, l₁, l₂, mul_assoc,l₃, mul_comm d, ← mul_div, ← mul_assoc, l₄]
@@ -254,7 +254,7 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
     have zp1 :‖f x * (f x - f x' + inner grad (x' - x)) / (f x * f x * f x')‖ =
         ‖(f x - f x' + inner grad (x' - x)) / (f x * f x')‖ := by
       rw [mul_comm, mul_assoc (f x) (f x) (f x'),
-      div_mul_eq_div_div ((f x - f x' + inner grad (x' - x)) * (f x)) (f x) (f x * f x'), mul_div_cancel]
+      div_mul_eq_div_div ((f x - f x' + inner grad (x' - x)) * (f x)) (f x) (f x * f x'), mul_div_cancel_right₀]
       apply h₁
 
     have zp2 : ‖f x‖ * ‖f x‖/2 ≤ ‖f x * f x'‖ := by

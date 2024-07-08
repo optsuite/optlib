@@ -4,7 +4,7 @@ We aim to formalize the broad area of **mathematical optimization** including co
 
 More topics related to computational mathematics such as numerical linear algebra and numerical analysis will be included in the future.
 
-Our github web page corresponding to this work can be found at [here](https://optsuite.github.io/optlib/) .
+Our GitHub web page corresponding to this work can be found at [here](https://optsuite.github.io/optlib/) .
 
 ## Lean4 Toolchain Installation
 
@@ -13,6 +13,8 @@ Our github web page corresponding to this work can be found at [here](https://op
 
 - Download guide provided by the official Lean team:
   https://leanprover-community.github.io/get_started.html
+
+- For Lean 4 users in China, the [glean](https://github.com/alissa-tung/glean) tool is recommended for using the [Shanghai Jiao Tong University mirror service](https://mirror.sjtu.edu.cn/).
 
 ## How to use the code in this repository
 
@@ -27,6 +29,12 @@ In a Lean4 project, add these lines to your `lakefile.lean`:
 ```lean4
 require convex from git
   "https://github.com/optsuite/optlib"
+```
+
+or in new `lakefile.lean` Lake DSL:
+
+```lean4
+require "optsuite" / "optlib" @ "git#master"
 ```
 
 The convex library uses mathlib4 as a dependency, command `lake exe cache get` can be used to fetch mathlib4 cache.
@@ -89,7 +97,7 @@ will download the source of the convex library. After editing those files, you c
 
 ### Optimality Conditions
 
-- First Order Conditions for Constrained and Unconstrained Methods 
+- First Order Conditions for Constrained and Unconstrained Methods
 - Second Order Conditions for Constrained and Unconstrained Methods
 - KKT conditions
 - ......

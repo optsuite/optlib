@@ -165,9 +165,9 @@ variable (hf : ConvexOn ℝ s f) (hc : ContinuousOn f (interior s))
 open Bornology
 
 /- The subderiv of `f` at interior point `x` is a nonempty set -/
-theorem SubderivWithinAt.Nonempty : ∀ x ∈ interior s, (SubderivWithinAt f s x).Nonempty := by
+theorem SubderivWithinAt.Nonempty (hf : ConvexOn ℝ s f) (hc : ContinuousOn f (interior s)) : ∀ x ∈ interior s, (SubderivWithinAt f s x).Nonempty := by
   intro x hx
-  obtain h := Banach_SubderivWithinAt.Nonempty hf hc hx
+  obtain h := Banach_SubderivWithinAt.Nonempty hc hx hf
   unfold Set.Nonempty at h ⊢
   rcases h with ⟨g, hg⟩; unfold Banach_SubderivWithinAt at hg
   simp at hg
@@ -288,7 +288,7 @@ theorem SubderivWithinAt_eq_gradient {f'x : E} (hx : x ∈ interior s)
     have : dist (x + t • v) x < δ := by
       rw [dist_eq_norm, add_sub_cancel_left, norm_smul, ← (sub_zero t)]
       apply lt_of_lt_of_eq ((mul_lt_mul_right (norm_sub_pos_iff.mpr neq)).mpr ht)
-      rw [mul_assoc, inv_mul_cancel (norm_ne_zero_iff.mpr vneq), mul_one]
+      rw [mul_assoc, inv_mul_cancel₀ (norm_ne_zero_iff.mpr vneq), mul_one]
     specialize hδ this; rw [dist_eq_norm] at hδ
     have eq1 : ‖‖x + t • v - x‖⁻¹‖ = ‖t • v‖⁻¹ := by
       rw [add_sub_cancel_left, norm_inv, norm_norm]
@@ -316,7 +316,8 @@ theorem SubderivWithinAt_eq_gradient {f'x : E} (hx : x ∈ interior s)
     rw [mem_ball_iff_norm, add_sub_cancel_left, norm_smul]
     have : ‖t‖ * ‖v‖ < ε * ‖v‖⁻¹ * ‖v‖ := by
       apply (mul_lt_mul_right (norm_sub_pos_iff.mpr neq)).mpr tball
-    rwa [mul_assoc, inv_mul_cancel (norm_ne_zero_iff.mpr vneq), mul_one] at this
+    field_simp [norm_ne_zero_iff.mpr vneq] at this
+    exact this
   obtain ineq1 := hg' (x + t • v); rw [add_sub_cancel_left] at ineq1
   have eq1 : ‖v‖ = (⟪g', t • v⟫ - ⟪g, t • v⟫) * ‖t • v‖⁻¹ := by
     have eq2 : ‖v‖ = ⟪v, v⟫ * ‖v‖⁻¹ := by
@@ -518,7 +519,7 @@ theorem SubderivAt.add {f₁ f₂ : E → ℝ} (h₁ : ConvexOn ℝ univ f₁) (
     specialize hg (x + x₀); rw [← add_sub, sub_self, add_zero] at hg
     apply not_le_of_gt ?_ hg
     obtain ineq := add_lt_add_of_le_of_lt hp2 (neg_lt_neg hp1)
-    simp only [add_neg_self, neg_sub] at ineq
+    simp only [add_neg_cancel, neg_sub] at ineq
     have hh : ∀ x : E, (f₁ + f₂) x = f₁ x + f₂ x := fun x => rfl
     apply lt_of_sub_pos
     have eq : f₂ x₀ - f₂ (x + x₀) + (⟪g, x⟫_ℝ - (f₁ (x + x₀) - f₁ x₀)) =
@@ -576,9 +577,8 @@ theorem SubderivAt.add {f₁ f₂ : E → ℝ} (h₁ : ConvexOn ℝ univ f₁) (
     rw [eq] at htp; linarith
   have bleq0 : b < 0 := by
     rw [ceq0] at htp
-    specialize htp 1 (by linarith); rw [mul_one] at htp; linarith
+    specialize htp 1 (by linarith); linarith
   let hata := - (1 / b) • a
-
   have g1 : g + hata ∈ {g | HasSubgradientAt f₁ g x₀} := by
     rw [Set.mem_setOf]; unfold HasSubgradientAt; intro x
     simp [hata]
@@ -591,7 +591,7 @@ theorem SubderivAt.add {f₁ f₂ : E → ℝ} (h₁ : ConvexOn ℝ univ f₁) (
       rw [ceq0, hab (x - x₀, f₁ x - f₁ x₀ - ⟪g, x - x₀⟫_ℝ + t)] at hsl; simp at hsl
       obtain ineq := (mul_lt_mul_left_of_neg (inv_lt_zero.mpr bleq0)).mpr hsl
       simp at ineq
-      rw [mul_add, ← mul_assoc, inv_mul_cancel (ne_of_lt bleq0), one_mul] at ineq
+      rw [mul_add, ← mul_assoc, inv_mul_cancel₀ (ne_of_lt bleq0), one_mul] at ineq
       rw [← add_assoc, add_sub, add_sub] at ineq; exact ineq
     rw [inner_add_left, inner_neg_left, real_inner_smul_left]
     rw [← add_assoc]; simp
@@ -605,10 +605,10 @@ theorem SubderivAt.add {f₁ f₂ : E → ℝ} (h₁ : ConvexOn ℝ univ f₁) (
     rw [ceq0, hab (x - x₀, f₂ x₀ - f₂ x)] at hsr; simp at hsr
     obtain ineq := (mul_le_mul_left_of_neg (inv_lt_zero.mpr bleq0)).mpr hsr
     rw [mul_add, ← real_inner_smul_left, mul_zero, ← mul_assoc,
-        inv_mul_cancel (ne_of_lt bleq0), one_mul] at ineq
+        inv_mul_cancel₀ (ne_of_lt bleq0), one_mul] at ineq
     linarith
   use (g + hata); constructor; exact g1
-  use (- hata); constructor; exact g2; simp
+  use (-hata); constructor; exact g2; simp
 
 end computation
 

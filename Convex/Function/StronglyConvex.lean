@@ -15,7 +15,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 section Strongly_Convex
 
-variable {s : Set E} {f : E → ℝ} {m : ℝ} {xm xm': E} {f' : E → E} {mp : m > 0}
+variable {s : Set E} {f : E → ℝ} {m : ℝ} {xm xm': E} {f' : E → E}
 
 open Set InnerProductSpace
 
@@ -47,13 +47,13 @@ theorem stronglyConvexOn_def (hs : Convex ℝ s)
   rw [← this]; exact hfun
 
 theorem Strongly_Convex_Unique_Minima (hsc: StrongConvexOn s m f)
-    (min: IsMinOn f s xm) (min' : IsMinOn f s xm') (hxm : xm ∈ s) (hxm' : xm' ∈ s): xm = xm' := by
+    (min: IsMinOn f s xm) (min' : IsMinOn f s xm') (hxm : xm ∈ s) (hxm' : xm' ∈ s) (mp : m > 0): xm = xm' := by
   by_contra neq
   push_neg at neq
   have eq : f xm = f xm' := by
     apply le_antisymm
-    . apply min hxm'
-    . apply min' hxm
+    · apply min hxm'
+    · apply min' hxm
   let x := (2 : ℝ)⁻¹ • xm + (2 : ℝ)⁻¹ • xm'
   have xeq : x = (2 : ℝ)⁻¹ • xm + (2 : ℝ)⁻¹ • xm' := by rfl
   rcases hsc with ⟨cr, sc⟩
@@ -67,19 +67,19 @@ theorem Strongly_Convex_Unique_Minima (hsc: StrongConvexOn s m f)
   specialize sc hxm hxm' this this (by norm_num)
   simp at sc
   rw [← xeq,← eq] at sc
-  rw [← two_mul,← mul_assoc, mul_inv_cancel (by norm_num), one_mul] at sc
+  rw [← two_mul,← mul_assoc, mul_inv_cancel₀ (by norm_num), one_mul] at sc
   have normp : ‖xm - xm'‖ > 0 := by
     apply norm_sub_pos_iff.mpr
     apply neq
   have nng : m / 2 * ‖xm - xm'‖ ^ 2 > 0 := by
     apply mul_pos
-    . linarith
-    . apply pow_pos; linarith
+    · linarith
+    · apply pow_pos; linarith
   apply absurd (min xs)
   simp [← xeq]
   calc
-    f x ≤ f xm - 2⁻¹ * 2⁻¹ * (m / 2 * ‖xm - xm'‖ ^ 2) := by apply sc
-    _ < f xm := by apply lt_of_sub_pos; simp; apply nng
+    f x ≤ f xm - 2⁻¹ * 2⁻¹ * (m / 2 * ‖xm - xm'‖ ^ 2) := sc
+    _ < f xm := by apply lt_of_sub_pos; simp; exact nng
 
 theorem Strong_Convex_lower (hsc : StrongConvexOn s m f) (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) :
     ∀ x ∈ s, ∀ y ∈ s, inner (f' x - f' y) (x - y) ≥ m * ‖x - y‖ ^ 2 := by

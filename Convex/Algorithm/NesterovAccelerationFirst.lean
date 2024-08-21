@@ -37,9 +37,9 @@ class Nesterov_first (f h: E → ℝ) (f' : E → E) (x0 : E) :=
   (update2 : ∀ k : ℕ, prox_prop (t k • h) (y k - t k • f' (y k)) (x (k + 1)))
 
 variable {alg : Nesterov_first f h f' x0}
-variable {xm : E} (minφ : IsMinOn (f + h) univ xm)
+variable {xm : E}
 
-theorem Nesterov_first_converge : ∀ k, f (alg.x (k + 1)) + h (alg.x (k + 1)) -
+theorem Nesterov_first_converge (minφ : IsMinOn (f + h) univ xm) : ∀ k, f (alg.x (k + 1)) + h (alg.x (k + 1)) -
     f xm - h xm ≤ (alg.γ k) ^ 2 / (2 * alg.t k) * ‖x0 - xm‖ ^ 2 := by
   have h1 : ∀ k : ℕ, alg.y k - alg.x (k + 1) - (alg.t k) • (f' (alg.y k))
       ∈ (SubderivAt ((alg.t k) • h) (alg.x (k + 1))) := by
@@ -277,9 +277,9 @@ theorem Nesterov_first_converge : ∀ k, f (alg.x (k + 1)) + h (alg.x (k + 1)) -
           linarith [alg.tbound 0]
         _ = ‖alg.x 0 - xm‖ ^ 2 := by
           rw [← add_sub, sub_self, add_zero, mul_add, ← mul_assoc]; ring_nf
-          rw [mul_inv_cancel, one_mul, one_mul, alg.oriy, norm_sub_rev (alg.x 1) xm]
+          rw [mul_inv_cancel₀ (by linarith [alg.tbound 0]), one_mul, one_mul, alg.oriy, norm_sub_rev (alg.x 1) xm]
           rw [add_comm (⟪alg.x 1 - alg.x 0, xm - alg.x 1⟫ * 2), mul_comm, ← norm_add_sq_real]
-          simp; rw [norm_sub_rev]; linarith [alg.tbound 0]
+          simp; rw [norm_sub_rev];
       rw [alg.initial]; apply div_pos; rw [sq_pos_iff]
       linarith [(alg.γbound k).1]; linarith [alg.tbound k]
 
@@ -329,9 +329,9 @@ instance {f h: E → ℝ} {f' : E → E} {x0 : E} [p : Nesterov_first_fix_stepsi
 
 variable {alg : Nesterov_first_fix_stepsize f h f' x0}
 
-variable {xm : E} (minφ : IsMinOn (f + h) univ xm)
+variable {xm : E}
 
-theorem Nesterov_first_fix_stepsize_converge:
+theorem Nesterov_first_fix_stepsize_converge (minφ : IsMinOn (f + h) univ xm):
     ∀ (k : ℕ), f (alg.x (k + 1)) + h (alg.x (k + 1)) - f xm - h xm ≤
     2 * alg.l / (k + 2) ^ 2 * ‖x0 - xm‖ ^ 2 := by
   intro k

@@ -38,7 +38,7 @@ theorem Strong_convex_Lipschitz_smooth (hsc: StrongConvexOn univ m f) (mp : m > 
   let phi : E → ℝ := fun x ↦ l / 2 * ‖x‖ ^ 2 - f x
   have convphi : ConvexOn ℝ univ phi := by
     apply lipschitz_to_lnorm_sub_convex
-    apply cov; simp; apply hf; rw [← lipschitzOn_univ] at h₂; apply h₂; apply hl
+    apply cov; simp; apply hf; rw [← lipschitzOnWith_univ] at h₂; apply h₂; apply hl
   let g : E → ℝ := fun x ↦ f x - m / 2 * ‖x‖ ^ 2
   let g' : E → E := fun x ↦ f' x - m • x
   let h : E → ℝ := fun x ↦ (l - m) / 2 * ‖x‖ ^ 2 - g x
@@ -135,10 +135,9 @@ lemma lipschitz_derivxm_eq_zero (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
   have eq4 : ‖f' xm‖ ^ 2 / (2 * l) = 0 := by linarith
   field_simp at eq4; exact eq4
 
-variable (hsc: StrongConvexOn univ m f) {alg : Gradient_Descent_fix_stepsize f f' x₀}
+variable {alg : Gradient_Descent_fix_stepsize f f' x₀}
 
-lemma gradient_method_strong_convex (hm : m > 0) (min : IsMinOn f univ xm)
-    (step₂ : alg.a ≤ 2 / (m + alg.l)) : ∀ k : ℕ , ‖alg.x k - xm‖ ^ 2 ≤ (1 - alg.a *
+lemma gradient_method_strong_convex (hm : m > 0) (min : IsMinOn f univ xm) (step₂ : alg.a ≤ 2 / (m + alg.l)) (hsc: StrongConvexOn univ m f) : ∀ k : ℕ , ‖alg.x k - xm‖ ^ 2 ≤ (1 - alg.a *
     (2 * m * alg.l / (m + alg.l))) ^ k * ‖x₀ - xm‖ ^ 2 := by
   have : LipschitzWith alg.l f' := alg.smooth
   have : alg.l > (0 : ℝ) := alg.hl

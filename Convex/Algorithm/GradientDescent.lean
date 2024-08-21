@@ -111,7 +111,7 @@ open InnerProductSpace Set
 
 variable {f : E → ℝ} {f' : E → E}
 
-variable {l : NNReal} {xm x₀ : E}{a : ℝ}
+variable {l : NNReal} {xm x₀ : E} {a : ℝ}
 
 variable {alg : Gradient_Descent_fix_stepsize f f' x₀}
 
@@ -142,7 +142,7 @@ lemma convex_lipschitz (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁)
         · simp;
           calc l / 2 * a * a = (l * a) * (a / 2) := by ring_nf
                 _  ≤ 1 * (a / 2) := by
-                  apply mul_le_mul_of_le_of_le _ (by linarith) (by positivity) (by linarith)
+                  apply mul_le_mul_of_nonneg _ (by linarith) (by positivity) (by linarith)
                   · exact (le_div_iff ha₂).mp ha₁
                 _  = - a / 2 + a := by ring_nf
         · exact sq_nonneg ‖f' x‖
@@ -153,15 +153,13 @@ lemma point_descent_for_convex (hfun : ConvexOn ℝ Set.univ f) (step₂ : alg.a
     ∀ k : ℕ, f (alg.x (k + 1)) ≤ f xm + 1 / ((2 : ℝ) * alg.a)
       * (‖alg.x k - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2) := by
   have step₂ : alg.l ≤ 1 / alg.a := by
-    rw [le_one_div alg.step₁] at step₂; exact step₂; linarith [alg.hl]
+    rw [le_one_div alg.step₁] at step₂; exact step₂; exact alg.hl
   intro k
-  have : LipschitzWith alg.l f' := alg.smooth
-  have : alg.l > 0 := alg.hl
   have descent: ∀ x : E, f (x - alg.a • (f' x)) ≤
       f xm + 1 / ((2 : ℝ) * alg.a) * (‖x - xm‖ ^ 2 - ‖x - alg.a • (f' x) - xm‖ ^ 2) := by
     intro x
     have t1 : 1 / ((2 : ℝ) * alg.a) * ((2 : ℝ) * alg.a) = 1 := by
-      field_simp; ring_nf; apply mul_inv_cancel; linarith [alg.step₁]
+      ring_nf; field_simp [ne_of_gt alg.step₁]
     have t2 : inner (f' x) (x - xm) - alg.a / 2 * ‖f' x‖ ^ 2 =
         1 / ((2 : ℝ) * alg.a) * (‖x - xm‖ ^ 2 - ‖x - alg.a • (f' x) - xm‖ ^ 2) := by
       symm
@@ -179,7 +177,7 @@ lemma point_descent_for_convex (hfun : ConvexOn ℝ Set.univ f) (step₂ : alg.a
           _ = inner (f' x) (x - xm) - alg.a / (2 : ℝ)
               * ‖f' x‖ ^ 2 := by ring_nf; simp; left; rw [pow_two,mul_self_mul_inv alg.a]
     calc f (x - alg.a • (f' x)) ≤ f x - alg.a / 2 * ‖f' x‖ ^ 2 := by
-              exact convex_lipschitz alg.diff this step₂ alg.step₁ alg.smooth x
+              exact convex_lipschitz alg.diff alg.hl step₂ alg.step₁ alg.smooth x
             _   ≤ f xm + inner (f' x) (x - xm) - alg.a / 2 * ‖f' x‖ ^ 2 := by
               linarith [convex_function alg.diff hfun x xm]
             _   = f xm + 1 / ((2 : ℝ) * alg.a) * (‖x - xm‖ ^ 2 - ‖x - alg.a • (f' x) - xm‖ ^ 2) := by
@@ -194,7 +192,7 @@ lemma gradient_method (hfun: ConvexOn ℝ Set.univ f) (step₂ : alg.a ≤ 1 / a
     ∀ k : ℕ, f (alg.x (k + 1)) - f xm ≤ 1 / (2 * (k + 1) * alg.a) * ‖x₀ - xm‖ ^ 2 := by
   intro k
   have step1₂ : alg.l ≤ 1 / alg.a := by
-    rw [le_one_div alg.step₁] at step₂; exact step₂; linarith [alg.hl]
+    rw [le_one_div alg.step₁] at step₂; exact step₂; exact alg.hl
   have : LipschitzWith alg.l f' := alg.smooth
   have : alg.l > 0 := alg.hl
   have tα : 1 / ((2 : ℝ) * (k + 1) * alg.a) > 0 := by
@@ -219,7 +217,7 @@ lemma gradient_method (hfun: ConvexOn ℝ Set.univ f) (step₂ : alg.a ≤ 1 / a
         _ ≤ f xm + 1 / (2 * alg.a) * (‖alg.x 0 - xm‖ ^ 2 - ‖alg.x (0 + 1) - xm‖ ^ 2) :=
             xdescent
         _ = alg.a⁻¹ * 2⁻¹ * (‖x₀ - xm‖^ 2 - ‖alg.x 1 - xm‖ ^ 2) + f xm := by
-            rw [alg.initial]; simp; ring_nf
+            rw [alg.initial, one_div, mul_inv_rev, zero_add]; ring_nf
     · specialize xdescent (j + 1)
       calc
         _ = (Finset.range (j + 1)).sum (fun (k : ℕ) ↦ f (alg.x (k + 1)) - f xm)
@@ -238,7 +236,7 @@ lemma gradient_method (hfun: ConvexOn ℝ Set.univ f) (step₂ : alg.a ≤ 1 / a
   specialize sum_prop k
   have h : f (alg.x (k + 1)) - f xm ≤ 1 / (2 * (k + 1) * alg.a) *
      (‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2) := by
-    have tt1 : 0 ≤ k + (1 : ℝ) := by exact add_nonneg (Nat.cast_nonneg k) zero_le_one
+    have tt1 : 0 ≤ k + (1 : ℝ) := add_nonneg (Nat.cast_nonneg k) zero_le_one
     calc
       _ ≤ (Finset.range (k + 1)).sum (fun (k : ℕ) ↦ f (alg.x (k + 1)) - f xm) / (k + 1) :=
         sum_prop_1

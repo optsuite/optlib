@@ -41,9 +41,9 @@ class Nesterov_second (f h : E → ℝ) (f' : E → E) (x0 : E) :=
 
 variable {alg : Nesterov_second f h f' x0}
 
-variable {xm : E} (minφ : IsMinOn (f + h) Set.univ xm)
+variable {xm : E}
 
-theorem Nesterov_second_convergence :
+theorem Nesterov_second_convergence (minφ : IsMinOn (f + h) Set.univ xm):
     ∀ (k : ℕ), f (alg.x (k + 1)) + h (alg.x (k + 1)) - f xm - h xm ≤
       (alg.γ (k + 1)) ^ 2 / (2 * alg.t (k + 1)) * ‖x0 - xm‖ ^ 2 := by
   let φ := fun z : E ↦ f z + h z
@@ -52,13 +52,13 @@ theorem Nesterov_second_convergence :
       ∈ (SubderivAt (alg.t k • h) (alg.y k)) := by
     intro k; obtain h1 := alg.update2 k
     rw [prox_iff_subderiv] at h1
-    have upd2 := @SubderivAt.pos_smul _ _ _ ((alg.t k / alg.γ k) • h) (alg.y k) (alg.γ k) (alg.γbound k).1
+    have upd2 := @SubderivAt.pos_smul _ _ _ _ ((alg.t k / alg.γ k) • h) (alg.y k) (alg.γ k) (alg.γbound k).1
     rw [← smul_assoc, smul_eq_mul, mul_div, mul_comm, ← mul_div, div_self, mul_one] at upd2
     rw [upd2]
     use (alg.y (↑k - 1) - (alg.t ↑k / alg.γ ↑k) • f' (alg.z k) - alg.y ↑k)
     constructor
-    . exact h1
-    . simp
+    · exact h1
+    · simp
       rw [sub_right_comm, smul_sub, ← smul_assoc, smul_eq_mul]
       rw [mul_div, mul_comm, ← mul_div, div_self, mul_one]
       linarith [(alg.γbound k).1]
@@ -81,16 +81,16 @@ theorem Nesterov_second_convergence :
     have mem1 : (alg.x (k - 1)) ∈ univ := by simp
     have mem2 : alg.y k ∈ univ := by simp
     by_cases eq1 : alg.γ k = 1
-    . simp [eq1]
+    · simp [eq1]
       obtain update3 := alg.update3 k
       simp [eq1] at update3
       rw [update3]
-    . push_neg at eq1
+    · push_neg at eq1
       have pos : 1 - alg.γ k > 0 := by
         apply lt_iff_le_and_ne.mpr
         constructor
-        . linarith [(alg.γbound k).2]
-        . contrapose eq1
+        · linarith [(alg.γbound k).2]
+        · contrapose eq1
           push_neg at *
           linarith [eq1]
       specialize fall mem1 mem2 pos ((alg.γbound k).1) (by linarith)
@@ -132,9 +132,9 @@ theorem Nesterov_second_convergence :
     apply le_trans (hieq4 k)
     simp only [add_le_add_iff_left]
     by_cases nm0 : ‖alg.x ↑k - alg.z k‖ ^ 2 = 0
-    . rw [nm0]
+    · rw [nm0]
       simp
-    . push_neg at nm0
+    · push_neg at nm0
       have ax : ‖alg.x ↑k - alg.z k‖ ^ 2 > 0 := by
         apply lt_of_le_of_ne
         simp
@@ -186,13 +186,13 @@ theorem Nesterov_second_convergence :
           + ((alg.γ k) ^ 2 / (2 * alg.t k)) * ‖alg.y k - alg.y (k - 1)‖ ^ 2 := by
         simp only [add_le_add_iff_right]
         by_cases eq1 : alg.γ k = 1
-        . simp [eq1]
-        . push_neg at eq1
+        · simp [eq1]
+        · push_neg at eq1
           have pos : 1 - alg.γ k > 0 := by
             apply lt_iff_le_and_ne.mpr
             constructor
-            . linarith [(alg.γbound k).2]
-            . contrapose eq1
+            · linarith [(alg.γbound k).2]
+            · contrapose eq1
               push_neg at *
               linarith [eq1]
           apply (mul_le_mul_left pos).mpr
@@ -228,7 +228,7 @@ theorem Nesterov_second_convergence :
           + alg.γ ↑k * (f (alg.z k) + ⟪f' (alg.z k), alg.y ↑k - alg.z k⟫_ℝ)
           + alg.γ ↑k ^ 2 / (2 * alg.t ↑k) * ‖alg.y ↑k - alg.y (↑k - 1)‖ ^ 2 := by
         simp
-        have gpos : alg.γ k > 0 := by exact (alg.γbound k).1
+        have gpos : alg.γ k > 0 := (alg.γbound k).1
         apply (mul_le_mul_left gpos).mpr
         apply Convex_first_order_condition' (alg.h₁ (alg.z k)) alg.convf
         simp
@@ -315,7 +315,7 @@ theorem Nesterov_second_convergence :
       + 1 / 2 * ‖alg.y (k + 1) - xm‖ ^ 2 ≤
       alg.t 1 / (alg.γ 1 ^ 2) * (φ (alg.x 1) - φ xm) + 1 / 2 * ‖alg.y 1 - xm‖ ^ 2 := by
     induction' k with k ik
-    . simp
+    · simp
     have ine := decrease (Nat.toPNat' (k + 1))
     simp only [Nat.toPNat'_coe, add_pos_iff, zero_lt_one, or_true, ↓reduceIte] at ine
     apply le_trans ine
@@ -422,9 +422,9 @@ instance {f h : E → ℝ} {f' : E → E} {x0 : E} [p : Nesterov_second_fix_step
 
 variable {alg : Nesterov_second_fix_stepsize f h f' x0}
 
-variable {xm : E} (minφ : IsMinOn (f + h) univ xm)
+variable {xm : E}
 
-theorem Nesterov_second_fix_stepsize_converge:
+theorem Nesterov_second_fix_stepsize_converge (minφ : IsMinOn (f + h) univ xm):
     ∀ (k : ℕ), f (alg.x (k + 1)) + h (alg.x (k + 1)) - f xm - h xm ≤
     2 * alg.l / (k + 2) ^ 2 * ‖x0 - xm‖ ^ 2 := by
   intro k
@@ -442,7 +442,7 @@ theorem Nesterov_second_fix_stepsize_converge:
         ‖x0 - xm‖ ^ 2 =
         Nesterov_second.γ f h f' x0 (k + 1) ^ 2 / (2 * Nesterov_second.t f h f' x0 (k + 1)) *
         ‖x0 - xm‖ ^ 2 := rfl
-      rw [h1, h2]; apply Nesterov_second_convergence minφ
+      rw [h1, h2]; apply Nesterov_second_convergence minφ _
     _ ≤ 2 * alg.l / (k + 2) ^ 2 * ‖x0 - xm‖ ^ 2 := by
       apply mul_le_mul_of_nonneg_right _ (sq_nonneg _)
       rw [alg.γeq (k + 1), alg.teq (k + 1)]; field_simp

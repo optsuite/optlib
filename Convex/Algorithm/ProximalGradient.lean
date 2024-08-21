@@ -44,19 +44,19 @@ theorem proximal_gradient_method_converge : ∀ (k : ℕ+),
   have th : ContinuousOn (alg.t • h) univ := by
     apply ContinuousOn.const_smul alg.h₃ alg.t
   have th' : ConvexOn ℝ univ (alg.t • h) := by
-    apply ConvexOn.smul; linarith [alg.tpos]; apply alg.hconv
+    apply ConvexOn.smul; apply le_of_lt; exact alg.tpos; apply alg.hconv
   let Gt := fun x ↦ (1 / alg.t) • (x - prox_point_c'  (alg.t • h)  (x - alg.t • f' x) th th')
   let φ := fun x ↦ f x + h x
   have hG : ∀ z : E, Gt z - f' z ∈ (SubderivAt h (z - alg.t • Gt z)) := by
     intro z
     have eq1 : z - alg.t • Gt z = prox_point_c' (alg.t • h) (z - alg.t • f' z) th th' := by
-      simp [Gt]; rw [smul_inv_smul₀, ← sub_add]; simp; linarith [alg.tpos]
+      simp [Gt]; rw [smul_inv_smul₀ (ne_of_gt alg.tpos), ← sub_add, sub_self, zero_add]
     have eq2 : prox_prop (alg.t • h) (z - alg.t • f' z) (z - alg.t • Gt z) := by
       rw [prox_point_c'] at eq1; rw [eq1]; apply Classical.choose_spec
     rw [prox_iff_subderiv_smul, sub_sub_sub_comm, sub_sub_eq_add_sub] at eq2;
     rw [sub_self, zero_add, ← smul_sub, ← smul_assoc, smul_eq_mul] at eq2;
-    rw [one_div_mul_cancel, one_smul] at eq2
-    exact eq2; linarith [alg.tpos]; exact alg.hconv; linarith [alg.tpos]
+    rw [one_div_mul_cancel (ne_of_gt alg.tpos), one_smul] at eq2
+    exact eq2; exact alg.hconv; exact alg.tpos
   have fieq1 : ∀ x : E, f (x - alg.t • Gt x) ≤
       f x - alg.t * inner (f' x) (Gt x) + alg.t ^ 2 * alg.L / 2 * ‖Gt x‖ ^ 2 := by
     intro x
@@ -66,7 +66,7 @@ theorem proximal_gradient_method_converge : ∀ (k : ℕ+),
     have eq3 : y - x = - alg.t • Gt x := by simp [Gt, y]
     rw [eq3] at ieq1; rw [inner_smul_right, norm_smul, mul_pow] at ieq1
     rw [← mul_assoc, mul_comm ] at ieq1
-    simp at ieq1; rw [← sub_eq_add_neg] at ieq1; simp; linarith [alg.tpos]
+    simp at ieq1; rw [← sub_eq_add_neg] at ieq1; linarith [alg.tpos]
   have fieq2 : ∀ x : E,
       f (x - alg.t • Gt x) ≤ f x - alg.t * inner (f' x) (Gt x) + alg.t / 2 * ‖Gt x‖ ^ 2 := by
     intro x
@@ -129,15 +129,14 @@ theorem proximal_gradient_method_converge : ∀ (k : ℕ+),
           rw [norm_sub_sq_real]; field_simp; ring_nf
           rw [inner_smul_right, real_inner_comm];
           nth_rw 2 [mul_comm _ (alg.t)⁻¹]; rw [norm_smul, mul_pow, pow_two ‖alg.t‖]
-          simp; rw [mul_comm _ ⟪q, p⟫_ℝ, mul_assoc _ alg.t, mul_inv_cancel, ← mul_assoc]
-          rw [← mul_assoc, inv_mul_cancel]; simp
-          repeat linarith [alg.tpos]
+          simp; rw [mul_comm _ ⟪q, p⟫_ℝ, mul_assoc _ alg.t, mul_inv_cancel₀ (ne_of_gt alg.tpos), ← mul_assoc]
+          rw [← mul_assoc, inv_mul_cancel₀ (ne_of_gt alg.tpos), mul_one, one_mul]
         rw [sub_right_comm]; apply aux
   have iter : ∀ i : ℕ, alg.x (i + 1) = alg.x i - alg.t • Gt (alg.x i) := by
     intro i
     apply prox_unique_of_convex
     apply th'; apply alg.update i; simp [Gt]; rw [smul_inv_smul₀, ← sub_add]; simp
-    rw [prox_point_c']; apply Classical.choose_spec; linarith [alg.tpos]
+    rw [prox_point_c']; apply Classical.choose_spec; exact ne_of_gt alg.tpos;
   have φdecrease : ∀ i : ℕ, φ (alg.x (i + 1)) ≤ φ (alg.x i) := by
     intro i
     specialize φieq1 (alg.x i)
@@ -200,6 +199,6 @@ theorem proximal_gradient_method_converge : ∀ (k : ℕ+),
     _ = ‖(alg.x 0) - alg.xm‖ ^ 2 - ‖(alg.x k) - alg.xm‖ ^ 2 := by
       rw [← mul_sub, ← mul_assoc, mul_one_div_cancel]; simp; linarith [alg.tpos]
     _ ≤ ‖x₀ - alg.xm‖ ^ 2 := by rw [alg.ori]; simp
-  field_simp; linarith [alg.tpos]
+  field_simp; exact alg.tpos
 
 end method

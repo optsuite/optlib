@@ -83,6 +83,7 @@ will download the source of the convex library. After editing those files, you c
 - [`ProximalGradient.lean`](Convex/Algorithm/ProximalGradient.lean): convergence rate of the proximal gradient method for composite optimization problems.
 - [`NesterovAccelerationFirst.lean`](Convex/Algorithm/NesterovAccelerationFirst.lean): convergence rate of the first version of Nesterov acceleration method for composite optimization problems.
 - [`NesterovAccelerationSecond.lean`](Convex/Algorithm/NesterovAccelerationSecond.lean): convergence rate of the second version of Nesterov acceleration method for composite optimization problems.
+- [`LASSO.lean`](Convex/Algorithm/LASSO.lean): convergence rate of the LASSO algorithm for L1-regularized least squares problem.
 
 ## What we plan to do
 
@@ -92,14 +93,17 @@ will download the source of the convex library. After editing those files, you c
 - Second Order Conditions for Convex Functions
 - Definition and Properties of Strongly Convex Functions (Done)
 - Definition and Properties of L-smooth Functions (Done)
-- Definition and Properties of Subgradients (Done)
+- Definition and Properties of Subgradient and Proximal Operator(Done)
+- Definition and Properties of Frechet Subdifferential
+- Definition of KL properties
 - ......
 
 ### Optimality Conditions
 
-- First Order Conditions for Constrained and Unconstrained Methods
-- Second Order Conditions for Constrained and Unconstrained Methods
-- KKT conditions
+- First Order Conditions for Constrained and Unconstrained Problems
+- Second Order Conditions for Constrained and Unconstrained Problems
+- KKT conditions under LICQ and other conditions
+- Slater Condition and KKT conditions for convex optimization problems
 - ......
 
 ### Convergence of Optimization Algorithms
@@ -109,7 +113,8 @@ will download the source of the convex library. After editing those files, you c
 - Subgradient Methods (Done)
 - Proximal Gradient Methods (Done)
 - Nesterov Acceleration Method (Done)
-- ADMM Methods
+- ADMM Methods (Done)
+- Block Coordinate Descent (BCD) Methods (Done)
 - ......
 
 ### Many other things to be added ...

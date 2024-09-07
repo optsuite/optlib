@@ -51,28 +51,36 @@ will download the source of the convex library. After editing those files, you c
 
 ## What we have done
 
-### Analysis
+### Differential
 
 - [`Basic.lean`](https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Calculus/Gradient/Basic.lean): (now `Mathlib/Analysis/Calculus/Gradient/Basic.lean`) the definition and basic properties of the gradient of a function. (**This file has been merged into mathlib4**, see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Calculus/Gradient/Basic.lean)
 - [`Calculation.lean`](Convex/Analysis/Calculation.lean): the properties of the gradient of a function, including the chain rule, the product rule.
 - [`GradientDiv.lean`](Convex/Analysis/GradientDiv.lean): the quotient rule of the gradient.
 - [`Lemmas.lean`](Convex/Analysis/Lemmas.lean): useful lemmas such as the mean-value theorem and the taylor's expansion.
+- [`Subgradient.lean`](Convex/Function/Subgradient.lean): the basic definitions and the properties of subgradient.
+- [`BanachSubgradient.lean`](Convex/Function/BanachSubgradient.lean): the basic definitions of subgradient on a banach space.
+- Frechet Subdifferential for general functions
+
+### Convex
+
+- [`ConvexFunction.lean`](Convex/Function/ConvexFunction.lean): the properties of convex functions.
+- [`QuasiConvexFirstOrder.lean`](Convex/Function/QuasiConvexFirstOrder.lean): first order conditions for quasi-convex functions.
+- [`StronglyConvex.lean`](Convex/Function/StronglyConvex.lean): the properties of strongly convex functions. (Part of this has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Convex/Strong.lean)
+- Convex Cone and Carathéodory's theorem
+- Farkas Lemma
 
 ### Function
 
 - [`ClosedFunction.lean`](https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Topology/Semicontinuous.lean): (now `Mathlib/Topology/Semicontinuous.lean`) the basic definitions and the properties of closed functions. (This file has been merged into mathlib4, see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Topology/Semicontinuous.lean)
-- [`ConvexFunction.lean`](Convex/Function/ConvexFunction.lean): the properties of convex functions.
 - [`Lsmooth.lean`](Convex/Function/Lsmooth.lean): the properties of L-smooth functions.
 - [`MinimaClosedFunction.lean`](Convex/Function/MinimaClosedFunction.lean): Weierstrass theorem for closed functions.
-- [`QuasiConvexFirstOrder.lean`](Convex/Function/QuasiConvexFirstOrder.lean): first order conditions for quasi-convex functions.
-- [`StronglyConvex.lean`](Convex/Function/StronglyConvex.lean): the properties of strongly convex functions. (Part of this has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Convex/Strong.lean)
-- [`BanachSubgradient.lean`](Convex/Function/BanachSubgradient.lean): the basic definitions of subgradient on a banach space.
-- [`Subgradient.lean`](Convex/Function/Subgradient.lean): the basic definitions and the properties of subgradient.
 - [`Proximal.lean`](Convex/Function/Proximal.lean): the basic definitions and the properties of proximal operator
+- KL properties and uniform KL properties
 
 ### Optimality
 
 - [`OptimalityConditionOfUnconstrainedProblem.lean`](Convex/Optimality/OptimalityConditionOfUnconstrainedProblem.lean): first order optimality conditions for unconstrained optimization problems.
+- First Order Conditions for Constrained Problems, KKT conditions under LICQ and other conditions   (Done)
 
 ### Algorithm
 
@@ -84,6 +92,9 @@ will download the source of the convex library. After editing those files, you c
 - [`NesterovAccelerationFirst.lean`](Convex/Algorithm/NesterovAccelerationFirst.lean): convergence rate of the first version of Nesterov acceleration method for composite optimization problems.
 - [`NesterovAccelerationSecond.lean`](Convex/Algorithm/NesterovAccelerationSecond.lean): convergence rate of the second version of Nesterov acceleration method for composite optimization problems.
 - [`LASSO.lean`](Convex/Algorithm/LASSO.lean): convergence rate of the LASSO algorithm for L1-regularized least squares problem.
+- Convergence analysis of block coordinate descent (BCD) Methods
+- Convergence analysis of ADMM Methods
+
 
 ## What we plan to do
 
@@ -91,19 +102,19 @@ will download the source of the convex library. After editing those files, you c
 
 - First Order Conditions for Convex Functions (Done)
 - Second Order Conditions for Convex Functions
+- Definition and Properties of Proper Functions and Conjugate Functions
 - Definition and Properties of Strongly Convex Functions (Done)
 - Definition and Properties of L-smooth Functions (Done)
 - Definition and Properties of Subgradient and Proximal Operator(Done)
-- Definition and Properties of Frechet Subdifferential
+- Definition and Properties of Frechet Subdifferential (Done)
 - Definition of KL properties
 - ......
 
 ### Optimality Conditions
 
-- First Order Conditions for Constrained and Unconstrained Problems
+- First Order Conditions for Constrained and Unconstrained Problems   (Done)
 - Second Order Conditions for Constrained and Unconstrained Problems
-- KKT conditions under LICQ and other conditions
-- Slater Condition and KKT conditions for convex optimization problems
+- Slater Condition and KKT Conditions for convex optimization problems
 - ......
 
 ### Convergence of Optimization Algorithms
@@ -115,6 +126,9 @@ will download the source of the convex library. After editing those files, you c
 - Nesterov Acceleration Method (Done)
 - ADMM Methods (Done)
 - Block Coordinate Descent (BCD) Methods (Done)
+- Newton Method, Quasi-Newton Method, LBFGS Update
+- Primal-Dual Algorithms
+- Stochastic Gradient Descent and Stochastic Algorithms
 - ......
 
 ### Many other things to be added ...

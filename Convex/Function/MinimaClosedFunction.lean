@@ -32,9 +32,6 @@ variable [FirstCountableTopology E] [FirstCountableTopology F]
 
 section
 
-/- Suppose `f` is LowerSemicontinuous -/
-variable (hf : LowerSemicontinuous f)
-
 private lemma l0 (y : F) (h : (f ⁻¹' Set.Iic y).Nonempty) :
     sInf {f x | x ∈ f ⁻¹' Set.Iic y} = sInf {f x | x : E}:= by
   have h₀ : {f x | x : E} = {f x | x ∈ f ⁻¹' Set.Iic y} ∪ {f x | x ∈ (f ⁻¹' Set.Iic y)ᶜ} := by
@@ -67,7 +64,7 @@ private lemma l0 (y : F) (h : (f ⁻¹' Set.Iic y).Nonempty) :
 /- If a premiage of `f` is nonempty and compact,
   then its minimum point set `{x | IsMinOn f univ x}` is nonempty -/
 theorem IsMinOn.of_isCompact_preimage {y : F}
-    (h1 : (f ⁻¹' Set.Iic y).Nonempty) (h2 : IsCompact (f ⁻¹' Set.Iic y)) :
+    (h1 : (f ⁻¹' Set.Iic y).Nonempty) (h2 : IsCompact (f ⁻¹' Set.Iic y)) (hf : LowerSemicontinuous f) :
     ∃ x, IsMinOn f univ x := by
   have hs : Set.Nonempty {f x | x ∈ (f ⁻¹' Set.Iic y)} := by
     rcases h1 with ⟨x, xsub⟩
@@ -95,9 +92,9 @@ variable [PseudoMetricSpace E] [ProperSpace E]
   then its minimum point set `{x | IsMinOn f univ x}` is compact -/
 
 theorem IsCompact_isMinOn_of_isCompact_preimage {y : F}
-    (h1 : (f ⁻¹' Set.Iic y).Nonempty) (h2 : IsCompact (f ⁻¹' Set.Iic y)) :
+    (h1 : (f ⁻¹' Set.Iic y).Nonempty) (h2 : IsCompact (f ⁻¹' Set.Iic y)) (hf : LowerSemicontinuous f) :
     IsCompact {x | IsMinOn f univ x} := by
-  obtain ⟨x', hx'⟩ := IsMinOn.of_isCompact_preimage hf h1 h2
+  obtain ⟨x', hx'⟩ := IsMinOn.of_isCompact_preimage h1 h2 hf
   have seq : {x | IsMinOn f univ x} = (f ⁻¹' Set.Iic (f x')) :=
       Set.ext fun xx =>
         { mp := fun hxx => isMinOn_iff.mp hxx x' trivial,
@@ -123,10 +120,8 @@ def strong_quasi : Prop :=
   ∀ ⦃x⦄, ∀ ⦃y⦄, x ≠ y → ∀ ⦃a b : 𝕜⦄, 0 < a → 0 < b → a + b = 1
     → f ((a • x : E) + (b • y : E)) < max (f x) (f y)
 
-variable ( hf' : @strong_quasi E F _ _ f 𝕜 _ _)
-
 /- the Minimum of strongly quasi function is unique -/
-theorem isMinOn_unique {x y : E} (hx : IsMinOn f univ x) (hy : IsMinOn f univ y) : x = y := by
+theorem isMinOn_unique {x y : E} (hx : IsMinOn f univ x) (hy : IsMinOn f univ y) (hf' : @strong_quasi E F _ _ f 𝕜 _ _) : x = y := by
   by_contra neq
   have : (0 : 𝕜) < (1 : 𝕜) := one_pos
   obtain ⟨a, lta, alt⟩ := exists_between this

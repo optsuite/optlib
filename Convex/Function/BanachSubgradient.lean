@@ -3,7 +3,7 @@ Copyright (c) 2023 Wanyi He. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Author: Wanyi He, Chenyi Li, Zichen Wang
 -/
-import Mathlib.Analysis.NormedSpace.Dual
+import Mathlib.Analysis.Normed.Module.Dual
 import Mathlib.Analysis.NormedSpace.HahnBanach.Separation
 import Mathlib.LinearAlgebra.Dual
 
@@ -31,8 +31,6 @@ def Banach_SubderivWithinAt (f : E → ℝ) (s : Set E) (x : E) : Set (E →L[�
 
 def Epi (f : E → ℝ) (s : Set E) : Set (E × ℝ) :=
   {p : E × ℝ | p.1 ∈ s ∧ f p.1 ≤ p.2}
-
-variable (hf : ConvexOn ℝ s f)
 
 lemma EpigraphInterior_existence (hc : ContinuousOn f (interior s)) (hx : x ∈ interior s) :
     ∀ t > f x, (x, t) ∈ interior {p : E × ℝ| p.1 ∈ s ∧ f p.1 ≤ p.2} := by
@@ -70,7 +68,7 @@ lemma mem_epi_frontier : ∀ y ∈ interior s, (y, f y) ∈
   obtain ⟨_, h2⟩ := st this
   simp at h2; linarith
 
-theorem Banach_SubderivWithinAt.Nonempty (hc : ContinuousOn f (interior s)) (hx : x ∈ interior s) :
+theorem Banach_SubderivWithinAt.Nonempty (hc : ContinuousOn f (interior s)) (hx : x ∈ interior s) (hf : ConvexOn ℝ s f) :
     Set.Nonempty (Banach_SubderivWithinAt f s x) := by
   have hepi_f₁ : Convex ℝ (interior (Epi f s)) := Convex.interior (ConvexOn.convex_epigraph hf)
   have disj : (x , f x) ∉ interior (Epi f s) := by

@@ -29,10 +29,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 variable {S :Set E} {f : E → ℝ} {g : E} {x : E}
 
-variable {G : NNReal} (hf : ConvexOn ℝ univ f) (hc : ContinuousOn f univ)
+variable {G : NNReal}
 
 theorem bounded_subgradient_to_Lipschitz
-    (h : ∀ ⦃x : E⦄ , ∀ ⦃g⦄ , g ∈ SubderivAt f x → ‖g‖ ≤ G) :
+    (h : ∀ ⦃x : E⦄ , ∀ ⦃g⦄ , g ∈ SubderivAt f x → ‖g‖ ≤ G) (hf : ConvexOn ℝ univ f) (hc : ContinuousOn f univ) :
     LipschitzWith G f := by
   intro x y
   have hx₂' : Nonempty (SubderivAt f x) := SubderivAt.nonempty hf hc x
@@ -118,9 +118,9 @@ theorem Lipschitz_to_bounded_subgradient (h : LipschitzWith G f ) :
   linarith
 
 /- Subgradient of `f` is bounded if and only if `f` is Lipschitz -/
-theorem bounded_subgradient_iff_Lipschitz :
-    (∀ ⦃x : E⦄ , ∀ ⦃g⦄ , g ∈ SubderivAt f x → ‖g‖ ≤ G)  ↔ LipschitzWith G f :=
-  ⟨bounded_subgradient_to_Lipschitz hf hc, Lipschitz_to_bounded_subgradient⟩
+theorem bounded_subgradient_iff_Lipschitz (hf : ConvexOn ℝ univ f) (hc : ContinuousOn f Set.univ) :
+    (∀ ⦃x : E⦄ , ∀ ⦃g⦄ , g ∈ SubderivAt f x → ‖g‖ ≤ G) ↔ LipschitzWith G f :=
+    ⟨fun h ↦ bounded_subgradient_to_Lipschitz h hf hc, Lipschitz_to_bounded_subgradient⟩
 
 end
 
@@ -142,7 +142,7 @@ class subgradient_method (f : E → ℝ) (x₀ : E) :=
   (update : ∀ k, (x (k + 1)) = x k - a k • (g k))
   (hg : ∀ n, g n ∈ SubderivAt f (x n))
 
-variable (xm x₀ : E) (hm : IsMinOn f univ xm) {alg : subgradient_method f x₀}
+variable (xm x₀ : E) {alg : subgradient_method f x₀}
 
 /- Convergence of general subgradient method -/
 theorem subgradient_method_converge:
@@ -257,7 +257,7 @@ theorem subgradient_method_fix_step_size {t : ℝ}
 
 /-- convergence with fixed $‖x^{i+1}-x^{i}‖$ --/
 theorem subgradient_method_fixed_distance {s : ℝ}
-   (ha' : ∀ (n : ℕ), alg.a n * ‖alg.g n‖ = s) (hs : s > 0):
+   (ha' : ∀ (n : ℕ), alg.a n * ‖alg.g n‖ = s) (hs : s > 0) (hm : IsMinOn f univ xm):
     ∀ (k : ℕ) ,(sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x}) - (f xm)
       ≤ alg.G * ‖x₀ - xm‖ ^ 2 / (2 * (k + 1) * s) + alg.G * s / 2 := by
   intro k
@@ -374,7 +374,8 @@ theorem subgradient_method_fixed_distance {s : ℝ}
 /-- convergence with diminishing step size --/
 theorem subgradient_method_diminishing_step_size
     (ha' : Tendsto alg.a atTop (𝓝 0))
-    (ha'' : Tendsto (fun (k : ℕ) => (Finset.range (k + 1)).sum alg.a) atTop atTop) :
+    (ha'' : Tendsto (fun (k : ℕ) => (Finset.range (k + 1)).sum alg.a) atTop atTop)
+    (hm : IsMinOn f univ xm) :
     Tendsto (fun k => sInf {f (alg.x i) | i ∈ Finset.range (k + 1)}) atTop (𝓝 (f xm)) := by
   have h₁ : Tendsto (fun k => sInf {f (alg.x i) | i ∈ Finset.range (k + 1)} - f xm)
       atTop (𝓝 0) := by

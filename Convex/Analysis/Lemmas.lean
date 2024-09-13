@@ -210,8 +210,8 @@ lemma gradient_norm_sq_eq_two_self (x : E) :
   intro e ep
   use e
   constructor
-  . linarith
-  . intro x' dles
+  · linarith
+  · intro x' dles
     rw [← norm_neg (x - x'), neg_sub] at dles
     rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, inner_sub_right]
     rw [real_inner_smul_left, real_inner_smul_left]; ring_nf
@@ -280,8 +280,8 @@ lemma sub_normsquare_gradient (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) (m : 
     ∀ x ∈ s, HasGradientAt (fun x ↦ f x - m / 2 * ‖x‖ ^ 2) (f' x - m • x) x := by
   intro x xs
   apply HasGradientAt.sub
-  . apply hf x xs
-  . have u := HasGradientAt.const_smul (gradient_norm_sq_eq_two_self x) (m / 2)
+  · apply hf x xs
+  · have u := HasGradientAt.const_smul (gradient_norm_sq_eq_two_self x) (m / 2)
     simp at u
     rw [smul_smul, div_mul_cancel_of_invertible] at u
     apply u

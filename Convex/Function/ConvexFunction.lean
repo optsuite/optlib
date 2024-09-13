@@ -412,7 +412,7 @@ theorem monotone_gradient_strict_convex (hs : Convex ℝ s)
     calc
       c * b < b := by rw [mul_lt_iff_lt_one_left]; apply cl1; linarith
       _ < b + d * a := by
-        have : 0 < d * a := by apply mul_pos dpos apos
+        have : 0 < d * a := mul_pos dpos apos
         linarith
   have neq0 : inner (f' u - f' v) (u - v) > (0 : ℝ) := by
     have uin : u ∈ s := by
@@ -437,7 +437,7 @@ theorem strict_convex_monotone_gradient (hf : ∀ x ∈ s, HasGradientAt f (f' x
     (h₁ : StrictConvexOn ℝ s f ) :
     ∀ x ∈ s, ∀ y ∈ s, x ≠ y → inner (f' x - f' y) (x - y) > (0 : ℝ) := by
   intro x xin y yin xney
-  have convf : ConvexOn ℝ s f := by apply StrictConvexOn.convexOn h₁
+  have convf : ConvexOn ℝ s f := StrictConvexOn.convexOn h₁
   rw [StrictConvexOn] at h₁
   rcases h₁ with ⟨hs, fsconv⟩
   have : inner (f' x - f' y) (x - y) ≥ (0 : ℝ) := by

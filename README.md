@@ -59,7 +59,7 @@ will download the source of the convex library. After editing those files, you c
 - [`Lemmas.lean`](Convex/Analysis/Lemmas.lean): useful lemmas such as the mean-value theorem and the taylor's expansion.
 - [`Subgradient.lean`](Convex/Function/Subgradient.lean): the basic definitions and the properties of subgradient.
 - [`BanachSubgradient.lean`](Convex/Function/BanachSubgradient.lean): the basic definitions of subgradient on a banach space.
-- Frechet Subdifferential for general functions
+- The definition and properties of Fréchet subdifferential for general functions (Ongoing)
 
 ### Convex
 

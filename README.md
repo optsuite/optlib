@@ -119,7 +119,8 @@ will download the source of the convex library. After editing those files, you c
 ### Optimality Conditions
 
 - First Order Conditions for Constrained and Unconstrained Problems   (Done)
-- Second Order Conditions for Constrained and Unconstrained Problems 
+- Second Order Conditions for Constrained and Unconstrained Problems
+- KKT Conditions for Constrained Problems under constraint qualifications (Done)
 - Slater Condition and KKT Conditions for convex optimization problems (Ongoing)
 - ......
 
@@ -136,6 +137,8 @@ will download the source of the convex library. After editing those files, you c
 - Primal-Dual Algorithms
 - Stochastic Gradient Descent and Stochastic Algorithms
 - ......
+
+### Integer Programming
 
 ### Many other things to be added ...
 

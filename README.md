@@ -68,6 +68,7 @@ will download the source of the convex library. After editing those files, you c
 - [`StronglyConvex.lean`](Convex/Function/StronglyConvex.lean): the properties of strongly convex functions. (Part of this has been merged into mathlib) (see https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Analysis/Convex/Strong.lean)
 - Convex Cone and Carathéodory's theorem
 - Farkas Lemma
+- The definition and properties of line derivative for convex functions
 
 ### Function
 
@@ -76,11 +77,15 @@ will download the source of the convex library. After editing those files, you c
 - [`MinimaClosedFunction.lean`](Convex/Function/MinimaClosedFunction.lean): Weierstrass theorem for closed functions.
 - [`Proximal.lean`](Convex/Function/Proximal.lean): the basic definitions and the properties of proximal operator
 - KL properties and uniform KL properties
+- The definition and properties of proper functions
+- The definition and properties of the closure of a function
+- The definition and properties of conjugate functions
 
 ### Optimality
 
 - [`OptimalityConditionOfUnconstrainedProblem.lean`](Convex/Optimality/OptimalityConditionOfUnconstrainedProblem.lean): first order optimality conditions for unconstrained optimization problems.
-- First Order Conditions for Constrained Problems, KKT conditions under LICQ and other conditions   (Done)
+- First order conditions for constrained problems, KKT conditions under LICQ and other conditions   (Done)
+- KKT conditions for constrained convex problems under Slater Condition (Ongoing)  
 
 ### Algorithm
 
@@ -102,19 +107,20 @@ will download the source of the convex library. After editing those files, you c
 
 - First Order Conditions for Convex Functions (Done)
 - Second Order Conditions for Convex Functions
-- Definition and Properties of Proper Functions and Conjugate Functions
+- Definition and Properties of Proper Functions and Conjugate Functions (Ongoing)
 - Definition and Properties of Strongly Convex Functions (Done)
 - Definition and Properties of L-smooth Functions (Done)
 - Definition and Properties of Subgradient and Proximal Operator(Done)
 - Definition and Properties of Frechet Subdifferential (Done)
-- Definition of KL properties
+- Definition of KL properties (Done)
+- Definition of semi-algebraic functions
 - ......
 
 ### Optimality Conditions
 
 - First Order Conditions for Constrained and Unconstrained Problems   (Done)
-- Second Order Conditions for Constrained and Unconstrained Problems
-- Slater Condition and KKT Conditions for convex optimization problems
+- Second Order Conditions for Constrained and Unconstrained Problems 
+- Slater Condition and KKT Conditions for convex optimization problems (Ongoing)
 - ......
 
 ### Convergence of Optimization Algorithms

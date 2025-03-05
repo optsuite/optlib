@@ -55,18 +55,17 @@ theorem lipschitz_continuous_upper_bound
   let g' := fun t : ℝ ↦ (f' (x + t • (y - x)) (y - x))
   let LL := l * ‖y - x‖ ^ 2
   have H₁ : ∀ t₀ : ℝ , HasDerivAt g (g' t₀) t₀ := deriv_function_comp_segment x y h₁
-  have L₁ : LL = l * ‖y - x‖ ^ 2 := by exact rfl
+  have L₁ : LL = l * ‖y - x‖ ^ 2 := rfl
   have H₂ : ∀ u v : ℝ, ‖g' u - g' v‖  ≤ l * ‖y - x‖ ^ 2 * ‖u - v‖ := by
     intro u v
     specialize h₂ (x + u • (y - x)) (x + v • (y - x))
     have : x + u • (y - x) - (x + v • (y - x)) = (u - v) • (y - x) := by
       rw [← sub_sub, add_sub_right_comm, sub_self, zero_add, ← sub_smul]
-    calc ‖g' u - g' v‖ = ‖(f' (x + u • (y - x))) (y - x) - (f' (x + v • (y - x))) (y - x)‖ := rfl
-      _ = ‖(f' (x + u • (y - x)) - f' (x + v • (y - x))) (y - x)‖ := by congr
+    calc ‖g' u - g' v‖ = ‖(f' (x + u • (y - x)) - f' (x + v • (y - x))) (y - x)‖ := by congr
       _ ≤ ‖f' (x + u • (y - x)) - f' (x + v • (y - x))‖ * ‖y - x‖ :=
          ContinuousLinearMap.le_opNorm (f' (x + u • (y - x)) - f' (x + v • (y - x))) (y - x)
       _ ≤ l * ‖x + u • (y - x) - (x + v • (y - x))‖ * ‖y - x‖ :=
-         mul_le_mul_of_le_of_le h₂ (le_refl ‖y - x‖) (norm_nonneg _) (norm_nonneg _)
+         mul_le_mul_of_nonneg h₂ (le_refl ‖y - x‖) (norm_nonneg _) (norm_nonneg _)
       _ = l * ‖(u - v) • (y - x)‖ * ‖y - x‖  := by rw [this]
       _ = l * ‖y - x‖ ^ 2 * ‖u - v‖ := by rw [norm_smul]; ring_nf
   let upperf := fun t₀ : ℝ ↦ g 0 + t₀ * (g' 0) +  t₀ ^ 2 * (LL / 2)
@@ -77,8 +76,8 @@ theorem lipschitz_continuous_upper_bound
     rw [sub_zero] at H₂
     have abs_pos : LL * |t| = LL * t := congrArg (HMul.hMul LL) (abs_of_nonneg (by linarith))
     have HH₆ : g' t - g' 0 ≤ LL * t :=
-      calc  (g' t - g' 0) ≤ |g' t - g' 0| := by exact le_abs_self (g' t - g' 0)
-            _   ≤ l * ‖y - x‖ ^ 2 * |t| := by exact H₂
+      calc  (g' t - g' 0) ≤ |g' t - g' 0| := le_abs_self (g' t - g' 0)
+            _   ≤ l * ‖y - x‖ ^ 2 * |t| := H₂
             _   = LL * |t| := by simp
             _   = LL * t := abs_pos
     exact tsub_le_iff_left.mp HH₆
@@ -298,7 +297,7 @@ theorem convex_to_lower {l : ℝ} (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
     simp only [] at t₁₁; rw [← sub_add (l / 2 * ‖z₁‖ ^ 2) _ _] at t₁₁
     calc
       _ ≤ l / 2 * ‖z₂‖ ^ 2 - (l / 2 * ‖z₁‖ ^ 2 - f z₁ +
-          inner (f' s) z₁ + inner (l • z₁ - fs' s z₁) (z₂ - z₁)) := by apply t₁₁
+          inner (f' s) z₁ + inner (l • z₁ - fs' s z₁) (z₂ - z₁)) := t₁₁
       _ = l / 2 * ‖z₂‖ ^ 2 -(l / 2 * ‖z₁‖ ^ 2 - f z₁ + inner (f' s) z₁ +
         (l * (inner z₁ z₂ - ‖z₁‖ ^ 2) - inner (f' z₁ - f' s) (z₂ - z₁))) := by
         rw [inner_sub_left, inner_smul_left]
@@ -323,7 +322,7 @@ theorem convex_to_lower {l : ℝ} (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
     rcases hfx₂ x y (y - (1 / l) • fs' x y) with hfx₂'
     calc
       _ ≤ fs x y + inner (fs' x y) (y - (1 / l) • fs' x y - y)
-          + l / 2 * ‖y - (1 / l) • fs' x y - y‖ ^ 2 := by apply hfx₂'
+          + l / 2 * ‖y - (1 / l) • fs' x y - y‖ ^ 2 := hfx₂'
       _ = fs x y - 1 / (2 * l) * ‖fs' x y‖ ^ 2 := by
         have : y - (1 / l) • fs' x y - y = - (1 / l) • fs' x y := by simp
         rw [this, real_inner_smul_right]
@@ -339,7 +338,7 @@ theorem convex_to_lower {l : ℝ} (h₁ : ∀ x : E, HasGradientAt f (f' x) x)
     rcases hfx₂ y x (x - (1 / l) • fs' y x) with hfy₂'
     calc
       _ ≤ fs y x + inner (fs' y x) (x - (1 / l) • fs' y x - x)
-          + l / 2 * ‖x - (1 / l) • fs' y x - x‖ ^ 2 := by apply hfy₂'
+          + l / 2 * ‖x - (1 / l) • fs' y x - x‖ ^ 2 := hfy₂'
       _ = fs y x - 1 / (2 * l) * ‖fs' y x‖ ^ 2 := by
         have : x - (1 / l) • fs' y x - x = - (1 / l) • fs' y x := by simp
         rw [this, real_inner_smul_right]
@@ -388,7 +387,7 @@ theorem lipschitz_to_lower (h₁ : ∀ x, HasGradientAt f (f' x) x) (h₂ : Lips
     (hfun : ConvexOn ℝ Set.univ f) (hl : l > 0) :
     ∀ x y, inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2 := by
   obtain convex : ConvexOn ℝ Set.univ (fun x ↦ l / 2 * ‖x‖ ^ 2 - f x) :=
-    lipschitz_to_lnorm_sub_convex convex_univ (fun x _ => h₁ x) (lipschitzOn_univ.mpr h₂) hl
+    lipschitz_to_lnorm_sub_convex convex_univ (fun x _ => h₁ x) (lipschitzOnWith_univ.mpr h₂) hl
   exact convex_to_lower h₁ convex hl hfun
 
 theorem lower_to_lipschitz (h₂ : ∀ x y, inner (f' x - f' y) (x - y) ≥ 1 / l * ‖f' x - f' y‖ ^ 2)

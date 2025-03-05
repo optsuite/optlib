@@ -151,7 +151,7 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
     apply mul_pos
     linarith
     have h' : (0 : ℝ)  < 1 := by linarith
-    have h'' : 0 ≤ ‖grad‖ := by exact norm_nonneg (grad)
+    have h'' : 0 ≤ ‖grad‖ := norm_nonneg (grad)
     exact add_pos_of_nonneg_of_pos h'' h'
   have h₃ : ∃ δ₃ > (0 : ℝ), ∀ (x' : E),
       ‖x - x'‖ ≤ δ₃ → ‖f x' - f x‖ ≤ ε * ‖f x‖ * ‖f x‖ * ‖f x‖ /(4 * (‖grad‖ + 1 )) := by
@@ -167,10 +167,10 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
     exact lt_min δ₀pos δ₃pos
     intro x' h'
     have hp₁ : ‖x - x'‖ ≤ δ₀ := by
-      have h₂ : min δ₀ δ₃ ≤ δ₀ := by exact min_le_left δ₀ δ₃
+      have h₂ : min δ₀ δ₃ ≤ δ₀ := min_le_left δ₀ δ₃
       apply le_trans h' h₂
     have hp₂ : ‖x - x'‖ ≤ δ₃ := by
-      have h₂ : min δ₀ δ₃ ≤ δ₃ := by exact min_le_right δ₀ δ₃
+      have h₂ : min δ₀ δ₃ ≤ δ₃ := min_le_right δ₀ δ₃
       apply le_trans h' h₂
     have l0 : 0 < ‖f x'‖ := by
       have h' : ‖f x‖/2 ≤ ‖f x'‖ := hδ₀ x' hp₁
@@ -191,7 +191,7 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
       have h' : ‖f x' - f x‖ * ‖grad‖ * ‖x' - x‖ = ‖f x' - f x‖ * (‖grad‖ * ‖x' - x‖) := by
         apply mul_assoc
       rw [h']
-      have h'' : 0 ≤ ‖f x' - f x‖ := by apply norm_nonneg (f x' - f x)
+      have h'' : 0 ≤ ‖f x' - f x‖ := norm_nonneg (f x' - f x)
       have h''' : ‖⟪grad, (x' - x)⟫‖ ≤ ‖grad‖ * ‖x' - x‖ := by
         exact norm_inner_le_norm grad (x' - x)
       exact mul_le_mul_of_nonneg_left h''' h''
@@ -245,10 +245,10 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
     exact lt_min δ₀pos δ₂pos
     intro x' h'
     have hp₁ : ‖x - x'‖ ≤ δ₀ := by
-      have h₂ : min δ₀ δ₂ ≤ δ₀ := by exact min_le_left δ₀ δ₂
+      have h₂ : min δ₀ δ₂ ≤ δ₀ := min_le_left δ₀ δ₂
       apply le_trans h' h₂
     have hp₂ : ‖x - x'‖ ≤ δ₂ := by
-      have h₂ : min δ₀ δ₂ ≤ δ₂ := by exact min_le_right δ₀ δ₂
+      have h₂ : min δ₀ δ₂ ≤ δ₂ := min_le_right δ₀ δ₂
       apply le_trans h' h₂
 
     have zp1 :‖f x * (f x - f x' + inner grad (x' - x)) / (f x * f x * f x')‖ =
@@ -339,14 +339,14 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
   have hp₁ : ‖x - x'‖ ≤ δ₄ := by
     have h₀ : min δ₀ (min δ₄ δ₅) ≤ (min δ₄ δ₅) := by
       exact min_le_right δ₀ (min δ₄ δ₅)
-    have h₂ : min δ₄ δ₅ ≤ δ₄ := by exact min_le_left δ₄ δ₅
+    have h₂ : min δ₄ δ₅ ≤ δ₄ := min_le_left δ₄ δ₅
     have h₃ : ‖x - x'‖ ≤ (min δ₄ δ₅) := by
       apply le_trans h' h₀
     apply le_trans h₃ h₂
   have hp₂ : ‖x - x'‖ ≤ δ₅ := by
     have h₀ : min δ₀ (min δ₄ δ₅) ≤ (min δ₄ δ₅) := by
       exact min_le_right δ₀ (min δ₄ δ₅)
-    have h₂ : min δ₄ δ₅ ≤ δ₅ := by exact min_le_right δ₄ δ₅
+    have h₂ : min δ₄ δ₅ ≤ δ₅ := min_le_right δ₄ δ₅
     have h₃ : ‖x - x'‖ ≤ (min δ₄ δ₅) := by
       apply le_trans h' h₀
     apply le_trans h₃ h₂
@@ -421,7 +421,7 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
         apply norm_add_le ((f x) * (f x - f x' + inner grad (x' - x))/
       (f x * f x * f x')) ((f x' * inner grad (x' - x) - f x * inner grad (x' - x))/
       (f x * f x * f x'))
-      _ ≤ (ε/2) * ‖x' - x‖ + (ε/2) * ‖x' - x‖ := by exact add_le_add (hδ₅ x' hp₂) (hδ₄ x' hp₁)
+      _ ≤ (ε/2) * ‖x' - x‖ + (ε/2) * ‖x' - x‖ := add_le_add (hδ₅ x' hp₂) (hδ₄ x' hp₁)
       _ = ε * ‖x' - x‖ := by linarith
   have j₁ : ‖1 / f x' - 1 / f x - (- (⟪grad, (x' - x)⟫))/((f x) * (f x))‖ = ‖1 / f x' - 1 / f x -
       inner ((-(1 / f x ^ ↑2) • grad)) (x' - x)‖ := by

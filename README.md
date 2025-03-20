@@ -22,12 +22,12 @@ If anything goes wrong, please feel free to contact Chenyi Li through email (lic
 
 The version of Lean4 that used by this repository can be checked [here](https://github.com/optsuite/optlib/blob/main/lean-toolchain).
 
-### Use the `Convex` library as a Lean4 project dependency
+### Use the `Optlib` library as a Lean4 project dependency
 
 In a Lean4 project, add these lines to your `lakefile.lean`:
 
 ```lean4
-require convex from git
+require optlib from git
   "https://github.com/optsuite/optlib"
 ```
 
@@ -37,9 +37,9 @@ or in new `lakefile.lean` Lake DSL:
 require "optsuite" / "optlib" @ "git#master"
 ```
 
-The convex library uses mathlib4 as a dependency, command `lake exe cache get` can be used to fetch mathlib4 cache.
+The optlib library uses mathlib4 as a dependency, command `lake exe cache get` can be used to fetch mathlib4 cache.
 
-### Contribute to the `Convex` library
+### Contribute to the `Optlib` library
 
 The command
 
@@ -47,7 +47,7 @@ The command
 git clone https://github.com/optsuite/optlib.git && cd optlib && code .
 ```
 
-will download the source of the convex library. After editing those files, you can fork this project on GitHub and file a pull request.
+will download the source of the optlib library. After editing those files, you can fork this project on GitHub and file a pull request.
 
 ## Main Contributions (What we have done)
 

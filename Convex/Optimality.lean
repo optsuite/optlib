@@ -1,1 +1,0 @@
-import Convex.Optimality.OptimalityConditionOfUnconstrainedProblem

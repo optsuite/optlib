@@ -79,7 +79,7 @@ lemma Simplifying₂ (h₁ : a ≠ 0) (h₂ : 0 ≤ c) :
 
 lemma div_div_mul (h₁ : a / b ≤ c) (h₂ : 0 < a) (h₃ : 0 < b) (h₄ : 0 < c):
     1 / c ≤ b / a := by
-  have : a ≤ c * b := Iff.mp (div_le_iff h₃) h₁
+  have : a ≤ c * b := Iff.mp (div_le_iff₀ h₃) h₁
   have : a ≤ b * c := by linarith
   apply Iff.mpr (div_le_div_iff h₄ h₂)
   rw [one_mul]

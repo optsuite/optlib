@@ -238,7 +238,7 @@ lemma Lipschitz_of_Bounded [T0Space X](hf : ConvexOn ℝ (ball x₀ r) f)
             _ ≤ M + M :=by linarith
             _ = 2 * M :=by linarith
     calc
-      _ ≤ 2 * M * ‖uy - vx‖ / ε := by rwa[le_div_iff' hε.1]
+      _ ≤ 2 * M * ‖uy - vx‖ / ε := by rwa[le_div_iff₀' hε.1]
       _ = (2 * M / ε) * ‖uy - vx‖ := by ring
       _ ≤ _ := by
         simp[K]
@@ -433,7 +433,7 @@ lemma LocallyUpperBounded (hs_convex : Convex ℝ s)(hs_isopen : IsOpen s)
   have hx : x₁ ∈ (convexHull ℝ) u' := by
     simp[u'];apply t_pos hx₁.1
   apply ConvexOn.le_sup_of_mem_convexHull hf _ hx
-  sorry
+  apply subset_convexHull
 
 lemma LocallyLipschitz_of_LocallyUpperBounded (hs : IsOpen s)
     (h : ∀ x ∈ s , ∃ t ∈ 𝓝[s] x , Convex ℝ t ∧ IsOpen t ∧ BddAbove (f '' t))

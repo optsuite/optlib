@@ -42,7 +42,7 @@ end Definition
 section WeakDuality
 
 variable {E : Type _} {τ σ : Finset ℕ}
-variable {p : Constrained_OptimizationProblem E τ σ}
+variable {p : Constrained_OptimizationProblem E τ σ} {x : E}
 
 lemma empty_domain_inf_value_top {p : Constrained_OptimizationProblem E τ σ} (hp : (p.domain) = ∅) :
     p.inf_value = ⊤ := by
@@ -180,7 +180,7 @@ variable {E : Type _} {τ σ : Finset ℕ}
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 variable {p : Constrained_OptimizationProblem E τ σ}
 
-lemma ConcaveOn.sum {𝕜 : Type*} [OrderedSemiring 𝕜] [AddCommMonoid α][SMul 𝕜 α]
+lemma ConcaveOn.sum {α 𝕜 : Type*} [OrderedSemiring 𝕜] [AddCommMonoid α][SMul 𝕜 α]
     {ι : Type*} [DecidableEq ι] {s : Finset ι} {t : s → α → 𝕜} {d : Set α}
     (h : ∀ i : s, ConcaveOn 𝕜 d (t i)) (hd : Convex 𝕜 d):
     ConcaveOn 𝕜 d (fun x => ∑ i : s, t i x) := by

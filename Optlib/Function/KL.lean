@@ -76,7 +76,7 @@ lemma desingularizing_function_is_nonneg (φ : ℝ → ℝ) (η : ℝ) (h : φ �
   intro x ⟨hx₁, hx₂⟩
   rcases h with ⟨_,h₂,h₃,h₄,h₅⟩
   have Cont_φ : ContinuousOn φ (Icc 0 x) := by
-    apply ContinuousAt.continuousOn
+    apply continuousOn_of_forall_continuousAt
     intro y hy
     by_cases hy0 : y = 0
     rwa [hy0]
@@ -137,7 +137,7 @@ def KL_property_with_regularization (f : E → ℝ) (u' : E) (φ : ℝ → ℝ) 
   (EMetric.infEdist 0 (subdifferential (λ u => φ (f u - f u')) x)).toReal ≥ 1)
 
 -- deriv of function (fun t => c⁻¹ * t) is c⁻¹
-lemma deriv_of_const_mul_func (x : ℝ) : deriv (fun (t : ℝ) => c⁻¹ * t) x = c⁻¹ := by
+lemma deriv_of_const_mul_func (c : ℝ) (x : ℝ) : deriv (fun (t : ℝ) => c⁻¹ * t) x = c⁻¹ := by
     apply HasDerivAt.deriv
     have : (fun (t : ℝ) => c⁻¹ * t) = (fun t => t * c⁻¹) := by ext t; ring
     rw [this]
@@ -264,7 +264,7 @@ theorem KL_property_at_noncritical_point (h_noncrit : 0 ∉ subdifferential f x)
   apply Metric.ball_mem_nhds; simpa using hc_pos
   use φ, const_mul_special_concave c hc_pos
   intro u hu
-  rw [deriv_of_const_mul_func (f u - f x)]
+  rw [deriv_of_const_mul_func _ (f u - f x)]
   have : ‖u - x‖ + ‖f u - f x‖ < c := by
     rw [← add_halves c]
     apply add_lt_add
@@ -297,19 +297,22 @@ lemma real_geq_ennreal_ofreal_geq {a b : ℝ} {c : ENNReal} (hgeq : a ≥ b) (ap
 
 end aux_lemma_uniform_KL
 
+variable {E : Type*}
+variable {f : E → ℝ} {x : E}
+
 -- Definition of functions constant on a set
 def is_constant_on (f : E → ℝ) (Ω : Set E) : Prop :=
   ∀ x ∈ Ω, ∀ y ∈ Ω, f x = f y
 
 -- If f is constant on an empty set, then a constant value can be chosen
-lemma exist_constant_value (f : E → ℝ) (h : is_constant_on f Ω)
+lemma exist_constant_value (f : E → ℝ) {Ω : Set E} (h : is_constant_on f Ω)
   (h_nonempty : Ω.Nonempty) :
   ∃ μ : ℝ, ∀ x ∈ Ω, f x = μ := by
   rcases (Set.nonempty_def.1 h_nonempty) with ⟨x, hx⟩
   exact ⟨f x, fun y hy => h y hy x hx⟩
 
 section uniformized_KL
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-  Uniformized KL property -/
 theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsCompact Ω)

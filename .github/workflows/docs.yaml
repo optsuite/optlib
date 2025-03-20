@@ -36,7 +36,7 @@ jobs:
           lake -Kenv=CI_BUILD clean
           lake -Kenv=CI_BUILD exe cache get
           lake -Kenv=CI_BUILD build
-          lake -Kenv=CI_BUILD build Convex:docs
+          lake -Kenv=CI_BUILD build Optlib:docs
 
       - name: Fix File Permissions
         run: |

@@ -34,7 +34,7 @@ end
 
 section block_subdifferential
 
-variable [NormedAddCommGroup E]
+variable {E : Type*} [NormedAddCommGroup E]
 
 lemma infEdist_bound {s : Set E} : ∀ x ∈ s, ENNReal.ofReal ‖x‖ ≥ EMetric.infEdist 0 s := by
   by_cases hs : s = ∅
@@ -48,9 +48,9 @@ lemma infEdist_bound {s : Set E} : ∀ x ∈ s, ENNReal.ofReal ‖x‖ ≥ EMetr
   · exact Metric.infEdist_ne_top hs
   · simp
 
-variable [InnerProductSpace ℝ E]
+variable {F: Type*} [InnerProductSpace ℝ E]
 variable [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-variable {f : E → ℝ} {g : F → ℝ} {x : E} {y : F}
+variable {f : E → ℝ} {g : F → ℝ} {x u : E} {y v : F}
 
 lemma f_subdiff_block (hf : u ∈ f_subdifferential f x) (hg : v ∈ f_subdifferential g y) :
     ⟨u, v⟩ ∈ f_subdifferential (fun z ↦ f z.1 + g z.2 : WithLp 2 (E × F) → ℝ) ⟨x, y⟩ := by

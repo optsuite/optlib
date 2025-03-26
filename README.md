@@ -146,6 +146,7 @@ will download the source of the optlib library. After editing those files, you c
 - [Chenyi Li, Ziyu Wang, Wanyi He, Yuxuan Wu, Shengyang Xu, Zaiwen Wen. Formalization of Complexity Analysis of the First-order Optimization Algorithms](https://arxiv.org/abs/2403.11437)
 - [Chenyi Li, Zichen Wang, Yifan Bai, Yunxi Duan, Yuqing Gao, Pengfei Hao, Zaiwen Wen, Formalization of Algorithms for Optimization with Block Structures](http://arxiv.org/abs/2503.18806)
 - [Chenyi Li, Shengyang Xu, Chumin Sun, Li Zhou, Zaiwen Wen, Formalization of Optimality Conditions for Smooth Constrained Optimization Problems](https://arxiv.org/abs/2503.18821)
+- [Chenyi Li, Zaiwen Wen, An Introduction to Mathematics Formalization Based on Lean (in Chinese)](http://faculty.bicmr.pku.edu.cn/~wenzw/paper/OptLean.pdf)
 - [H. Liu, J. Hu, Y. Li, Z. Wen, Optimization: Modeling, Algorithm and Theory (in Chinese)](http://faculty.bicmr.pku.edu.cn/~wenzw/optbook.html)
 - [Rockafellar, R. Tyrrell, and Roger J-B. Wets. Variational analysis. Vol. 317. Springer Science & Business Media, 2009.](https://link.springer.com/book/10.1007/978-3-642-02431-3)
 - [Nocedal, Jorge, and Stephen J. Wright, eds. Numerical optimization. New York, NY: Springer New York, 1999.](https://link.springer.com/chapter/10.1007/0-387-22742-3_18)
@@ -154,6 +155,9 @@ will download the source of the optlib library. After editing those files, you c
 - [Bolte, J., Sabach, S. & Teboulle, M. Proximal alternating linearized minimization for nonconvex and nonsmooth problems. Math. Program. 146, 459–494 (2014).](https://link.springer.com/article/10.1007/s10107-013-0701-9)
 - [Maryam Fazel, Ting Kei Pong, Defeng Sun, and Paul Tseng. Hankel matrix rank minimization with applications to system identification and realization. SIAM Journal on Matrix Analysis and Applications, 34(3):946–977, 2013](https://epubs.siam.org/doi/abs/10.1137/110853996)
 - ...
+
+## Training Sessions
+There will be a weekly online session on formalization every Wednesday from 6:15 p.m. to 7:15 p.m throughout the Spring semester of 2025.
 
 ## The Team
 

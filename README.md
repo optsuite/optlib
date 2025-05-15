@@ -157,7 +157,7 @@ will download the source of the optlib library. After editing those files, you c
 - ...
 
 ## Training Sessions
-There will be a weekly online session on formalization every Wednesday from 6:15 p.m. to 7:15 p.m throughout the Spring semester of 2025.
+There will be a weekly online session on formalization every Wednesday from 6:15 p.m. to 7:15 p.m throughout the Spring semester of 2025. Join via Tencent Meeting (ID: 659-2856-6723).
 
 ## The Team
 

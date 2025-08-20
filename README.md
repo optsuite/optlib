@@ -49,7 +49,7 @@ git clone https://github.com/optsuite/optlib.git && cd optlib && code .
 
 will download the source of the optlib library. After editing those files, you can fork this project on GitHub and file a pull request.
 
-## Main Contributions (What we have done)
+## Code Explanations
 
 ### Differential
 
@@ -58,7 +58,6 @@ will download the source of the optlib library. After editing those files, you c
 - [`GradientDiv.lean`](Optlib/Differential/GradientDiv.lean): the quotient rule of the gradient.
 - [`Lemmas.lean`](Optlib/Differential/Lemmas.lean): useful lemmas such as the mean-value theorem and the taylor's expansion.
 - [`Subdifferential.lean`](Optlib/Differential/Subdifferential.lean): the basic definitions and properties of subdifferentials for general nonsmooth functions.
-- Subdifferentials for general proper functions (with the extended real numbers as its range) (Ongoing)
 
 ### Convex
 
@@ -70,7 +69,6 @@ will download the source of the optlib library. After editing those files, you c
 - [`FiniteDimensionalConvexFunctionsLocallyLipschitz.lean`](Optlib/Function/FiniteDimensionalConvexFunctionsLocallyLipschitz.lean): the proof of the the contuity of convex functions on finite dimensional space
 - [`ConicCaratheodory.lean`](Optlib/Convex/ConicCaratheodory.lean): the proof of the conic Caratheodory lemma
 - [`Farkas.lean`](Optlib/Convex/Farkas.lean): the proof of the Farkas Lemma
-- The definition and properties of line derivative for convex functions (todo)
 
 ### Function
 
@@ -79,16 +77,12 @@ will download the source of the optlib library. After editing those files, you c
 - [`MinimaClosedFunction.lean`](Optlib/Function/MinimaClosedFunction.lean): Weierstrass theorem for closed functions.
 - [`Proximal.lean`](Optlib/Function/Proximal.lean): the basic definitions and the properties of proximal operator
 - [`KL.lean`](Optlib/Function/KL.lean): KL properties and uniform KL properties
-- The definition and properties of proper functions
-- The definition and properties of the closure of a function
-- The definition and properties of conjugate functions
 
 ### Optimality
 
 - [`OptimalityConditionOfUnconstrainedProblem.lean`](Optlib/Optimality/OptimalityConditionOfUnconstrainedProblem.lean): first order optimality conditions for unconstrained optimization problems.
 - [`Constrained_Problem.lean`](Optlib/Optimality/Constrained_Problem.lean): the basic definitions of constrained optimization problems and the proof the KKT conditions under LICQ and linear constraint qualification
 - [`Weak_Duality.lean`](Optlib/Optimality/Weak_Duality.lean): the formalization of the dual problem and the proof of the weak duality property
-- KKT conditions for constrained convex problems under Slater Condition (Ongoing)  
 
 ### Algorithm
 
@@ -102,28 +96,20 @@ will download the source of the optlib library. After editing those files, you c
 - [`LASSO.lean`](Optlib/Algorithm/LASSO.lean): convergence rate of the LASSO algorithm for L1-regularized least squares problem.
 - [`the BCD method`](Optlib/Algorithm/BCD/Convergence.lean): convergence analysis of the block coordinate descent method.
 - [`the ADMM method`](Optlib/Algorithm/ADMM/Theroem_converge.lean): convergence analysis of the alternating direction method of multipliers.
-- Primal-Dual Algorithms (todo)
 
-
-## What we plan to do
+## What we have done
 
 ### Convex Analysis
 
-- First Order Conditions for Convex Functions (Done)
-- Second Order Conditions for Convex Functions
-- Definition and Properties of Proper Functions and Conjugate Functions (Ongoing)
-- Definition and Properties of Strongly Convex Functions (Done)
-- Definition and Properties of L-smooth Functions (Done)
-- Definition and Properties of Subgradient and Proximal Operator(Done)
-- Definition and Properties of Frechet Subdifferential (Done)
-- Definition of KL properties (Done)
-- Definition of semi-algebraic functions
+- First and Second Order Conditions for Convex Functions
+- Definition and Properties of Strongly Convex Functions
+- Definition and Properties of L-smooth Functions
+- Definition and Properties of Proper Functions and Conjugate Functions 
 - ......
 
 ### Optimality Conditions
-
-- First Order Conditions for Constrained and Unconstrained Problems   
-- Second Order Conditions for Constrained and Unconstrained Problems
+   
+- First and Second Order Conditions for Constrained and Unconstrained Problems
 - KKT Conditions for Constrained Problems under constraint qualifications 
 - Slater Condition and KKT Conditions for convex optimization problems (Ongoing)
 - ......
@@ -131,22 +117,72 @@ will download the source of the optlib library. After editing those files, you c
 ### Convergence of Optimization Algorithms
 
 - Gradient Descent for Convex and Strongly Convex Functions 
-- Line Search Methods
-- Newton Method, Quasi-Newton Method, LBFGS Update
-- Primal-Dual Algorithms
-- Stochastic Gradient Descent and Stochastic Algorithms
+- Proximal Gradient Method and Nesterov's Acceleration
+- Block Coordinate Descent Method
+- Alternating Direction Method of Multipliers
 - ......
 
-### Integer Programming
+
+## Sino-Russian Mathematics Center Formalization Plan
+
+### Objectives
+The project aims to systematically formalize core areas of mathematics, including convex analysis, numerical linear algebra, and high-dimensional probability using Lean. By formalizing classical textbooks and building a machine-readable, verifiable knowledge network, the initiative will bridge traditional human-written mathematics with AI-assisted reasoning and scientific computing. The ultimate goal is to create a replicable paradigm for textbook formalization, foster integration between mathematics and artificial intelligence, and establish a foundation for next-generation mathematical infrastructure.
+
+### Recruitment
+The project will build a collaborative research team centered on Lean-based formalization. We welcome outstanding undergraduate seniors, master’s students, and PhD students with strong mathematical backgrounds and programming skills. Team members will be organized into groups under the guidance of group leaders, focusing respectively on convex optimization, numerical algebra, and high-dimensional probability. 
+
+### Compensation and Benefits
+
+- Group Members: Base stipend of RMB 1,000 per month, rising up to RMB 3,000 depending on the number and quality of formalized theorems.
+
+- Group Leaders: Base stipend of RMB 1,500 per month, rising up to RMB 4,000 depending on individual and team contributions.
+
+### Topics
+#### Convex Analysis
+
+We mainly follow the book [Convex Analysis](https://press.princeton.edu/books/paperback/9780691015866/convex-analysis).
+- Topological Properties
+- Duality Correspondences
+- Representation and Inequalities
+- Differential Theory
+
+#### Numerical Algebra
+
+We mainly follow the book [Numerical Linear Algebra](https://www.pup.cn/bookDetail?name=%25E6%2595%25B0%25E5%2580%25BC%25E7%25BA%25BF%25E6%2580%25A7%25E4%25BB%25A3%25E6%2595%25B0%28%25E7%25AC%25AC%25E4%25BA%258C%25E7%2589%2588%29&id=e78cd4d7185f11e9805800163e0a6607&0.2220737514339418).
+- Iterative Methods
+- Conjugate Gradient Methods
+- Eigenvalue Computation Methods
+
+#### High Dimensional Probability
+
+We mainly follow the book [High-Dimensional Probability](https://www.math.uci.edu/~rvershyn/teaching/hdp/hdp.html).
+- Concentration Inequalities
+- Random Vectors
+- Random Matrices
+- Random Processes
 
 ### Many other things to be added ...
 
-## References
+## Publications
+
+### Formalization of Optimization
 
 - [Chenyi Li, Ziyu Wang, Wanyi He, Yuxuan Wu, Shengyang Xu, Zaiwen Wen. Formalization of Complexity Analysis of the First-order Optimization Algorithms](https://arxiv.org/abs/2403.11437)
 - [Chenyi Li, Zichen Wang, Yifan Bai, Yunxi Duan, Yuqing Gao, Pengfei Hao, Zaiwen Wen, Formalization of Algorithms for Optimization with Block Structures](http://arxiv.org/abs/2503.18806)
 - [Chenyi Li, Shengyang Xu, Chumin Sun, Li Zhou, Zaiwen Wen, Formalization of Optimality Conditions for Smooth Constrained Optimization Problems](https://arxiv.org/abs/2503.18821)
 - [Chenyi Li, Zaiwen Wen, An Introduction to Mathematics Formalization Based on Lean (in Chinese)](http://faculty.bicmr.pku.edu.cn/~wenzw/paper/OptLean.pdf)
+
+### Autoformalization and Automatic Theorem Proving
+
+- Ziyu Wang, Bowen Yang, Shihao Zhou, Chenyi Li, Yuan Zhang, Bin Dong, Zaiwen Wen, Translating Informal Proofs into Formal Proofs Using  a Chain of States
+- Chenyi Li, Wanli Ma, Zichen Wang, Zaiwen Wen, SITA: A Framework for Structure-to-Instance  Theorem Autoformalization
+
+### Premise Selection
+
+- Zichen Wang, Anjie Dong, Zaiwen Wen, Tree-Based Premise Selection for Lean4
+
+## References
+
 - [H. Liu, J. Hu, Y. Li, Z. Wen, Optimization: Modeling, Algorithm and Theory (in Chinese)](http://faculty.bicmr.pku.edu.cn/~wenzw/optbook.html)
 - [Rockafellar, R. Tyrrell, and Roger J-B. Wets. Variational analysis. Vol. 317. Springer Science & Business Media, 2009.](https://link.springer.com/book/10.1007/978-3-642-02431-3)
 - [Nocedal, Jorge, and Stephen J. Wright, eds. Numerical optimization. New York, NY: Springer New York, 1999.](https://link.springer.com/chapter/10.1007/0-387-22742-3_18)

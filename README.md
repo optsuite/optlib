@@ -146,7 +146,7 @@ We mainly follow the book [Convex Analysis](https://press.princeton.edu/books/pa
 - Representation and Inequalities
 - Differential Theory
 
-#### Numerical Algebra
+#### Numerical Linear Algebra
 
 We mainly follow the book [Numerical Linear Algebra](https://www.pup.cn/bookDetail?name=%25E6%2595%25B0%25E5%2580%25BC%25E7%25BA%25BF%25E6%2580%25A7%25E4%25BB%25A3%25E6%2595%25B0%28%25E7%25AC%25AC%25E4%25BA%258C%25E7%2589%2588%29&id=e78cd4d7185f11e9805800163e0a6607&0.2220737514339418).
 - Iterative Methods

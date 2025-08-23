@@ -123,7 +123,7 @@ will download the source of the optlib library. After editing those files, you c
 - ......
 
 
-## Sino-Russian Mathematics Center Formalization Plan
+## Mathematics Textbook Formalization Project
 
 ### Objectives
 The project aims to systematically formalize core areas of mathematics, including convex analysis, numerical linear algebra, and high-dimensional probability using Lean. By formalizing classical textbooks and building a machine-readable, verifiable knowledge network, the initiative will bridge traditional human-written mathematics with AI-assisted reasoning and scientific computing. The ultimate goal is to create a replicable paradigm for textbook formalization, foster integration between mathematics and artificial intelligence, and establish a foundation for next-generation mathematical infrastructure.
@@ -161,7 +161,12 @@ We mainly follow the book [High-Dimensional Probability](https://www.math.uci.ed
 - Random Matrices
 - Random Processes
 
-### Many other things to be added ...
+### Sponsor
+
+- Beijing International Center for Mathematical Research, Peking University
+- Sino-Russian Mathematics Center
+- Great Bay University
+- National Natural Science Foundation of China
 
 ## Publications
 

@@ -140,22 +140,22 @@ The project will build a collaborative research team centered on Lean-based form
 ### Topics
 #### Convex Analysis
 
-We mainly follow the book [Convex Analysis](https://press.princeton.edu/books/paperback/9780691015866/convex-analysis).
+We mainly follow the book [Convex Analysis (R. T. Rockafellar)](https://press.princeton.edu/books/paperback/9780691015866/convex-analysis).
 - Topological Properties
 - Duality Correspondences
 - Representation and Inequalities
 - Differential Theory
-
+  
 #### Numerical Linear Algebra
 
-We mainly follow the book [Numerical Linear Algebra](https://www.pup.cn/bookDetail?name=%25E6%2595%25B0%25E5%2580%25BC%25E7%25BA%25BF%25E6%2580%25A7%25E4%25BB%25A3%25E6%2595%25B0%28%25E7%25AC%25AC%25E4%25BA%258C%25E7%2589%2588%29&id=e78cd4d7185f11e9805800163e0a6607&0.2220737514339418).
-- Iterative Methods
-- Conjugate Gradient Methods
-- Eigenvalue Computation Methods
-
+We mainly follow the book [Matrix Computations (Golub & Van Loan)](https://epubs.siam.org/doi/abs/10.1137/1.9781421407944).
+- Matrix Factorizations (LU/Cholesky, QR, Schur, SVD; Jordan canonical form)
+- Matrix Functions
+- Matrix Differential Calculus
+  
 #### High Dimensional Probability
 
-We mainly follow the book [High-Dimensional Probability](https://www.math.uci.edu/~rvershyn/teaching/hdp/hdp.html).
+We mainly follow the book [High-Dimensional Probability (Roman Vershynin)](https://www.math.uci.edu/~rvershyn/teaching/hdp/hdp.html).
 - Concentration Inequalities
 - Random Vectors
 - Random Matrices

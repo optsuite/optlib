@@ -149,7 +149,7 @@ We mainly follow the book [Convex Analysis (R. T. Rockafellar)](https://press.pr
 
 #### Nonlinear Programming 
 
-We mainly follow the book [Numerical Optimization (Jorge Nocedal, Stephen J. Wright)](https://link.springer.com/book/10.1007/978-0-387-40065-5) and [Optimization: Modeling, Algorithm and Theory](http://faculty.bicmr.pku.edu.cn/~wenzw/optbook.html)
+We mainly follow the books [Numerical Optimization (Jorge Nocedal, Stephen J. Wright)](https://link.springer.com/book/10.1007/978-0-387-40065-5) and [Optimization: Modeling, Algorithm and Theory](http://faculty.bicmr.pku.edu.cn/~wenzw/optbook.html)
 - Line Search Methods
 - Quasi-Newton Methods
 - Theory of Constrained Optimization

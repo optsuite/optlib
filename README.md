@@ -145,13 +145,31 @@ We mainly follow the book [Convex Analysis (R. T. Rockafellar)](https://press.pr
 - Duality Correspondences
 - Representation and Inequalities
 - Differential Theory
-  
+- ...
+
+#### Nonlinear Programming 
+
+We mainly follow the book [Numerical Optimization (Jorge Nocedal, Stephen J. Wright)](https://link.springer.com/book/10.1007/978-0-387-40065-5) and [Optimization: Modeling, Algorithm and Theory](http://faculty.bicmr.pku.edu.cn/~wenzw/optbook.html)
+- Line Search Methods
+- Quasi-Newton Methods
+- Theory of Constrained Optimization
+- ...
+
+#### Integer Programming
+
+We mainly follow the book [Integer Programming (Michele Conforti, Gérard Cornuéjols, and Giacomo Zambelli)](https://link.springer.com/book/10.1007/978-3-319-11008-0).
+- Linear Inequlities and Polyhedra
+- Perfect Formulations
+- Intersection Cuts and Corner Polyhedra
+- ...
+
 #### Numerical Linear Algebra
 
 We mainly follow the book [Matrix Computations (Golub & Van Loan)](https://epubs.siam.org/doi/abs/10.1137/1.9781421407944).
 - Matrix Factorizations (LU/Cholesky, QR, Schur, SVD; Jordan canonical form)
 - Matrix Functions
 - Matrix Differential Calculus
+- ...
   
 #### High Dimensional Probability
 
@@ -160,6 +178,7 @@ We mainly follow the book [High-Dimensional Probability (Roman Vershynin)](https
 - Random Vectors
 - Random Matrices
 - Random Processes
+- ...
 
 ### Sponsor
 

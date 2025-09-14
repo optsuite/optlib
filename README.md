@@ -217,7 +217,7 @@ We mainly follow the book [High-Dimensional Probability (Roman Vershynin)](https
 - ...
 
 ## Training Sessions
-There will be a weekly online session on formalization every Wednesday from 6:15 p.m. to 7:15 p.m throughout the Spring semester of 2025. Join via Tencent Meeting (ID: 659-2856-6723).
+There will be a weekly online session on formalization every Wednesday from 6:15 p.m. to 7:15 p.m throughout the Fall semester of 2025. Join via Tencent Meeting (ID: 892-7680-9007).
 
 ## The Team
 

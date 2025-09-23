@@ -18,7 +18,7 @@ open Set InnerProductSpace
   x with d is less than zero.
 -/
 def DescentDirection (d : E) (x : E) (_ : HasGradientAt f (f' x) x) : Prop :=
-  inner (f' x) d < (0 : ℝ)
+  ⟪f' x, d⟫_ℝ < (0 : ℝ)
 
 /-
   For any vector d, there does not exist a descent direction for the function f
@@ -30,19 +30,19 @@ theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
   intro d
   by_contra h
   have : ∃ t : ℝ , f (xm + t • d) < f xm := by
-    have h₁ : ∃ T : ℝ , T > 0 ∧ (∀ a ∈ Icc (- T) T, inner (f' (xm + a • d)) d < (0 : ℝ)) := by
-      let g := fun r : ℝ ↦ (inner (f' (xm + r • d)) d : ℝ)
-      have hg0 : g 0 = inner (f' xm) d := by simp [g]
+    have h₁ : ∃ T : ℝ , T > 0 ∧ (∀ a ∈ Icc (- T) T, ⟪f' (xm + a • d), d⟫_ℝ < (0 : ℝ)) := by
+      let g := fun r : ℝ ↦ (⟪f' (xm + r • d), d⟫_ℝ : ℝ)
+      have hg0 : g 0 = ⟪f' xm, d⟫_ℝ := by simp [g]
       have hc : ContinuousOn g univ := by
-        simp [g]
+        change ContinuousOn (fun r : ℝ => ⟪f' (xm + r • d), d⟫_ℝ) univ
         apply ContinuousOn.inner
         · apply ContinuousOn.comp hfc
           · apply ContinuousOn.add continuousOn_const
             apply ContinuousOn.smul continuousOn_id continuousOn_const
-          · simp
+          · intro _ _; simp
         · exact continuousOn_const
-      have hu : ∃ u < (0 : ℝ) , inner (f' xm) d ≤  u := by
-        use (inner (f' xm) d / 2)
+      have hu : ∃ u < (0 : ℝ) , ⟪f' xm, d⟫_ℝ ≤  u := by
+        use (⟪f' xm, d⟫_ℝ / 2)
         rw [DescentDirection] at h
         constructor
         · linarith
@@ -51,7 +51,7 @@ theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
       rw [← hg0] at hu2
       have hc' : ∃ T, T > 0 ∧ (∀ a ∈ Icc (- T) T, g a < 0) := by
         have : univ ∈ nhds (0 : ℝ) := by simp
-        rcases continuous (ContinuousOn.continuousAt hc this) with h1
+        rcases Metric.continuousAt_iff.mp (ContinuousOn.continuousAt hc this) with h1
         specialize h1 (- u / 2) (by linarith)
         rcases h1 with ⟨T, ⟨hT1, hT2⟩⟩
         use T / 2; constructor
@@ -61,10 +61,10 @@ theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
             simp; rw [abs_lt]; simp at ha
             rcases ha with ⟨ha1, ha2⟩
             constructor; linarith; linarith
-          specialize hT2 a this
-          simp at hT2
-          rw [abs_lt] at hT2
-          rcases hT2 with ⟨_, hs2⟩
+          specialize hT2 this
+          have : |g a - g 0| < -u / 2 := hT2
+          rw [abs_lt] at this
+          rcases this with ⟨_, hs2⟩
           rw [sub_lt_iff_lt_add] at hs2
           apply lt_trans hs2
           · linarith
@@ -72,7 +72,7 @@ theorem optimal_no_descent_direction (hf : ∀ x : E, HasGradientAt f (f' x) x)
       use T
     rcases h₁ with ⟨T, ⟨hT1,hT2⟩⟩
     have h₂ : ∃ t1 : ℝ, t1 ≥ -T ∧ t1 ≤ T ∧ f (xm + T • d) =
-        f xm + inner (f' (xm + t1 • d)) (T • d) := by
+        f xm + ⟪f' (xm + t1 • d), T • d⟫_ℝ := by
       rcases (expansion hf xm (T • d)) with ⟨ts,⟨ts1,⟨ts2,ts3⟩⟩⟩
       use (ts • T)
       constructor
@@ -111,7 +111,7 @@ theorem first_order_unconstrained (hf : ∀ x : E, HasGradientAt f (f' x) x) (mi
 -/
 theorem first_order_convex (hf : ∀ x : E, HasGradientAt f (f' x) x) (hcon : ConvexOn ℝ univ f)
     (hfm : f' xm = 0) : IsMinOn f univ xm := by
-  have : ∀ y , f y ≥ f xm + inner (f' xm) (y - xm) := by
+  have : ∀ y , f y ≥ f xm + ⟪f' xm, y - xm⟫_ℝ := by
     intro y
     apply Convex_first_order_condition' (hf xm) hcon (by trivial)
     · trivial

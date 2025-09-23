@@ -82,10 +82,12 @@ lemma nonneg₁ [Setting E₁ E₂ F admm admm_kkt]: min τ (1 + τ - τ ^ 2) > 
 
 lemma nonneg₂ [Setting E₁ E₂ F admm admm_kkt]: min 1 (1 + 1 / τ - τ) > 0 := by
    rcases admm.htau with ⟨h1, _⟩
-   have h2: 1 + 1/τ - τ > 0 := by
-      field_simp;rw [← sq]
-      have h3 : 1 + τ - τ ^ 2 > 0 := nonneg_prime
-      linarith
+   have h2 : 1 + 1 / τ - τ > 0 := by
+      have h3 : 0 < 1 + τ - τ ^ 2 := nonneg_prime
+      have hquot : 0 < (1 + τ - τ ^ 2) / τ := by exact div_pos h3 h1
+      have hrew : (1 + τ - τ ^ 2) / τ = 1 + 1 / τ - τ := by
+         field_simp [one_div]; simp; grind
+      simpa [hrew] using hquot
    apply lt_min one_pos h2
 
 lemma Φ₁_nonneg [Setting E₁ E₂ F admm admm_kkt]:
@@ -674,7 +676,7 @@ lemma Φ_Summable₁' [Setting E₁ E₂ F admm admm_kkt] :
    intro n
    let φ₀ := (fun i : ℕ => Φ i.succ)
    have : ∀ i ∈ Finset.range n , (φ₀ i)-(φ₀ (i+1)) = (Φ i.succ ) - (Φ (i.succ + 1)) := by
-      simp only [Finset.mem_range, Nat.succ_eq_add_one, implies_true]
+      simp only [Finset.mem_range, Nat.succ_eq_add_one]; grind
    have h : Finset.range n =Finset.range n := rfl
    rw[← Finset.sum_congr h this , Finset.sum_range_sub']
    simp only [φ₀]
@@ -705,7 +707,7 @@ Summable g:=by
    apply hgf
   apply NNReal.summable_of_le this
   rw[← NNReal.summable_coe]
-  exact hf
+  exact hf; grind
 
 lemma Φ_inequ₁ [Setting E₁ E₂ F admm admm_kkt] (m : ℕ+):
       (min 1 (1 + 1 / τ - τ )) * ρ * ‖A₁ (e₁ (m+1)) + A₂ (e₂ (m+1))‖ ^ 2 ≤ Φ m - Φ (m + 1) := by

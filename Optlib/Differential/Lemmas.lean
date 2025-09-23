@@ -3,10 +3,13 @@ Copyright (c) 2023 Chenyi Li. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li
 -/
-import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Analysis.Calculus.ContDiff.Defs
-import Mathlib.Topology.Semicontinuous
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Normed.Lp.ProdLp
+import Mathlib.Data.Real.StarOrdered
+import Mathlib.Order.Filter.ENNReal
 import Optlib.Differential.Calculation
 
 /-!
@@ -164,7 +167,7 @@ lemma continuous_positive_direction [NormedSpace ℝ E] (h : ContinuousAt f x) (
   obtain ⟨δ, hδ1, hδ2⟩ := continuous_positive_neighborhood h hx
   by_cases hv : v = 0
   · rw [hv]; simp; use 1; constructor; linarith; intro t _ _; exact hx
-  have : ‖v‖ > 0 := norm_pos_iff'.mpr hv
+  have : ‖v‖ > 0 := norm_pos_iff.mpr hv
   use δ / (2 * ‖v‖); constructor; positivity
   intro y hy
   obtain hδ2 := hδ2 (x + y • v)
@@ -173,7 +176,7 @@ lemma continuous_positive_direction [NormedSpace ℝ E] (h : ContinuousAt f x) (
     simp at hy; rw [norm_smul]; simp; rw [abs_of_nonneg hy.1]
     calc
       _ ≤ δ / (2 * ‖v‖) * ‖v‖ := (mul_le_mul_iff_of_pos_right this).mpr hy.2
-      _ = δ / 2 := by field_simp; ring
+      _ = δ / 2 := by field_simp
       _ < δ := by linarith
   exact hδ2 this
 
@@ -269,26 +272,24 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 variable {x p y : E} {f : E → ℝ} {f' : E → E} {s : Set E}
 
-open Topology InnerProductSpace Set Filter Tendsto
+open Topology InnerProductSpace Set Filter
 
 theorem HasGradient_Convergence (h : HasGradientAt f (f' x) x) :
     ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E, ‖x - x'‖ ≤ δ
-    → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
+    → ‖f x' - f x - ((toDual ℝ E) (f' x)) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
   rw [hasGradientAt_iff_hasFDerivAt] at h
-  show ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ
-    → ‖f x' - f x - ((toDual ℝ E) (f' x)) (x' - x)‖ ≤ ε * ‖x - x'‖
   apply HasFDeriv_Convergence
   exact h
 
 theorem Convergence_HasGradient (h : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
-    ‖x - x'‖ ≤ δ → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖) :
+    ‖x - x'‖ ≤ δ → ‖f x' - f x - ((toDual ℝ E) (f' x)) (x' - x)‖ ≤ ε * ‖x - x'‖) :
     HasGradientAt f (f' x) x := by
   rw [hasGradientAt_iff_hasFDerivAt]
   exact HasFDeriv_iff_Convergence_Point.mpr h
 
-theorem HasGradient_iff_Convergence_Point {f'x : E}:
-      HasGradientAt f f'x x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
-     ‖x - x'‖ ≤ δ → ‖f x' - f x - inner (f'x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
+theorem HasGradient_iff_Convergence_Point {g : E}:
+      HasGradientAt f g x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
+     ‖x - x'‖ ≤ δ → ‖f x' - f x - (@inner ℝ E _ g (x' - x))‖ ≤ ε * ‖x - x'‖ := by
   constructor
   · intro h; apply HasGradient_Convergence
     exact h
@@ -296,7 +297,7 @@ theorem HasGradient_iff_Convergence_Point {f'x : E}:
 
 theorem HasGradient_iff_Convergence :
       HasGradientAt f (f' x) x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
-      ‖x - x'‖ ≤ δ → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
+      ‖x - x'‖ ≤ δ → ‖f x' - f x - (@inner ℝ E _ (f' x) (x' - x))‖ ≤ ε * ‖x - x'‖ := by
   constructor
   apply HasGradient_Convergence
   apply Convergence_HasGradient
@@ -308,20 +309,39 @@ lemma gradient_norm_sq_eq_two_self (x : E) :
   intro e ep
   use e
   constructor
-  . linarith
-  . intro x' dles
-    rw [← norm_neg (x - x'), neg_sub] at dles
-    rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, inner_sub_right]
-    rw [real_inner_smul_left, real_inner_smul_left]; ring_nf
-    rw [add_sub, add_sub_right_comm, mul_two, ← sub_sub]
-    rw [← inner_sub_left, sub_add, ← inner_sub_right]
-    rw [real_inner_comm, ← inner_sub_left, real_inner_self_eq_norm_sq]
-    rw [abs_of_nonneg, pow_two, ← norm_neg (x - x'), neg_sub]
-    apply mul_le_mul_of_nonneg_right dles (norm_nonneg (x' - x))
-    apply pow_two_nonneg
+  · linarith
+  · intro x' dles
+    have hId :
+        ⟪x', x'⟫_ℝ - ⟪x, x⟫_ℝ - 2 * ⟪x, x' - x⟫_ℝ
+          = ⟪x' - x, x' - x⟫_ℝ := by
+      calc
+        ⟪x', x'⟫_ℝ - ⟪x, x⟫_ℝ - 2 * ⟪x, x' - x⟫_ℝ
+            = ⟪x', x'⟫_ℝ - ⟪x, x⟫_ℝ - 2 * (⟪x, x'⟫_ℝ - ⟪x, x⟫_ℝ) := by
+              simp [inner_sub_right]
+        _ = ⟪x', x'⟫_ℝ + ⟪x, x⟫_ℝ - 2 * ⟪x, x'⟫_ℝ := by
+          ring_nf
+        _ = ⟪x', x'⟫_ℝ - ⟪x', x⟫_ℝ - ⟪x, x'⟫_ℝ + ⟪x, x⟫_ℝ := by
+          have hxcomm : ⟪x', x⟫_ℝ = ⟪x, x'⟫_ℝ := real_inner_comm x x'
+          have : ⟪x', x'⟫_ℝ + ⟪x, x⟫_ℝ - 2 * ⟪x, x'⟫_ℝ
+                = ⟪x', x'⟫_ℝ - ⟪x, x'⟫_ℝ - ⟪x, x'⟫_ℝ + ⟪x, x⟫_ℝ := by
+            ring_nf
+          simpa [hxcomm, add_comm, add_left_comm, add_assoc, sub_eq_add_neg] using this
+        _ = ⟪x' - x, x' - x⟫_ℝ := by
+          simp_rw [inner_sub_left, inner_sub_right, sub_eq_add_neg, add_comm, add_left_comm, add_assoc]
+          grind only
+    have hId2 :
+      ‖x'‖ ^ 2 - ‖x‖ ^ 2 - 2 * ⟪x, x' - x⟫_ℝ = ‖x' - x‖ ^ 2 := by
+      simpa [real_inner_self_eq_norm_sq] using hId
+    have hle' : ‖x - x'‖ ≤ e := dles
+    have hineq : ‖x' - x‖ ^ 2 ≤ e * ‖x - x'‖ := by
+      have : ‖x - x'‖ ^ 2 ≤ e * ‖x - x'‖ := by
+        simpa [pow_two] using mul_le_mul_of_nonneg_right hle' (norm_nonneg _)
+      simpa [norm_sub_rev] using this
+    rw [hId2, abs_of_nonneg (pow_two_nonneg _)]
+    exact hineq
 
 lemma gradient_of_inner_const (x : E) (a : E):
-    HasGradientAt (fun x ↦ (inner a x : ℝ)) a x := by
+    HasGradientAt (fun x ↦ (⟪a, x⟫_ℝ)) a x := by
   apply HasGradient_iff_Convergence_Point.mpr
   simp only [gt_iff_lt, Real.norm_eq_abs]
   intros ε εpos
@@ -336,43 +356,29 @@ lemma gradient_of_const_mul_norm (l : ℝ) (z : E) :
   let h := fun x : E => ‖x‖ ^ 2
   have e1 : (l • z) = (l / 2) • (2 : ℝ) • z := by rw [smul_smul]; simp
   have : (fun (x : E) => l / 2 * ‖x‖ ^ 2) = (fun (x : E) => (l / 2) • h x) := by
-    ext; simp
+    ext; simp only [smul_eq_mul, mul_eq_mul_left_iff, div_eq_zero_iff, OfNat.ofNat_ne_zero,
+      or_false]; grind only
   have h1 : HasGradientAt h ((2 : ℝ) • z) z := gradient_norm_sq_eq_two_self z
   rw [this, e1]; refine HasGradientAt.const_smul' (l / 2) h1
 
 lemma gradient_of_sq : ∀ u : E, HasGradientAt (fun u ↦ ‖u - x‖ ^ 2 / 2) (u - x) u := by
-  intro s
-  rw [HasGradient_iff_Convergence_Point]
-  simp; intro e ep; use e
-  constructor
-  · linarith
-  · intro x' dles; field_simp; rw [abs_div]; simp
-    have eq1 (u v : E) (e : ℝ) (dle : ‖u - v‖ ≤ e) :
-      |‖v‖ ^ 2 - ‖u‖ ^ 2 - inner ((2 : ℝ) • u) (v - u)| ≤ e * ‖u - v‖ := by
-      rw [← norm_neg (u - v), neg_sub] at dle;
-      rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, inner_sub_right]
-      rw [real_inner_smul_left, real_inner_smul_left]; ring_nf
-      rw [add_sub, add_sub_right_comm, mul_two, ← sub_sub]
-      rw [← inner_sub_left, sub_add, ← inner_sub_right]
-      rw [real_inner_comm, ← inner_sub_left, real_inner_self_eq_norm_sq]
-      rw [abs_of_nonneg, pow_two, ← norm_neg (u - v), neg_sub]
-      apply mul_le_mul_of_nonneg_right dle (norm_nonneg (v - u))
-      apply pow_two_nonneg
-    let u := s - x
-    have hu : u = s - x := rfl
-    let v := x' - x
-    have hv : v = x' - x := rfl
-    rw [← real_inner_smul_left]
-    have eq2 : s - x' = u - v := by rw [hu, hv]; simp
-    have eq3 : x' - s = v - u := by rw [hu, hv]; simp
-    rw [eq2, eq3]
-    show |‖v‖ ^ 2 - ‖u‖ ^ 2 - inner ((2 : ℝ) • u) (v - u)| / 2 ≤ e * ‖u - v‖
-    calc
-      |‖v‖ ^ 2 - ‖u‖ ^ 2 - inner ((2 : ℝ) • u) (v - u)| / 2 ≤ (e * ‖u - v‖) / 2 := by
-        rw [div_le_div_right]
-        apply eq1; rw [hu, hv]; simp; apply dles; simp
-      _ ≤ e * ‖u - v‖ := by
-        field_simp
+  intro u
+  have hT : HasFDerivAt (fun u : E ↦ u - x) (1 : E →L[ℝ] E) u := by
+    simpa using
+      (hasFDerivAt_id (𝕜 := ℝ) (E := E) u).sub_const x
+  have hg0 : HasGradientAt (fun z : E ↦ ‖z‖ ^ 2) ((2 : ℝ) • (u - x)) (u - x) := by
+    simpa using (gradient_norm_sq_eq_two_self (u - x))
+  have hF : HasFDerivAt (fun u : E ↦ ‖u - x‖ ^ 2)
+      ((toDual ℝ E) ((2 : ℝ) • (u - x))) u := by
+    simpa [Function.comp] using
+      (hasGradientAt_iff_hasFDerivAt.mp hg0).comp u hT
+  have hG : HasGradientAt (fun u : E ↦ ‖u - x‖ ^ 2)
+      ((2 : ℝ) • (u - x)) u :=
+    (hasGradientAt_iff_hasFDerivAt.mpr hF)
+  have hG' : HasGradientAt
+      (fun u : E ↦ (1 / 2 : ℝ) * ‖u - x‖ ^ 2) (u - x) u := by
+    simpa [smul_eq_mul] using hG.const_mul (1 / 2 : ℝ)
+  simpa [div_eq_inv_mul, mul_comm] using hG'
 
 lemma sub_normsquare_gradient (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) (m : ℝ):
     ∀ x ∈ s, HasGradientAt (fun x ↦ f x - m / 2 * ‖x‖ ^ 2) (f' x - m • x) x := by
@@ -431,14 +437,14 @@ open InnerProductSpace Set
 -/
 
 lemma expansion (hf : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
-    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner (f' (x + t • p)) p := by
+    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + ⟪f' (x + t • p), p⟫_ℝ := by
   let g := fun r : ℝ ↦ f (x + r • p)
-  let g' := fun r : ℝ ↦ (inner (f' (x + r • p)) p : ℝ)
+  let g' := fun r : ℝ ↦ (⟪f' (x + r • p), p⟫_ℝ : ℝ)
   have h1 : ∀ r , HasDerivAt g (g' r) r := by
     let h := fun r : ℝ ↦ x + r • p
     have : g = f ∘ h := by rfl
     rw [this]; intro r
-    have : inner (f' (x + r • p)) p = toDual ℝ E (f' (x + r • p)) p := rfl
+    have : ⟪f' (x + r • p), p⟫_ℝ = toDual ℝ E (f' (x + r • p)) p := rfl
     simp [g']; rw [this]; apply HasFDerivAt.comp_hasDerivAt
     · apply hasGradientAt_iff_hasFDerivAt.mp
       exact hf (x + r • p)
@@ -449,7 +455,9 @@ lemma expansion (hf : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
       rw [one_smul] at this; exact this
   have e1 : f (x + p) = g 1 := by simp [g]
   have e2 : f x = g 0 := by simp [g]
-  have e3 : ∀ t, inner (f' (x + t • p)) p = g' t := by simp []
+  have e3 : ∀ t, ⟪f' (x + t • p), p⟫_ℝ = g' t := by
+    intro t
+    simp_all only [one_smul, zero_smul, add_zero, g, g']
   rw [e1, e2]
   have : ∃ c ∈ Set.Ioo 0 1, g' c = (g 1 - g 0) / (1 - 0) := by
     apply exists_hasDerivAt_eq_slope g g' (by norm_num)
@@ -465,14 +473,14 @@ lemma expansion (hf : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
   rw [e3 c]; simp [h2]
 
 lemma general_expansion (x p : E) (hf : ∀ y ∈ Metric.closedBall x ‖p‖, HasGradientAt f (f' y) y) :
-    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner (f' (x + t • p)) p := by
+    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + ⟪f' (x + t • p), p⟫_ℝ := by
   let g := fun r : ℝ ↦ f (x + r • p)
-  let g' := fun r : ℝ ↦ (inner (f' (x + r • p)) p : ℝ)
+  let g' := fun r : ℝ ↦ (⟪f' (x + r • p), p⟫_ℝ : ℝ)
   have h1 : ∀ r ∈ Icc 0 1, HasDerivAt g (g' r) r := by
     let h := fun r : ℝ ↦ x + r • p
     have : g = f ∘ h := by rfl
     rw [this]; intro r hr
-    have : inner (f' (x + r • p)) p = toDual ℝ E (f' (x + r • p)) p := rfl
+    have : ⟪f' (x + r • p), p⟫_ℝ = toDual ℝ E (f' (x + r • p)) p := rfl
     simp [g']; rw [this]; apply HasFDerivAt.comp_hasDerivAt
     · apply hasGradientAt_iff_hasFDerivAt.mp
       have : x + r • p ∈ Metric.closedBall x ‖p‖ := by
@@ -486,7 +494,7 @@ lemma general_expansion (x p : E) (hf : ∀ y ∈ Metric.closedBall x ‖p‖, H
       rw [one_smul] at this; exact this
   have e1 : f (x + p) = g 1 := by simp [g]
   have e2 : f x = g 0 := by simp [g]
-  have e3 : ∀ t, inner (f' (x + t • p)) p = g' t := by simp []
+  have e3 : ∀ t, ⟪f' (x + t • p), p⟫_ℝ = g' t := by grind only
   rw [e1, e2]
   have : ∃ c ∈ Set.Ioo 0 1, g' c = (g 1 - g 0) / (1 - 0) := by
     apply exists_hasDerivAt_eq_slope g g' (by norm_num)
@@ -501,15 +509,15 @@ lemma general_expansion (x p : E) (hf : ∀ y ∈ Metric.closedBall x ‖p‖, H
 
 theorem lagrange (hs : Convex ℝ s) (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) :
     ∀ x ∈ s, ∀ y ∈ s, ∃ c : ℝ, c ∈ Set.Ioo 0 1 ∧
-    inner (f' (x + c • (y - x))) (y - x) = f y - f x := by
+    ⟪f' (x + c • (y - x)), (y - x)⟫_ℝ = f y - f x := by
   intro x xs y ys
   let g := fun t : ℝ ↦ f (x + t • (y - x))
-  let g' := fun t : ℝ ↦ (inner (f' (x + t • (y - x))) (y - x) : ℝ)
+  let g' := fun t : ℝ ↦ (⟪f' (x + t • (y - x)), (y - x)⟫_ℝ : ℝ)
   have h1 : ∀ r ∈ Icc 0 1 , HasDerivAt g (g' r) r := by
     let h := fun r : ℝ ↦ (x + r • (y - x))
     have : g = f ∘ h := rfl
     rw [this]; intro t ht
-    have : inner (f' (x + t • (y - x))) (y - x) = toDual ℝ E (f' (x + t • (y - x))) (y - x) := rfl
+    have : ⟪f' (x + t • (y - x)), (y - x)⟫_ℝ = toDual ℝ E (f' (x + t • (y - x))) (y - x) := rfl
     simp [g']; rw [this]; apply HasFDerivAt.comp_hasDerivAt
     · apply hasGradientAt_iff_hasFDerivAt.mp
       have : x + t • (y - x) ∈ s := by

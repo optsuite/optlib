@@ -26,8 +26,8 @@ lemma subdifferential_Graph' (f : E → ℝ) :
         use fun n => (u n, f (u n), v n)
         constructor
         · intro n; simp; exact (hv n).1
-        · apply Tendsto.prod_mk_nhds u_conv
-            (Tendsto.prod_mk_nhds fun_conv ((forall_and_right _ _).1 hv).2)
+        · apply Tendsto.prodMk_nhds u_conv
+            (Tendsto.prodMk_nhds fun_conv ((forall_and_right _ _).1 hv).2)
       · intro h
         simp [subdifferential_Graph, subdifferential]
         simp at h
@@ -63,7 +63,7 @@ theorem GraphOfSubgradientIsClosed {f : E → ℝ}
     exact this
   rw [nhds_prod_eq,Filter.tendsto_prod_iff'] at hconv;
   simp at hconv
-  exact Tendsto.prod_mk_nhds hconv.1 (Tendsto.prod_mk_nhds hf hconv.2)
+  exact Tendsto.prodMk_nhds hconv.1 (Tendsto.prodMk_nhds hf hconv.2)
 
 /- Definition of Φ_η, the family of desingularizing function -/
 def desingularizing_function (η : ℝ) := {φ : ℝ → ℝ | (ConcaveOn ℝ (Ico 0 η) φ) -- ∧ (∀ x ∈ Ioo 0 η, φ x > 0)
@@ -103,12 +103,16 @@ lemma desingularizing_function_is_nonneg (φ : ℝ → ℝ) (η : ℝ) (h : φ �
     obtain h_lag := exists_deriv_eq_slope φ hx₁ Cont_φ Diff_φ
     rcases h_lag with ⟨c, ⟨hc, hval⟩⟩
     use c, hc
-    field_simp [hval]
+    -- Rearrange hval: deriv φ c = (φ x - φ 0) / (x - 0) to φ x = φ 0 + deriv φ c * (x - 0)
+    have : φ x = φ 0 + deriv φ c * (x - 0) := by
+      rw [hval]
+      field_simp [ne_of_gt hx₁]; simp
+    exact this
   choose y hy₁ hy₂ using hhh
   simp [hy₂, h₂]; field_simp;
   rcases hy₁ with ⟨hy₁,hy₁'⟩
   have yleq: y < η := by linarith
-  exact h₅ y hy₁ yleq
+  exact Left.mul_pos (h₅ y hy₁ yleq) hx₁
 
 -- Definition of KL property with specific desingularizing function
 def KL_point_with_reparameter (σ : E → ℝ) (u : E) (φ : ℝ → ℝ) : Prop :=
@@ -161,9 +165,9 @@ lemma const_mul_special_concave : ∀ c > 0, (fun t => c⁻¹ * t) ∈ desingula
     rw [fun_smul_eq_mul]; apply ContDiff.contDiffOn; apply contDiff_const_smul
   have h₄: ContinuousAt (fun t ↦ c⁻¹ * t) 0 := by
     rw [fun_smul_eq_mul]; apply (continuousAt_const_smul_iff₀ _).2
-    apply continuousAt_id; field_simp
+    apply continuousAt_id; field_simp; simp; grind
   have h₅: ∀ (x : ℝ), 0 < x → x < c / 2 → 0 < deriv (fun t ↦ c⁻¹ * t) x := by
-    intro x _ _; rw [deriv_of_const_mul_func]; field_simp; exact cpos
+    intro x _ _; rw [deriv_of_const_mul_func]; field_simp; simp; grind
   exact ⟨h₁, h₃, h₄, h₅⟩
 
 
@@ -243,7 +247,7 @@ lemma edist_geq_const (h_noncrit : 0 ∉ subdifferential f x) :
         intro n
         exact (hv n).1
       have v_to_zero: Tendsto v atTop (𝓝 0) := by
-        rw [dist_zero_left] at hv
+        rw [dist_zero] at hv
         have : Tendsto (fun n => ‖v n‖) atTop (𝓝 0) := by
           apply squeeze_zero (by simp) _ tendsto_one_div_add_atTop_nhds_zero_nat
           intro n
@@ -251,7 +255,7 @@ lemma edist_geq_const (h_noncrit : 0 ∉ subdifferential f x) :
         apply tendsto_zero_iff_norm_tendsto_zero.2 this
       show (x, 0) ∈ subdifferential_Graph f
       apply GraphOfSubgradientIsClosed v_in_subdiff
-        (Filter.Tendsto.prod_mk_nhds u_to_x v_to_zero) fu_to_fx
+        (Filter.Tendsto.prodMk_nhds u_to_x v_to_zero) fu_to_fx
     contradiction
 
 /-- Non-critical KL property is naturally true -/
@@ -322,8 +326,7 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
     (ENNReal.ofReal (deriv φ (f x - f u))) * EMetric.infEdist 0 (subdifferential f x) ≥ 1 := by
     -- case : Ω = ∅
     by_cases h_nonempty : Ω = ∅
-    · push_neg at h_nonempty
-      use 1, (by simp), 1, (by simp), (fun t => 2⁻¹ * t)
+    · use 1, (by simp), 1, (by simp), (fun t => 2⁻¹ * t)
       constructor
       rw [← div_self]
       exact (const_mul_special_concave 2 (by simp))
@@ -452,7 +455,7 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
         rw [ContinuousAt]
         have : φ_sum = (fun c => ∑ x ∈ ht2.toFinset, φ x c) := by ext c; simp [φ_sum]
         rw [this]
-        simp [φ_sum]
+        simp
         apply tendsto_finset_sum
         intro c hc
         obtain cont := (hφ c (mem_t_in_Ω c hc)).2.2.2.1
@@ -463,6 +466,7 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
         have : φ_sum = (fun c => ∑ x ∈ ht2.toFinset, φ x c) := by ext c; simp [φ_sum]
         rw [this]
         have : deriv (fun c ↦ ∑ x ∈ ht2.toFinset, φ x c) y = ∑ x ∈ ht2.toFinset, deriv (φ x) y := by
+          rw [funext (fun c => (Finset.sum_apply c _ _).symm)]
           apply deriv_sum
           intro c hc
           have η_inequ: y < η c := by
@@ -527,7 +531,9 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
         simp [φ_sum]
         have equ₁: deriv (fun c ↦ ∑ x ∈ ht2.toFinset, φ x c) (f u - μ) =
             ∑ x ∈ ht2.toFinset, deriv (φ x) (f u - μ) := by
-          apply deriv_sum
+          have : (fun c ↦ ∑ x ∈ ht2.toFinset, φ x c) = ∑ x ∈ ht2.toFinset, φ x := by
+            ext c; exact Eq.symm (Finset.sum_apply c ht2.toFinset φ)
+          rw [this, deriv_sum]
           intro c hc
           have σu_pos : f u - μ > 0 := by linarith [hu2]
           have η_inequ: (f u - μ) < η c := by

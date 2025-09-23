@@ -6,6 +6,8 @@ Authors: Zichen Wang
 import Mathlib.Analysis.Normed.Lp.PiLp
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib
+
 /-!
 # l₁ Space and Continuous Linear Maps between l₁ Space and Finite Dimensional Space
 
@@ -20,7 +22,7 @@ This file contains several key definitions and theorems that involve continuous 
 
 - `f` : A noncomputable function mapping basis vectors to the `l₁` space.
 
-- `σ` : A noncomputable map constructed using `Basis.constrL` which is shown to be continuous.
+- `σ` : A noncomputable map constructed using `Module.Basis.constrL` which is shown to be continuous.
 
 ## Main Theorems
 
@@ -54,7 +56,7 @@ open scoped Pointwise Module
 noncomputable def f : Fin (Module.finrank ℝ α) → PiLp 1 (fun _ : Fin (Module.finrank ℝ α) => ℝ) :=
   fun i j => if i = j then ‖(Module.finBasis ℝ α) i‖ else 0
 
-noncomputable def σ := Basis.constrL (Module.finBasis ℝ α) f
+noncomputable def σ := Module.Basis.constrL (Module.finBasis ℝ α) f
 
 theorem continuous_map_sigma : Continuous (σ (α := α)):= by exact ContinuousLinearMap.continuous σ
 
@@ -91,7 +93,7 @@ theorem sigma_decompose_apply : ∀ x , ∀ j , (σ x) j =
   rw[← PiLp.ext_iff]
   calc
     _ = σ (∑ i , (((Module.finBasis ℝ α).repr x) i) • (Module.finBasis ℝ α) i):= by
-      congr;exact Eq.symm (Basis.sum_repr (Module.finBasis ℝ α) x)
+      congr;exact Eq.symm (Module.Basis.sum_repr (Module.finBasis ℝ α) x)
     _ = ∑ i , σ ((((Module.finBasis ℝ α).repr x) i) • (Module.finBasis ℝ α) i):= by
       simp only [map_sum, map_smul]
     _ = _ := by
@@ -134,7 +136,7 @@ theorem l1Ball_sub_convexHull{x : α}{r : ℝ}(hr : r > 0)(hn : Module.finrank �
   rw[← map_sub] at hx₀
   have sum_le_r :  ∑ i , ‖(b).equivFun (x₀ - x)  i‖ * ‖(b) i‖ / r ≤  1 := by
     rw[← Finset.sum_div]
-    simp only [Basis.equivFun_apply, Pi.sub_apply]
+    simp only [Module.Basis.equivFun_apply]
     rw[← l1_norm_eq (x₀ - x)]
     apply le_of_lt
     apply Bound.div_lt_one_of_pos_of_lt hr hx₀
@@ -142,13 +144,13 @@ theorem l1Ball_sub_convexHull{x : α}{r : ℝ}(hr : r > 0)(hn : Module.finrank �
   let ι := Fin n
   let ι₀ := Fin (n + 2)
   let w₀ := (b).equivFun (x₀ - x)
-  have repr : ∑ i , w₀ i • b i = x₀ - x := Basis.sum_equivFun b (x₀ - x)
+  have repr : ∑ i , w₀ i • b i = x₀ - x := Module.Basis.sum_equivFun b (x₀ - x)
 
   let w₁  : ι → ℝ := fun i => |(b).equivFun (x₀ - x) i| * ‖b i‖ / r
   let sum := ∑ i : ι, w₁ i
 
   have sum_pos : 1 - sum ≥ 0 := by
-    simp only [sum,w₁,ge_iff_le, gt_iff_lt,sub_pos,Pi.sub_apply, sub_nonneg]
+    simp only [sum,w₁,ge_iff_le, sub_nonneg]
     apply sum_le_r
 
   let w  : ι₀ → ℝ
@@ -177,7 +179,7 @@ theorem l1Ball_sub_convexHull{x : α}{r : ℝ}(hr : r > 0)(hn : Module.finrank �
   have hw₀ : ∀ (i : ι₀), 0 ≤ w i := by
     intro ⟨i,hi⟩
     by_cases h : i < n
-    · simp only [Pi.sub_apply, h, ↓reduceDIte, ge_iff_le, w, w₁]
+    · simp only [h, ↓reduceDIte, ge_iff_le, w, w₁]
       apply div_nonneg _ (le_of_lt hr)
       apply mul_nonneg
       apply abs_nonneg
@@ -196,33 +198,65 @@ theorem l1Ball_sub_convexHull{x : α}{r : ℝ}(hr : r > 0)(hn : Module.finrank �
 
   have hz : ∀ (i : ι₀), z i ∈ ((⋃ i , {(r / ‖b i‖) • (b i)})  ∪  (⋃ i ,{- (r / ‖b i‖) • (b i)})) := by
     intro i
-    simp only [dite_eq_ite, z]
-    by_cases h₁ : (i : ℕ) = n + 1
-    · simp[h₁]
-    simp only [h₁, ↓reduceIte]
-    by_cases h₂ : (i : ℕ) = n
-    · simp[h₂]
-    simp only [h₂, ↓reduceIte, add_right_inj]
-    let use_i : ι := ⟨i ,lem_i i.2 h₁ h₂⟩
-    simp only [↓reduceDIte]
-    let a := (b).equivFun (x₀ - x) use_i
-    rcases lt_trichotomy a 0 with ha | ha | ha
-    · right
-      have : (b).equivFun (x₀ - x) use_i ≠ 0 := by linarith
-      simp at this
-      rw[sign_neg ha]
-      simp[this, ↓reduceIte]
-    · left;
-      simp only [a] at ha
-      rw[ha,sign_zero]
-      simp;
-    · left
-      rw[sign_pos ha]
-      simp
+    rcases i with ⟨k, hk⟩
+    by_cases h₁ : k = n + 1
+    · refine Or.inr ?_
+      refine Set.mem_iUnion.2 ?_
+      refine ⟨fin0, ?_⟩
+      simp [z, dite_eq_ite, h₁]
+    · by_cases h₂ : k = n
+      · refine Or.inl ?_
+        refine Set.mem_iUnion.2 ?_
+        refine ⟨fin0, ?_⟩
+        simp [z, dite_eq_ite, h₂]
+      · have hlt : k < n := lem_i hk (by exact h₁) (by exact h₂)
+        let use_i : ι := ⟨k, hlt⟩
+        let a : ℝ := (b).equivFun (x₀ - x) use_i
+        have hz_form :
+            z ⟨k, hk⟩ =
+              if a = 0 then (r / ‖b use_i‖) • b use_i
+              else ((SignType.sign a) * (r / ‖b use_i‖)) • b use_i := by
+          simp [z, dite_eq_ite, h₁, h₂, a]
+          rfl
+        have hrepr_sub :
+            ((b).repr x₀) use_i - ((b).repr x) use_i = a := by
+          simp [Pi.sub_apply, Module.Basis.equivFun_apply, a]
+        rcases lt_trichotomy a 0 with hlt0 | heq | hgt0
+        · have ha0 : a ≠ 0 := ne_of_lt hlt0
+          refine Or.inr ?_
+          refine Set.mem_iUnion.2 ?_
+          refine ⟨use_i, ?_⟩
+          have hz_neg' :
+              z ⟨k, hk⟩ = ((SignType.sign a) * (r / ‖b use_i‖)) • b use_i := by
+            simp [hz_form, ha0]
+          have hz_neg :
+              z ⟨k, hk⟩ = - (r / ‖b use_i‖) • b use_i := by
+            have hsign : SignType.sign a = (-1 : ℝ) := by simp [*]
+            simpa [hsign, smul_smul, neg_one_smul] using hz_neg'
+          exact Set.mem_singleton_iff.mpr hz_neg
+        · refine Or.inl ?_
+          refine Set.mem_iUnion.2 ?_
+          refine ⟨use_i, ?_⟩
+          have hz_zero :
+              z ⟨k, hk⟩ = (r / ‖b use_i‖) • b use_i := by
+            simp [hz_form, heq]
+          exact Set.mem_singleton_iff.mpr hz_zero
+        · have ha0 : a ≠ 0 := ne_of_gt hgt0
+          refine Or.inl ?_
+          refine Set.mem_iUnion.2 ?_
+          refine ⟨use_i, ?_⟩
+          have hz_pos' :
+              z ⟨k, hk⟩ = ((SignType.sign a) * (r / ‖b use_i‖)) • b use_i := by
+            simp [hz_form, ha0]
+          have hz_pos :
+              z ⟨k, hk⟩ = (r / ‖b use_i‖) • b use_i := by
+            have hsign : SignType.sign a = (1 : ℝ) := by simp [*]
+            simpa [hsign, one_mul] using hz_pos'
+          exact Set.mem_singleton_iff.mpr hz_pos
   have bi_pos : ∀ i : ι , ‖b i‖ ≠ 0 := by
     intro i
     refine norm_ne_zero_iff.mpr ?_
-    exact Basis.ne_zero b i
+    exact Module.Basis.ne_zero b i
 
   have hx : ∑ i : ι₀, w i • z i = x₀ - x := by
     rw[Fin.sum_univ_castSucc,Fin.sum_univ_castSucc]
@@ -242,7 +276,7 @@ theorem l1Ball_sub_convexHull{x : α}{r : ℝ}(hr : r > 0)(hn : Module.finrank �
     simp only [neg_smul, dite_eq_ite, Fin.coe_castSucc, h₁, ↓reduceIte, h₂,
       Fin.eta, z]
     have : w₁ i • ((SignType.sign ((b).equivFun (x₀ - x) i)) * (r / ‖b i‖)) = w₀ i := by
-      simp only [Pi.sub_apply, smul_eq_mul, w₁, w₀]
+      simp only [smul_eq_mul, w₁, w₀]
       calc
         _ = |(b).equivFun (x₀ - x) i| * (‖b i‖ / r) * (SignType.sign ((b).equivFun (x₀ - x) i)) * (r / ‖b i‖) := by
           rw[← mul_div]
@@ -274,7 +308,7 @@ theorem sigma_is_injective : Function.Injective σ (α := α) := by
   let z := x - y
   let n := Module.finrank ℝ α
   let bs := Module.finBasis ℝ α
-  have hz : z = ∑ i : Fin n , (bs.repr z i)• bs i := Eq.symm (Basis.sum_repr bs z)
+  have hz : z = ∑ i : Fin n , (bs.repr z i)• bs i := Eq.symm (Module.Basis.sum_repr bs z)
   change σ z = 0 at h
   rw[hz] at h
   simp at h
@@ -289,7 +323,7 @@ theorem sigma_is_injective : Function.Injective σ (α := α) := by
   intro i
   rw[smul_eq_zero]
   left
-  have : ‖(Module.finBasis ℝ α) i‖ ≠ 0:= norm_ne_zero_iff.mpr $ Basis.ne_zero (Module.finBasis ℝ α) i
+  have : ‖(Module.finBasis ℝ α) i‖ ≠ 0:= norm_ne_zero_iff.mpr $ Module.Basis.ne_zero (Module.finBasis ℝ α) i
   have h1 : (bs.repr z) i * ‖(Module.finBasis ℝ α) i‖ = 0 := by
     rw[← hi , h, PiLp.zero_apply]
   apply eq_zero_of_ne_zero_of_mul_right_eq_zero this h1

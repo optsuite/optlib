@@ -189,22 +189,22 @@ open BigOperators Asymptotics
 variable {ι : Type*} {u : Finset ι} {A : ι → F → 𝕜} {A' : ι → F}
 
 theorem HasGradientAtFilter.sum (h : ∀ i ∈ u, HasGradientAtFilter (A i) (A' i) x L) :
-    HasGradientAtFilter (fun y => ∑ i in u, A i y) (∑ i in u, A' i) x L := by
-  have : ∑ i in u, (toDual 𝕜 F) (A' i) = (toDual 𝕜 F) (∑ i in u, A' i) := by
+    HasGradientAtFilter (fun y => ∑ i ∈ u, A i y) (∑ i ∈ u, A' i) x L := by
+  have : ∑ i ∈ u, (toDual 𝕜 F) (A' i) = (toDual 𝕜 F) (∑ i ∈ u, A' i) := by
     rw [map_sum]
   rw [HasGradientAtFilter, ← this]; unfold HasGradientAtFilter at h
-  exact HasFDerivAtFilter.sum h
+  exact HasFDerivAtFilter.fun_sum h
 
 theorem HasGradientWithinAt.sum (h : ∀ i ∈ u, HasGradientWithinAt (A i) (A' i) s x) :
-    HasGradientWithinAt (fun y => ∑ i in u, A i y) (∑ i in u, A' i) s x := by
+    HasGradientWithinAt (fun y => ∑ i ∈ u, A i y) (∑ i ∈ u, A' i) s x := by
   exact HasGradientAtFilter.sum h
 
 theorem HasGradientAt.sum (h : ∀ i ∈ u, HasGradientAt (A i) (A' i) x) :
-    HasGradientAt (fun y => ∑ i in u, A i y) (∑ i in u, A' i) x := by
+    HasGradientAt (fun y => ∑ i ∈ u, A i y) (∑ i ∈ u, A' i) x := by
   exact HasGradientAtFilter.sum h
 
 theorem gradient_sum (h : ∀ i ∈ u, DifferentiableAt 𝕜 (A i) x) :
-    ∇ (fun y => ∑ i in u, A i y) x = ∑ i in u, ∇ (A i) x :=
+    ∇ (fun y => ∑ i ∈ u, A i y) x = ∑ i ∈ u, ∇ (A i) x :=
   (HasGradientAt.sum fun i hi => (h i hi).hasGradientAt).gradient
 
 end Sum
@@ -229,7 +229,7 @@ theorem HasGradientAt.neg (h : HasGradientAt f f' x) :
 
 theorem gradient_neg : ∇ (fun y => - f y) x = - ∇ f x := by
   unfold gradient
-  simp only [fderiv_neg, map_neg]
+  simp only [fderiv_fun_neg, map_neg]
 
 end Neg
 
@@ -300,8 +300,8 @@ open ContinuousLinearMap
 
 lemma equiv_lemma_mul : c x • (toDual 𝕜 F) d' + d x • (toDual 𝕜 F) c'
     = (toDual 𝕜 F) ((starRingEnd 𝕜) (c x) • d' + (starRingEnd 𝕜) (d x) • c'):= by
-  simp
-  congr <;> exact SemilinearMapClass.map_smul_inv _ _ _
+  simp only [map_add]
+  congr <;> rw [← @SemilinearMapClass.map_smul_inv]
 
 theorem HasGradientAt.mul (hc : HasGradientAt c c' x) (hd : HasGradientAt d d' x) :
     HasGradientAt (fun y => c y * d y)

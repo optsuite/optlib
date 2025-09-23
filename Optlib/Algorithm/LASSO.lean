@@ -31,7 +31,7 @@ local notation "‖" x "‖₂" => @Norm.norm (EuclideanSpace ℝ (Fin m)) (PiLp
 local notation "‖" x "‖₁" => (Finset.sum Finset.univ (fun (i : Fin n) => ‖x i‖))
 
 open Set Real Matrix Finset
-
+open scoped InnerProductSpace RealInnerProductSpace EuclideanSpace
 /- `u ⬝ Av = Aᵀu ⬝ v` for u v in EuclideanSpace -/
 
 lemma dot_mul_eq_transpose_mul_dot (u : EuclideanSpace ℝ (Fin m)) (v : EuclideanSpace ℝ (Fin n)) :
@@ -53,8 +53,9 @@ lemma norm2eq_dot (x :  EuclideanSpace ℝ (Fin m)) : ‖x‖₂ ^ 2 = x ⬝ᵥ 
 
 /- `⟪x, y⟫_ℝ = x ⬝ y` for x y in EuclideanSpace -/
 
-lemma real_inner_eq_dot (x y : EuclideanSpace ℝ (Fin m)) : inner x y = x ⬝ᵥ y := by
-  simp; rw [dotProduct]
+lemma real_inner_eq_dot (x y : EuclideanSpace ℝ (Fin m)) : ⟪x, y⟫_ℝ = x ⬝ᵥ y := by
+  simpa [real_inner_comm, dotProduct_comm] using
+    (EuclideanSpace.inner_eq_star_dotProduct (x := y) (y := x))
 
 /- gradient of a quadratic in ℝⁿ -/
 
@@ -80,11 +81,8 @@ lemma quadratic_gradient : ∀ x : (EuclideanSpace ℝ (Fin n)),
   · apply div_pos εpos; rw [sq_pos_iff]; linarith [normApos]
   intro y ydist;
   rw [inner_smul_left]
-  simp; rw [← dotProduct]
-  have aux1 : (fun x_1 ↦ ((Aᵀ * A) *ᵥ x) x_1) ⬝ᵥ (fun x_1 ↦ y x_1 - x x_1)
-      = (Aᵀ * A) *ᵥ x ⬝ᵥ (y - x) := by
-    rw [dotProduct, dotProduct]; simp
-  rw [aux1, ← mulVec_mulVec, ← dot_mul_eq_transpose_mul_dot _ (y - x), Matrix.mulVec_sub,
+  simp [real_inner_eq_dot]
+  rw [← mulVec_mulVec, ← dot_mul_eq_transpose_mul_dot _ (y - x), Matrix.mulVec_sub,
       dotProduct_sub]
   ring_nf
   have aux2 (u v : Fin m → ℝ) : u ⬝ᵥ u + (v ⬝ᵥ v - v ⬝ᵥ u * 2) = (u - v) ⬝ᵥ (u - v) := by
@@ -120,11 +118,12 @@ private lemma linear_gradient : ∀ x : (EuclideanSpace ℝ (Fin n)),
   intro ε εpos
   use ε; use εpos
   intro y _
-  rw [dot_mul_eq_transpose_mul_dot, dot_mul_eq_transpose_mul_dot, ← dotProduct_sub]
-  rw [EuclideanSpace.inner_eq_star_dotProduct]; simp
-  repeat rw [dotProduct]
-  simp
-  apply mul_nonneg; linarith [εpos]; apply norm_nonneg
+  rw [dot_mul_eq_transpose_mul_dot (u := b) (v := y),
+      dot_mul_eq_transpose_mul_dot (u := b) (v := x)]
+  simp only [real_inner_eq_dot]
+  rw [← dotProduct_sub]
+  rw [sub_self, norm_zero]
+  exact mul_nonneg (le_of_lt εpos) (norm_nonneg (x - y))
 
 /- gradient of the square of an affine map in ℝⁿ -/
 
@@ -182,7 +181,7 @@ lemma norm_one_convex : ConvexOn ℝ univ (fun x : (EuclideanSpace ℝ (Fin n)) 
   intro i _
   simp
   calc
-    |a * x i + b * y i| ≤ |a * x i| + |b * y i| := by apply abs_add
+    |a * x i + b * y i| ≤ |a * x i| + |b * y i| := abs_add_le (a * x i) (b * y i)
     _ = a * |x i| + b * |y i| := by
       rw [abs_mul, abs_mul, abs_of_nonneg anneg, abs_of_nonneg bnneg]
 
@@ -216,8 +215,11 @@ theorem norm_one_proximal
   rw [prox_iff_subderiv_smul (fun x : (EuclideanSpace ℝ (Fin n)) => ‖x‖₁) norm_one_convex tμpos]
   rw [← mem_SubderivAt, HasSubgradientAt]
   intro y
-  simp; rw [← sum_add_distrib]; apply sum_le_sum
+  simp [real_inner_eq_dot, dotProduct] -- expand dot products into explicit sums
+  rw [← sum_add_distrib]
+  apply sum_le_sum
   intro i _
+  rw [← le_sub_iff_add_le']
   let abs_subg := SubderivAt_abs (xm i)
   by_cases hxm : xm i = 0
   · rw [hxm]; simp
@@ -228,7 +230,7 @@ theorem norm_one_proximal
       · simp [hx] at minpoint; exact minpoint
     calc
       μ⁻¹ * t⁻¹ * x i * y i ≤ μ⁻¹ * t⁻¹ * |x i * y i| := by
-        rw [mul_assoc _ (x i), mul_le_mul_left]
+        rw [mul_assoc _ (x i), mul_le_mul_iff_right₀]
         apply le_abs_self; rw [← mul_inv, inv_pos]; apply mul_pos
         linarith [μpos]; linarith [tpos]
       _ ≤ |y i| * μ⁻¹ * t⁻¹ * t * μ := by
@@ -244,39 +246,50 @@ theorem norm_one_proximal
   rcases abs_subg with ⟨_, abs_subg⟩
   let sgnxm := sign (xm i)
   have aux : sgnxm ∈ SubderivAt abs (xm i) := by
-    rw [abs_subg]; simp
+    rw [abs_subg]; simp; rfl
   rw [← mem_SubderivAt, HasSubgradientAt] at aux
   specialize aux (y i)
-  have aux2 : inner sgnxm (y i - xm i) = μ⁻¹ * t⁻¹ * (x i - xm i) * (y i - xm i) := by
-    simp [sgnxm]; left
-    rw [minpoint]; simp; rw [minpoint] at hxm; simp at hxm; push_neg at hxm
+  have aux2 : ⟪sgnxm, (y i - xm i)⟫_ℝ = μ⁻¹ * t⁻¹ * (x i - xm i) * (y i - xm i) := by
+    simp [sgnxm]
+    rw [minpoint] at hxm; simp at hxm; push_neg at hxm
     rcases hxm with ⟨xiieq0, ieq⟩
     have eq1 : max (|x i| - t * μ) 0 = |x i| - t * μ := by
       apply max_eq_left; linarith
-    rw [eq1]; simp; nth_rw 3 [mul_sub]
-    rw [← sub_add, real_sign_mul_abs]; simp
-    nth_rw 2 [mul_comm (sign (x i))]
-    rw [← mul_assoc _ (t * μ), ← mul_inv, mul_comm μ t, inv_mul_cancel₀, one_mul]
-    by_cases hx : 0 < x i
-    · have eq2 : sign (sign (x i) * (|x i| - t * μ)) = 1 := by
-        apply Real.sign_of_pos; apply mul_pos
+    have hxmi : xm i = Real.sign (x i) * (|x i| - t * μ) := by
+      simp [minpoint i, eq1]
+    have hxabs : Real.sign (x i) * |x i| = x i := real_sign_mul_abs (x i)
+    have coeff : μ⁻¹ * t⁻¹ * (x i - xm i) = Real.sign (x i) := by
+      have hxmx : x i - xm i = Real.sign (x i) * (t * μ) := by
         calc
-          0 < 1 := by simp
-          1 = sign (x i) := by
-            symm; apply Real.sign_of_pos hx
-        linarith [ieq]
-      rw [eq2]; symm; apply Real.sign_of_pos hx
-    · have xneg : x i < 0 := by
-        contrapose! xiieq0; linarith
-      have eq2 : sign (sign (x i) * (|x i| - t * μ)) = -1 := by
-        apply Real.sign_of_neg; apply mul_neg_of_neg_of_pos
-        calc
-          sign (x i) = -1 := by
-            apply Real.sign_of_neg xneg
-          _ < 0 := by linarith
-        linarith [ieq]
-      rw [eq2]; symm; apply Real.sign_of_neg xneg
-    linarith [μpos, tpos]
+          x i - xm i
+              = Real.sign (x i) * |x i| - Real.sign (x i) * (|x i| - t * μ) := by
+                rw [hxabs, hxmi]
+          _ = Real.sign (x i) * (|x i| - (|x i| - t * μ)) := by
+                ring
+          _ = Real.sign (x i) * (t * μ) := by
+                ring
+      field_simp [hxmx, tpos.ne', μpos.ne']; grind
+    have sgnxm_eq : Real.sign (xm i) = Real.sign (x i) := by
+      by_cases hx : 0 < x i
+      · have eq2 : Real.sign (Real.sign (x i) * (|x i| - t * μ)) = 1 := by
+          apply Real.sign_of_pos
+          have pos : 0 < |x i| - t * μ := by linarith [ieq]
+          have sgnpos : 0 < Real.sign (x i) := by
+            simp [Real.sign_of_pos hx]
+          exact mul_pos sgnpos pos
+        have : Real.sign (xm i) = 1 := by simpa [hxmi] using eq2
+        simp [Real.sign_of_pos hx, this]
+      · have xneg : x i < 0 := by
+          contrapose! xiieq0; linarith
+        have eq2 : Real.sign (Real.sign (x i) * (|x i| - t * μ)) = -1 := by
+          apply Real.sign_of_neg
+          have pos : 0 < |x i| - t * μ := by linarith [ieq]
+          have sgnneg : Real.sign (x i) < 0 := by
+            simp [Real.sign_of_neg xneg]
+          exact mul_neg_of_neg_of_pos sgnneg pos
+        have : Real.sign (xm i) = -1 := by simpa [hxmi] using eq2
+        simp [Real.sign_of_neg xneg, this]
+    simp [sgnxm_eq, coeff]; grind
   rw [aux2] at aux; linarith [aux]
   push_neg; intro hxm'; contrapose! hxm'; exact hxm
 
@@ -298,7 +311,7 @@ open Set Real Matrix Finset NNReal
 
 
 structure LASSO (A : Matrix (Fin m) (Fin n) ℝ) (b : (Fin m) → ℝ) (μ : ℝ) (μpos : 0 < μ) (Ane0 : A ≠ 0)
-    (x₀ : (EuclideanSpace ℝ (Fin n))) :=
+    (x₀ : (EuclideanSpace ℝ (Fin n))) where
   (f h : (EuclideanSpace ℝ (Fin n)) → ℝ)
   (f' : (EuclideanSpace ℝ (Fin n)) → (EuclideanSpace ℝ (Fin n)))
   (L : ℝ≥0) (t : ℝ) (xm : (EuclideanSpace ℝ (Fin n))) (x y : ℕ → (EuclideanSpace ℝ (Fin n)))
@@ -364,10 +377,10 @@ instance {A : Matrix (Fin m) (Fin n) ℝ} {b : (Fin m) → ℝ} {μ : ℝ} {μpo
     calc
       |μ| * |Finset.sum Finset.univ fun i ↦ (|y i| - |x i|)| ≤
           |μ| * Finset.sum Finset.univ fun i ↦ |(|y i| - |x i|)| := by
-        rw [mul_le_mul_left]; apply Finset.abs_sum_le_sum_abs
+        rw [mul_le_mul_iff_right₀]; apply Finset.abs_sum_le_sum_abs
         simp; linarith [μpos]
       _ ≤ |μ| * (n * (ε / n / μ)) := by
-        rw [mul_le_mul_left]
+        rw [mul_le_mul_iff_right₀]
         calc
           (Finset.sum Finset.univ fun i ↦ |(|y i| - |x i|)|) ≤
               (Finset.sum Finset.univ (fun _ ↦ (ε / n / μ))) := by
@@ -376,8 +389,8 @@ instance {A : Matrix (Fin m) (Fin n) ℝ} {b : (Fin m) → ℝ} {μ : ℝ} {μpo
           _ = (n * (ε / n / μ)) := by simp
         simp; linarith [μpos]
       _ = ε := by
-        field_simp; rw [mul_comm, ← mul_assoc, mul_comm ε]
-        simp; left; linarith
+        field_simp
+        simp [abs_of_pos μpos]
   minphi : IsMinOn (p.f + p.h) Set.univ p.xm := p.minphi
   tpos : 0 < p.t := by
     rw [p.teq]; simp

@@ -4,6 +4,7 @@ import Mathlib.Topology.MetricSpace.Sequences
 noncomputable section
 
 open Set InnerProductSpace Topology Filter LinearMap ContinuousLinearMap InnerProduct Function
+
 variable {X Y:Type*}
 [NormedAddCommGroup X] [InnerProductSpace ℝ X]
 [NormedAddCommGroup Y] [InnerProductSpace ℝ Y]
@@ -14,14 +15,18 @@ lemma KerA_bot (fullrank: Injective A): ker A = ⊥ := ker_eq_bot.2 fullrank
 variable [CompleteSpace X] [CompleteSpace Y]
 
 lemma KerA_eq_KerA'A : ker A = ker (A†.comp A) := by
-   ext x; constructor; simp
-   ·  intro h; rw[h]; continuity
-   ·  intro h; simp at h
-      have : ((inner (A x) (A x)):ℝ) = (0:ℝ) := by
-         calc
-            _ = (inner x ((A†) (A x)):ℝ) := by rw [ContinuousLinearMap.adjoint_inner_right]
-            _ = (0:ℝ) := by rw [h, inner_zero_right]
-      apply inner_self_eq_zero.1 this
+  ext x; constructor
+  · intro hx
+    simp [ContinuousLinearMap.comp_apply]; simp_all
+  · intro hx
+    have hx' : (A†) (A x) = 0 := by
+      simpa [ContinuousLinearMap.comp_apply] using hx
+    have hinner : ⟪A x, A x⟫_ℝ = ⟪x, (A†) (A x)⟫_ℝ := by
+      dsimp only
+      exact Eq.symm (ContinuousLinearMap.adjoint_inner_right A x (A x))
+    have : ⟪A x, A x⟫_ℝ = 0 := by
+      simpa [hx', inner_zero_right] using hinner
+    exact inner_self_eq_zero.mp this
 
 lemma KerA'A_bot (fullrank: Injective A) : ker (A†.comp A) = ⊥ := by
    rw[← KerA_eq_KerA'A]

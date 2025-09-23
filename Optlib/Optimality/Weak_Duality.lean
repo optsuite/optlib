@@ -180,7 +180,7 @@ variable {E : Type _} {τ σ : Finset ℕ}
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 variable {p : Constrained_OptimizationProblem E τ σ}
 
-lemma ConcaveOn.sum {α 𝕜 : Type*} [OrderedSemiring 𝕜] [AddCommMonoid α][SMul 𝕜 α]
+lemma ConcaveOn.sum {α 𝕜 : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [IsOrderedRing 𝕜] [AddCommMonoid α][SMul 𝕜 α]
     {ι : Type*} [DecidableEq ι] {s : Finset ι} {t : s → α → 𝕜} {d : Set α}
     (h : ∀ i : s, ConcaveOn 𝕜 d (t i)) (hd : Convex 𝕜 d):
     ConcaveOn 𝕜 d (fun x => ∑ i : s, t i x) := by
@@ -203,14 +203,14 @@ theorem convex_problem_convex_Lagrange {p : Constrained_OptimizationProblem E τ
   unfold Lagrange_function
   apply ConvexOn.sub
   · apply ConvexOn.sub h
-    simp [hτ]; apply concaveOn_const 0
-    exact convex_univ
-  apply ConcaveOn.sum _ convex_univ
-  intro i
-  apply ConcaveOn.smul
-  · unfold KKT_point at hKKT
-    exact hKKT.2.2.1 i
-  exact hi i i.2
+    cases hτ
+    simpa using (concaveOn_const (0 : ℝ) convex_univ)
+  apply ConcaveOn.sum
+  · intro i
+    apply ConcaveOn.smul
+    · exact hKKT.2.2.1 i
+    · exact hi i i.2
+  · exact convex_univ
 
 omit [CompleteSpace E] in
 theorem diff_problem_diff_Lagrange {p : Constrained_OptimizationProblem E τ σ}
@@ -223,7 +223,7 @@ theorem diff_problem_diff_Lagrange {p : Constrained_OptimizationProblem E τ σ}
   · apply DifferentiableAt.sub
     · exact hf
     simp [hτ]
-  apply DifferentiableAt.sum
+  refine DifferentiableAt.fun_sum ?_-- DifferentiableAt.sum
   intro i _
   apply DifferentiableAt.const_mul _ (lambda2 i)
   apply conti i i.2

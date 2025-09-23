@@ -20,7 +20,7 @@ This file contains the following parts of closed cone.
 
 section ClosedCone
 
-open Finset Matrix
+open Finset Matrix Topology
 
 variable {n : ℕ} {s : Finset ℕ} {V : ℕ → (EuclideanSpace ℝ (Fin n))}
 variable {x : EuclideanSpace ℝ (Fin n)}
@@ -90,13 +90,13 @@ lemma cone_eq_finite_union (s : Finset ℕ) (V : ℕ → (EuclideanSpace ℝ (Fi
     · intro xin
       let mem_x := conic_Caratheodory s V x xin
       rcases mem_x with ⟨τ, τsubs, xinτ, idpτ, _⟩
-      simp [finite_F, F, idx_set, idx_to_cone]
+      simp [F, idx_set, idx_to_cone]
       use τ
-    · simp [finite_F, F, idx_set, idx_to_cone]
+    · simp [F, idx_set, idx_to_cone]
       intro τ τsubs _ xinτ
       apply cone_subset_of_idx_subset' s τ τsubs V xinτ
   · intro C Cin
-    simp [finite_F, F] at Cin; rcases Cin with ⟨τ, τin, Ceq⟩
+    simp [F] at Cin; rcases Cin with ⟨τ, τin, Ceq⟩
     use τ; constructor
     · rw [← Ceq]
     · simp [idx_set] at τin; exact τin.2

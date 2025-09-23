@@ -6,6 +6,7 @@ Authors: Chenyi Li, Ziyu Wang
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Convex.Strong
 import Optlib.Function.Lsmooth
+import Optlib.Convex.ConvexFunction
 
 /-!
   the properties of strongly convex function and gradient descent method
@@ -18,6 +19,7 @@ variable {s : Set E} {f : E → ℝ} {m : ℝ} {xm xm': E} {f' : E → E} {mp : 
 section Strongly_Convex
 
 open Set InnerProductSpace
+open scoped RealInnerProductSpace
 
 theorem Strongly_Convex_Bound (m : ℝ) (strongly_convex: StrongConvexOn s m f):
   ∀ ⦃x⦄, x ∈ s → ∀ ⦃y⦄, y ∈ s →
@@ -76,7 +78,7 @@ theorem Strongly_Convex_Unique_Minima (hsc: StrongConvexOn s m f) {mp : m > 0}
     . linarith
     . apply pow_pos; linarith
   apply absurd (min xs)
-  simp [← xeq]
+  simp
   calc
     f x ≤ f xm - 2⁻¹ * 2⁻¹ * (m / 2 * ‖xm - xm'‖ ^ 2) := by apply sc
     _ < f xm := by apply lt_of_sub_pos; simp; apply nng
@@ -98,40 +100,71 @@ lemma strongconvex_of_convex_add_sq (f : E → ℝ) (x : E) (hfun : ConvexOn ℝ
     rw [mul_add, ← add_assoc, ← add_sub _ (a * (‖y - x‖ ^ 2 / 2)), add_assoc]
     apply add_le_add
     · rw [← smul_eq_mul, ← smul_eq_mul]
-      apply hfun yin zin anneg bnneg absum1
-    · field_simp; rw [div_le_div_right, add_sub]
-      have eq1 : a • y + b • z - x = a • (y - x) + b • (z - x) := by
+      exact hfun yin zin anneg bnneg absum1
+    · have eq1 : a • y + b • z - x = a • (y - x) + b • (z - x) := by
         rw [smul_sub, smul_sub, add_comm_sub, sub_sub, ← add_smul, add_comm b a]
         rw [absum1, one_smul, ← add_sub]
-      have eq2 (u v : E) : ‖a • u + b • v‖ ^ 2 = b * ‖v‖ ^ 2
-        + a * ‖u‖ ^ 2 - a * b * ‖u - v‖ ^ 2 := by
-        rw [norm_add_sq_real, norm_sub_sq_real]
-        rw [inner_smul_left, inner_smul_right, norm_smul, norm_smul]; field_simp
-        rw [add_comm (b * ‖v‖ ^ 2), mul_pow, sq_abs, mul_pow, sq_abs]
-        rw [mul_add, ← sub_sub, mul_sub, ← sub_add]
-        rw [add_sub_right_comm, add_sub_right_comm, ← sub_mul, ← add_sub, ← sub_mul]
-        nth_rw 3 [← mul_one a]; rw [← absum1, mul_add]
-        nth_rw 5 [← mul_one b]; rw [← absum1, mul_add, mul_comm b a]
-        rw [pow_two, pow_two b]; simp; rw [add_right_comm, add_left_cancel_iff]
-        rw [mul_mul_mul_comm, mul_comm a 2, mul_assoc]
+      have eq2 (u v : E) :
+          ‖a • u + b • v‖ ^ 2 =
+            b * ‖v‖ ^ 2 + a * ‖u‖ ^ 2 - a * b * ‖u - v‖ ^ 2 := by
+        have an := abs_of_nonneg anneg
+        have bn := abs_of_nonneg bnneg
+        calc
+          ‖a • u + b • v‖ ^ 2
+              = ‖a • u‖ ^ 2 + 2 * ⟪a • u, b • v⟫_ℝ + ‖b • v‖ ^ 2 := by
+                simpa using norm_add_sq_real (a • u) (b • v)
+          _ = ‖a • u‖ ^ 2 + ‖b • v‖ ^ 2 + 2 * ⟪a • u, b • v⟫_ℝ := by
+                ring
+          _ = (‖a‖ * ‖u‖) ^ 2 + (‖b‖ * ‖v‖) ^ 2 + 2 * (a * b * ⟪u, v⟫_ℝ) := by
+                simp [norm_smul, real_inner_smul_left, real_inner_smul_right,
+                      mul_comm, mul_left_comm, mul_assoc]
+          _ = (a * ‖u‖) ^ 2 + (b * ‖v‖) ^ 2 + 2 * a * b * ⟪u, v⟫_ℝ := by
+                simp [Real.norm_eq_abs, an, bn]
+                ring
+          _ = a ^ 2 * ‖u‖ ^ 2 + b ^ 2 * ‖v‖ ^ 2 + 2 * a * b * ⟪u, v⟫_ℝ := by
+                ring
+          _ = a * ‖u‖ ^ 2 + b * ‖v‖ ^ 2 - a * b * (‖u‖ ^ 2 + ‖v‖ ^ 2 - 2 * ⟪u, v⟫_ℝ) := by
+            have h1 : a = 1 - b := by linarith
+            have h2 : b = 1 - a := by linarith
+            have ha : a * (a * ‖u‖ ^ 2) = a * ((1 - b) * ‖u‖ ^ 2) := by simp [h1]
+            have hb : b * (b * ‖v‖ ^ 2) = b * ((1 - a) * ‖v‖ ^ 2) := by simp [h2]
+            calc
+              a ^ 2 * ‖u‖ ^ 2 + b ^ 2 * ‖v‖ ^ 2 + 2 * a * b * ⟪u, v⟫_ℝ
+                  = a * (a * ‖u‖ ^ 2) + b * (b * ‖v‖ ^ 2) + 2 * a * b * ⟪u, v⟫_ℝ := by ring
+              _ = a * ((1 - b) * ‖u‖ ^ 2) + b * ((1 - a) * ‖v‖ ^ 2)
+                    + 2 * a * b * ⟪u, v⟫_ℝ := by simp [ha, hb]
+              _ = a * ‖u‖ ^ 2 + b * ‖v‖ ^ 2
+                    - a * b * (‖u‖ ^ 2 + ‖v‖ ^ 2 - 2 * ⟪u, v⟫_ℝ) := by ring
+          _ = b * ‖v‖ ^ 2 + a * ‖u‖ ^ 2 - a * b * ‖u - v‖ ^ 2 := by
+                rw [norm_sub_sq_real]; ring
+      have eq2_div (u v : E) :
+          ‖a • u + b • v‖ ^ 2 / 2 =
+            b * (‖v‖ ^ 2 / 2) + a * (‖u‖ ^ 2 / 2) - a * b * ( (2 : ℝ)⁻¹ * ‖u - v‖ ^ 2) := by
+        have h := eq2 u v
+        have h' := congrArg (fun t : ℝ => t / 2) h
+        simpa [div_eq_mul_inv, sub_eq_add_neg, mul_add, add_mul,
+               mul_comm, mul_left_comm, mul_assoc] using h'
       have eq3 : y - z = (y - x) - (z - x) := by simp
-      have eq4 (u v : E) : ‖a • u + b • v‖ ^ 2 ≤ b * ‖v‖ ^ 2
-        + a * ‖u‖ ^ 2 - a * b * ‖u - v‖ ^ 2 := by rw [eq2]
       let u := y - x
       let v := z - x
-      rw [eq1, eq3];
-      show ‖a • u + b • v‖ ^ 2 ≤ b * ‖v‖ ^ 2 + a * ‖u‖ ^ 2 - a * b * ‖u - v‖ ^ 2
-      apply eq4 u v
-      simp
+      have : ‖a • u + b • v‖ ^ 2 / 2
+          ≤ b * (‖v‖ ^ 2 / 2) + a * (‖u‖ ^ 2 / 2) - a * b * ((2 : ℝ)⁻¹ * ‖u - v‖ ^ 2) := by
+        exact (eq2_div u v).le
+      rw [eq1, eq3]
+      simp only [div_eq_mul_inv]
+      grind
 
 end Strongly_Convex
 
 section
 
 variable [CompleteSpace E]
+open Set InnerProductSpace
+open scoped RealInnerProductSpace
+open scoped InnerProductSpace
 
 theorem Strong_Convex_lower (hsc : StrongConvexOn s m f) (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) :
-    ∀ x ∈ s, ∀ y ∈ s, inner (f' x - f' y) (x - y) ≥ m * ‖x - y‖ ^ 2 := by
+    ∀ x ∈ s, ∀ y ∈ s, ⟪f' x - f' y, x - y⟫_ℝ ≥ m * ‖x - y‖ ^ 2 := by
   intro x xs y ys
   have cvx := strongConvexOn_iff_convex.mp hsc
   have grd := sub_normsquare_gradient hf m
@@ -139,10 +172,10 @@ theorem Strong_Convex_lower (hsc : StrongConvexOn s m f) (hf : ∀ x ∈ s, HasG
   rw [sub_sub, add_sub, add_comm, ← add_sub, ← sub_sub, inner_sub_left, ← smul_sub] at grm
   apply le_of_sub_nonneg at grm
   rw [real_inner_smul_left, real_inner_self_eq_norm_sq] at grm
-  apply grm
+  exact grm
 
 theorem Lower_Strong_Convex (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) (hs : Convex ℝ s)
-    (h : ∀ x ∈ s, ∀ y ∈ s, inner (f' x - f' y) (x - y) ≥ m * ‖x - y‖ ^ 2) :
+    (h : ∀ x ∈ s, ∀ y ∈ s, ⟪f' x - f' y, x - y⟫_ℝ ≥ m * ‖x - y‖ ^ 2) :
     StrongConvexOn s m f := by
   apply strongConvexOn_iff_convex.mpr
   have grd := sub_normsquare_gradient hf m
@@ -152,20 +185,21 @@ theorem Lower_Strong_Convex (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) (hs : C
   rw [sub_sub, add_sub, add_comm, ← add_sub, ← sub_sub, inner_sub_left, ← smul_sub]
   apply sub_nonneg_of_le
   rw [real_inner_smul_left, real_inner_self_eq_norm_sq]
-  apply h
+  exact h
 
 theorem Strong_Convex_iff_lower (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) (hs : Convex ℝ s) :
-    StrongConvexOn s m f ↔ ∀ x ∈ s, ∀ y ∈ s, inner (f' x - f' y) (x - y) ≥ m * ‖x - y‖ ^ 2 :=
-  ⟨fun hsc x xs y ys ↦ Strong_Convex_lower hsc hf x xs y ys, fun h ↦ Lower_Strong_Convex hf hs h⟩
+    StrongConvexOn s m f ↔ ∀ x ∈ s, ∀ y ∈ s, ⟪f' x - f' y, x - y⟫_ℝ ≥ m * ‖x - y‖ ^ 2 :=
+  ⟨fun hsc x xs y ys ↦ Strong_Convex_lower hsc hf x xs y ys,
+   fun h ↦ Lower_Strong_Convex hf hs h⟩
 
 theorem Strong_Convex_second_lower (hsc: StrongConvexOn s m f)
     (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) : ∀ x ∈ s, ∀ y ∈ s,
-    f y ≥ f x + inner (f' x) (y - x) + m / 2 * ‖y - x‖ ^ 2 := by
+    f y ≥ f x + ⟪f' x, y - x⟫_ℝ + m / 2 * ‖y - x‖ ^ 2 := by
   intro x xs y ys
   have cvx := strongConvexOn_iff_convex.mp hsc
   have grd := sub_normsquare_gradient hf m x xs
   let g := fun x ↦ f' x - m • x
-  have : g x = f' x - m • x := by rfl
+  have : g x = f' x - m • x := rfl
   rw [← this] at grd
   have foc := Convex_first_order_condition' grd cvx xs y ys
   rw [this] at foc
@@ -179,7 +213,7 @@ theorem Strong_Convex_second_lower (hsc: StrongConvexOn s m f)
   nth_rw 1 [← sub_self y] at foc
   rw [← sub_self x] at foc
   rw [sub_add, ← sub_add y x x, add_comm (y - x), inner_sub_right x, inner_add_right y] at foc
-  rw [real_inner_comm x y, sub_right_comm (inner x y), ← sub_sub, sub_self, sub_sub 0] at foc
+  rw [real_inner_comm x y, sub_right_comm ⟪x, y⟫_ℝ, ← sub_sub, sub_self, sub_sub 0] at foc
   rw [← inner_add_left, zero_sub, mul_neg, sub_neg_eq_add] at foc
   have : m = m / 2 * 2 := by simp
   nth_rw 1 [this] at foc

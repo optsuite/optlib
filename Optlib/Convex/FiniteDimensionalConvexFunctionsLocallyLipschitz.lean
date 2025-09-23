@@ -14,6 +14,8 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Optlib.Function.L1Space
 
+open NormedSpace InnerProductSpace
+
 /-!
 # Finite-Dimensional Convex Functions and Their Lipschitz Properties
 
@@ -61,7 +63,7 @@ open scoped Pointwise
 section Boundedness
 
 
-variable {X : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     {x₀ : X}{r : ℝ}{f : X → ℝ}
 
 /--
@@ -103,7 +105,7 @@ lemma Bounded_of_UpperBounded (hf : ConvexOn ℝ (ball x₀ r) f)
   simp only [smul_eq_mul, a] at h
   have h' : - f y + 2 * f x₀  ≤  f x := by linarith
   have fy_pos : - |m| ≤ - f y := by
-    simp only [neg_le_neg_iff, ge_iff_le]
+    simp only [neg_le_neg_iff]
     apply le_trans (hm y y_pos) (le_abs_self m)
   constructor
   · calc
@@ -145,7 +147,7 @@ lemma Lipschitz_of_Bounded [T0Space X](hf : ConvexOn ℝ (ball x₀ r) f)
   --type conversion
   rw[edist_dist,edist_dist]
   rw[ENNReal.coe_nnreal_eq]
-  simp only [NNReal.coe_mk, ge_iff_le]
+  simp only [NNReal.coe_mk]
   rw[← ENNReal.ofReal_mul K_pos]
   rw[ENNReal.ofReal_le_ofReal_iff (mul_nonneg K_pos dist_nonneg)]
   --type conversion
@@ -162,8 +164,7 @@ lemma Lipschitz_of_Bounded [T0Space X](hf : ConvexOn ℝ (ball x₀ r) f)
     have uy_pos :  uy ∈ ball x₀ r := sub hu
     let z := uy + (ε / ‖uy - vx‖) • (uy - vx)
     have sub_pos : 0 < ‖uy - vx‖ := by
-      apply norm_pos_iff'.mpr
-      exact sub_ne_zero_of_ne h
+      exact norm_pos_iff.mpr (sub_ne_zero_of_ne h)
     have z_pos : z ∈ ball x₀ r := by
       simp only [mem_ball,dist_eq_norm,z]
       calc
@@ -193,8 +194,8 @@ lemma Lipschitz_of_Bounded [T0Space X](hf : ConvexOn ℝ (ball x₀ r) f)
       apply div_pos hε.1 this
     have b_pos : 0 < b := by
       apply div_pos
-      rw[norm_pos_iff']
-      exact sub_ne_zero_of_ne h
+      rw [@norm_sub_pos_iff]
+      exact h
       apply this
     have a_add_b_one : a + b = 1 := by
       simp[a,b]
@@ -215,7 +216,7 @@ lemma Lipschitz_of_Bounded [T0Space X](hf : ConvexOn ℝ (ball x₀ r) f)
     have h1 : (ε + ‖uy - vx‖) * f uy ≤ ε * f vx + ‖uy - vx‖ * f z:= by
       rw[← h_combin] at h
       simp[a,b] at h
-      rw[← mul_le_mul_left this] at h
+      rw[← mul_le_mul_iff_right₀ this] at h
       field_simp at h
       exact h
     have h2 : ε * (f uy - f vx) ≤ 2 * M * ‖uy - vx‖ := by
@@ -238,15 +239,16 @@ lemma Lipschitz_of_Bounded [T0Space X](hf : ConvexOn ℝ (ball x₀ r) f)
             _ ≤ M + M :=by linarith
             _ = 2 * M :=by linarith
     calc
-      _ ≤ 2 * M * ‖uy - vx‖ / ε := by rwa[le_div_iff₀' hε.1]
+      _ ≤ 2 * M * ‖uy - vx‖ / ε := by rwa [le_div_iff₀' hε.1]
       _ = (2 * M / ε) * ‖uy - vx‖ := by ring
       _ ≤ _ := by
-        simp[K]
-        apply mul_le_mul_of_nonneg_right _ (le_of_lt sub_pos)
-        rw[div_le_div_right hε.1]
-        apply mul_le_mul_of_nonneg_left
-        apply le_abs_self
-        norm_num
+        simp [K]
+        have hcoeff : (2 * M / ε) ≤ (2 * |M| / ε) := by
+          have hbase : (2 : ℝ) * M ≤ 2 * |M| := by
+            have h2 : 0 ≤ (2 : ℝ) := by norm_num
+            exact mul_le_mul_of_nonneg_left (le_abs_self M) h2
+          exact div_le_div_of_nonneg_right hbase (le_of_lt hε.1)
+        exact mul_le_mul_of_nonneg_right hcoeff (le_of_lt sub_pos)
   by_cases h : x = y
   · rw[h]
     simp only [sub_self, abs_zero, norm_zero, mul_zero, le_refl]
@@ -325,8 +327,8 @@ lemma LocallyUpperBounded (hs_convex : Convex ℝ s)(hs_isopen : IsOpen s)
   have bi_pos : ∀ i : ι , ‖b i‖ ≠ 0 := by
     intro i
     refine norm_ne_zero_iff.mpr ?_
-    exact Basis.ne_zero b i
-  change Basis ι ℝ α at b
+    exact Module.Basis.ne_zero b i
+  change Module.Basis ι ℝ α at b
   by_cases hn : n = 0
   · have : Module.finrank ℝ α = 0 := by
       show n = 0;apply hn;
@@ -368,7 +370,7 @@ lemma LocallyUpperBounded (hs_convex : Convex ℝ s)(hs_isopen : IsOpen s)
         simp only [neg_add_cancel_comm];
       rw[this]
       apply hr₀.2
-      simp only [mem_ball, dist_self_add_left,dist_add_self_left]
+      simp only [mem_ball,dist_add_self_left]
       rw[norm_smul,norm_div,norm_norm,div_mul_cancel₀]
       simp[r]
       calc
@@ -381,7 +383,7 @@ lemma LocallyUpperBounded (hs_convex : Convex ℝ s)(hs_isopen : IsOpen s)
         simp only [neg_add_cancel_comm]
       rw[this]
       apply hr₀.2
-      simp only [mem_ball, dist_self_add_left,dist_add_self_left,neg_smul, norm_neg]
+      simp only [mem_ball, dist_add_self_left,neg_smul, norm_neg]
       rw[norm_smul,norm_div,norm_norm,div_mul_cancel₀]
       simp[r]
       calc
@@ -435,6 +437,7 @@ lemma LocallyUpperBounded (hs_convex : Convex ℝ s)(hs_isopen : IsOpen s)
   apply ConvexOn.le_sup_of_mem_convexHull hf _ hx
   apply subset_convexHull
 
+omit [FiniteDimensional ℝ α] in
 lemma LocallyLipschitz_of_LocallyUpperBounded (hs : IsOpen s)
     (h : ∀ x ∈ s , ∃ t ∈ 𝓝[s] x , Convex ℝ t ∧ IsOpen t ∧ BddAbove (f '' t))
     (hf : ConvexOn ℝ s f)

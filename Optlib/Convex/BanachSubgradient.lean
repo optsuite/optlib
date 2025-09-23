@@ -3,10 +3,15 @@ Copyright (c) 2023 Wanyi He. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Author: Wanyi He, Chenyi Li, Zichen Wang
 -/
+
+import Mathlib.Algebra.Order.Ring.Star
+import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.Analysis.Normed.Operator.Bilinear
+import Mathlib.Analysis.Normed.Order.Lattice
 import Mathlib.Analysis.NormedSpace.HahnBanach.Separation
-import Mathlib.LinearAlgebra.Dual
-
-
+import Mathlib.Data.Real.StarOrdered
+import Mathlib.GroupTheory.MonoidLocalization.Basic
+import Mathlib.LinearAlgebra.Dual.Lemmas
 section
 
 variable {E : Type*} [SeminormedAddCommGroup E]
@@ -23,7 +28,7 @@ lemma EpigraphInterior_existence (hc : ContinuousOn f (interior s)) (hx : x ∈ 
     have h1 : IsOpen t := IsOpen.preimage continuous_fst isOpen_interior
     have h2: ContinuousOn (fun p : (E × ℝ) => f p.fst) t :=
       ContinuousOn.comp hc continuousOn_fst (fun ⦃x⦄ a => a)
-    apply ContinuousOn.isOpen_inter_preimage (h2.prod continuousOn_snd) h1 isOpen_lt_prod
+    apply ContinuousOn.isOpen_inter_preimage (h2.prodMk continuousOn_snd) h1 isOpen_lt_prod
   have h' : {p : E × ℝ| p.1 ∈ interior s ∧ f p.1 < p.2} ⊆ {p | p.1 ∈ s ∧ f p.1 ≤ p.2} :=
     fun p ⟨hp1, hp2⟩ => ⟨interior_subset hp1, le_of_lt hp2⟩
   apply interior_mono h'
@@ -60,7 +65,7 @@ lemma Continuous_epi_open {f₁ : E → ℝ} (hcon : ContinuousOn f₁ univ) :
   have : {(x, y) : E × ℝ | y > f₁ x} = {(x, y) : E × ℝ | x ∈ univ ∧ y > f₁ x} := by
     ext z; simp
   rw [this]
-  apply ContinuousOn.isOpen_inter_preimage (h2.prod continuousOn_snd) h1 isOpen_lt_prod
+  apply ContinuousOn.isOpen_inter_preimage (h2.prodMk continuousOn_snd) h1 isOpen_lt_prod
 
 end
 noncomputable section
@@ -88,6 +93,8 @@ def Banach_SubderivWithinAt (f : E → ℝ) (s : Set E) (x : E) : Set (E →L[�
 def Epi (f : E → ℝ) (s : Set E) : Set (E × ℝ) :=
   {p : E × ℝ | p.1 ∈ s ∧ f p.1 ≤ p.2}
 
+set_option maxHeartbeats 0
+ in
 theorem Banach_SubderivWithinAt.Nonempty (hf : ConvexOn ℝ s f)
     (hc : ContinuousOn f (interior s)) (hx : x ∈ interior s) :
     Set.Nonempty (Banach_SubderivWithinAt f s x) := by
@@ -127,38 +134,45 @@ theorem Banach_SubderivWithinAt.Nonempty (hf : ConvexOn ℝ s f)
     have hgu' : g.1 x + g.2 (f x) < g.1 a.1 + g.2 a.2 := by
       obtain hg1 := hg a; obtain hg2 := hg (x , f x)
       rw[← hg1 , ← hg2]; apply hφ a ha
-    simp only [hu, hu] at hgu'; exact hgu'
+    simp only [hu] at hgu'; exact hgu'
   have hu0 : u > 0 := by
     specialize hgu (x, f x + 1) (EpigraphInterior_existence hc hx (f x + 1) (lt_add_one (f x)))
     dsimp at hgu; linarith
   let h := - (1 / u) • g.1
-  have : ∀ (x : E), ‖h x‖ ≤ ((1 / u) * ‖φ‖) * ‖x‖ := by
-    intro x; field_simp [h];  simp only [abs_of_pos hu0]
-    apply div_le_div_of_nonneg_right _ (by linarith)
+  have hbound : ∀ (x : E), ‖h x‖ ≤ ((1 / u) * ‖φ‖) * ‖x‖ := by
+    intro x
+    have hpos : 0 ≤ (1 / u) := by
+      have : 0 < 1 / u := by exact one_div_pos.mpr hu0
+      exact this.le
     calc
-      |φ (x, 0)| = ‖φ (x, 0)‖ := rfl
-      _  ≤ ‖φ‖ * ‖(x , (0 : ℝ))‖ := ContinuousLinearMap.le_opNorm φ (x, 0)
-      _  = ‖φ‖ * ‖x‖ := by
-        simp only [Prod.norm_def, norm_zero, max_eq_left (norm_nonneg x)]
+      ‖h x‖
+          = ‖-(1 / u)‖ * ‖g.1 x‖ := by
+            simp [h]
+      _   = (1 / u) * ‖g.1 x‖ := by
+            simp [Real.norm_eq_abs]; grind only
+      _   = (1 / u) * ‖φ (x, 0)‖ := by
+            have hx0 : φ (x, 0) = g.1 x := by
+              simpa [hu] using hg (x, 0)
+            simp [hx0]
+      _   ≤ (1 / u) * (‖φ‖ * ‖(x, (0 : ℝ))‖) := by
+            have := ContinuousLinearMap.le_opNorm φ (x, 0)
+            exact mul_le_mul_of_nonneg_left this hpos
+      _   = (1 / u) * ‖φ‖ * ‖x‖ := by
+            simp [mul_left_comm, mul_comm, Prod.norm_def, norm_zero]
   have hh : ∃ (C : ℝ), ∀ (x : E), ‖h x‖ ≤ C * ‖x‖ := by
     use ((1 / u) * ‖φ‖)
   let h' := (LinearMap.mkContinuousOfExistsBound h hh)
   have key1 : ∀ a ∈ interior (Epi f s) , h' (a.1 - x) + f x < a.2 := by
-    dsimp [h']; intro a ha
-    specialize hgu a ha; dsimp [g] at hgu
-    have uneq : u ≠ 0 := by linarith
-    rw [← mul_lt_mul_iff_of_pos_left hu0]; field_simp
-    have eq1 : u * (-φ (a.1 - x, 0) + f x * u) / u = u * f x - φ (a.1 - x, 0) := by
-      field_simp; ring_nf
-    have eq2 : φ (x, 0) - φ (a.1, 0) = -φ (a.1 - x, 0) := by
-      have : φ (x, 0) - φ (a.1, 0) = φ ((x, 0) - (a.1, 0)) := by
-        simp only [φ.map_sub]
-      simp only [this, Prod.mk_sub_mk, sub_zero]
-      have : (-(1 : ℝ)) • (a.1 - x, (0 : ℝ)) = (x - a.1, 0) := by simp
-      rw [← this, ContinuousLinearMap.map_smulₛₗ]; simp
-    field_simp [h, g, eq1, eq2, hgu]
-    rw [div_lt_iff₀ (by positivity)]; rw [← mul_lt_mul_iff_of_pos_left hu0] at hgu
-    linarith
+    intro a ha
+    change h (a.1 - x) + f x < a.2
+    have hsub : g.1 x + u * f x - g.1 a.1 < u * a.2 := by
+      have := sub_lt_sub_right (hgu a ha) (g.1 a.1)
+      simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using this
+    have hne : u ≠ 0 := ne_of_gt hu0
+    have hmul : u * (h (a.1 - x) + f x) < u * a.2 := by
+      simpa [h, mul_add, sub_eq_add_neg, map_sub, add_comm, add_left_comm, add_assoc,
+             mul_comm, mul_left_comm, mul_assoc, hne] using hsub
+    exact (mul_lt_mul_iff_of_pos_left hu0).1 hmul
 
   have key2₀ : ∀ a ∈ (Epi f s), a.1 ∈ interior s → h' (a.1 - x) + f x ≤  a.2 := by
     intro a ha posa
@@ -181,8 +195,7 @@ theorem Banach_SubderivWithinAt.Nonempty (hf : ConvexOn ℝ s f)
       exact tendsto_const_nhds
     apply le_of_tendsto_of_tendsto' cleft ?_ hxn
     simp only [an, hfa]
-    exact can2
-
+    rw [← hfa]; grind only [cases eager Prod]
   have key2₁ : ∀ a ∈ (Epi f s), a.1 ∉ interior s → h' (a.1 - x) + f x ≤ a.2 := by
     intro a ha _
     let an : ℕ → E × ℝ := fun n => ((n : ℝ) / (n + 1)) • a + ((1 : ℝ) / (n + 1)) • (x, f x)

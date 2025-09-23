@@ -25,7 +25,7 @@ variable {f h : E → ℝ} {f' : E → E} {x0 : E}
 
 open Set Real
 
-class Nesterov_first (f h: E → ℝ) (f' : E → E) (x0 : E) :=
+class Nesterov_first (f h: E → ℝ) (f' : E → E) (x0 : E) where
   (l : NNReal) (x y : ℕ → E) (t γ : ℕ → ℝ) (hl : l > (0 : ℝ))
   (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (convf : ConvexOn ℝ univ f)
   (h₂ : LipschitzWith l f') (convh : ConvexOn ℝ univ h)
@@ -66,7 +66,7 @@ theorem Nesterov_first_converge (minφ : IsMinOn (f + h) univ xm) :
         linarith [(alg.tbound k).1]
       _ ≤ (1 / alg.t k) * (alg.t k * h z
           - ⟪alg.y k - alg.x (k + 1) - (alg.t k) • (f' (alg.y k)), z - alg.x (k + 1)⟫) := by
-        rw [mul_le_mul_left]; apply add_le_add_right; exact hieq1 z k
+        rw [mul_le_mul_iff_right₀]; apply add_le_add_right; exact hieq1 z k
         simp; linarith [(alg.tbound k).1]
       _ = h z +
           ⟪(f' (alg.y k)) + (1 / alg.t k) • (alg.x (k + 1) - alg.y k), z - alg.x (k + 1)⟫ := by
@@ -83,7 +83,7 @@ theorem Nesterov_first_converge (minφ : IsMinOn (f + h) univ xm) :
         apply lipschitz_continuos_upper_bound' alg.h₁ alg.h₂ y x
       _ ≤ f y + ⟪f' y, x - y⟫ + 1 / (2 * alg.t k) * ‖x - y‖ ^ 2 := by
         apply add_le_add_left; apply mul_le_mul_of_nonneg_right
-        rw [← mul_one_div, ← one_div_mul_one_div, mul_comm, mul_le_mul_left]
+        rw [← mul_one_div, ← one_div_mul_one_div, mul_comm, mul_le_mul_iff_right₀]
         rw [le_one_div]; exact (alg.tbound k).2; exact alg.hl; exact (alg.tbound k).1
         simp; apply sq_nonneg
   let φ := fun z : E ↦ f z + h z
@@ -137,7 +137,7 @@ theorem Nesterov_first_converge (minφ : IsMinOn (f + h) univ xm) :
           (1 - alg.γ k) * ((1 / alg.t k) • ⟪alg.x (k + 1) - alg.y k, alg.x k - alg.x (k + 1)⟫ +
           1 / (2 * alg.t k) * ‖alg.x (k + 1) - alg.y k‖ ^ 2) := by
         apply add_le_add
-        · rw [mul_le_mul_left]; exact ieq2; linarith [(alg.γbound k).1]
+        · rw [mul_le_mul_iff_right₀]; exact ieq2; linarith [(alg.γbound k).1]
         · apply mul_le_mul_of_nonneg_left; exact ieq1; linarith [(alg.γbound k).2]
       _ = (alg.γ k) * (1 / alg.t k) * ⟪alg.x (k + 1) - alg.y k, xm - alg.x (k + 1)⟫ +
           (1 - alg.γ k) * (1 / alg.t k) * ⟪alg.x (k + 1) - alg.y k, alg.x k - alg.x (k + 1)⟫ +
@@ -155,7 +155,7 @@ theorem Nesterov_first_converge (minφ : IsMinOn (f + h) univ xm) :
   let v := fun k : ℕ+ ↦ alg.x (k - 1) + (1 / (alg.γ (k - 1))) • (alg.x k - alg.x (k - 1))
   have eq : ∀ k : ℕ+, alg.y k = (1 - alg.γ k) • alg.x k + (alg.γ k) • (v k) := by
     intro k
-    simp [φ, v]; rw [alg.update1 k, sub_smul, sub_add_eq_add_sub, ← smul_add, ← add_sub, one_smul]
+    simp [v]; rw [alg.update1 k, sub_smul, sub_add_eq_add_sub, ← smul_add, ← add_sub, one_smul]
     rw [add_left_cancel_iff, ← smul_sub, mul_div_assoc, ← smul_eq_mul, smul_assoc]
     have h2 : ((1 - alg.γ (k - 1)) / alg.γ (k - 1)) • (alg.x k - alg.x (k - 1)) =
         alg.x (k - 1) + (alg.γ (k - 1))⁻¹ • (alg.x k - alg.x (k - 1)) - alg.x k := by
@@ -212,11 +212,16 @@ theorem Nesterov_first_converge (minφ : IsMinOn (f + h) univ xm) :
     intro n
     let cond := alg.cond n
     simp [α]
-    rw [mul_div_assoc, mul_div_assoc, ← mul_assoc, mul_comm _ 2, mul_assoc, mul_le_mul_left]
+    rw [mul_div_assoc, mul_div_assoc, ← mul_assoc, mul_comm _ 2, mul_assoc, mul_le_mul_iff_right₀]
     rw [← mul_div_assoc]; exact cond; simp
   have h10 (n : ℕ) : α n * (alg.γ n ^ (2 : ℕ) / (2 * alg.t n)) = 1 := by
-    field_simp [α]; rw [mul_comm, div_self]; apply mul_ne_zero
-    simp; linarith [(alg.γbound n).1]; linarith [alg.tbound n]
+    have hγnz : alg.γ n ^ 2 ≠ 0 := by
+      have hγpos : 0 < alg.γ n := (alg.γbound n).1
+      exact ne_of_gt (pow_pos hγpos 2)
+    have htnz : 2 * alg.t n ≠ 0 := by
+      have htpos : 0 < alg.t n := (alg.tbound n).1
+      exact ne_of_gt (by linarith [htpos])
+    simp [α, pow_two, mul_comm, mul_left_comm, mul_div_mul_comm]; aesop
   have decrease (n : ℕ+) : (α n) * (φ (alg.x (n + 1)) - φ xm) + ‖v (n + 1) - xm‖ ^ 2 ≤
       (α (n - 1)) * (φ (alg.x n) - φ xm) + ‖v n - xm‖ ^ 2 := by
     calc
@@ -228,7 +233,7 @@ theorem Nesterov_first_converge (minφ : IsMinOn (f + h) univ xm) :
           * (‖v n - xm‖ ^ 2 - ‖v (n + 1) - xm‖ ^ 2))
           + (α n) * ((1 - alg.γ n) * (φ (alg.x n) - φ xm)) + ‖v (n + 1) - xm‖ ^ 2 := by
         rw [mul_add]; repeat apply add_le_add_right
-        rw [mul_le_mul_left]; exact φieq4 n; exact αpos n
+        rw [mul_le_mul_iff_right₀]; exact φieq4 n; exact αpos n
       _ = ‖v n - xm‖ ^ 2 - ‖v (n + 1) - xm‖ ^ 2 +
           (α n) * ((1 - alg.γ n) * (φ (alg.x n) - φ xm)) + ‖v (n + 1) - xm‖ ^ 2 := by
         rw [← mul_assoc, h10, one_mul]
@@ -258,22 +263,22 @@ theorem Nesterov_first_converge (minφ : IsMinOn (f + h) univ xm) :
   calc
     f (alg.x (k + 1)) + h (alg.x (k + 1)) - f xm - h xm =
         alg.γ k ^ 2 / (2 * alg.t k) * ((α k) * (φ (alg.x (↑k + 1))- φ xm)) := by
-      rw [sub_sub, ← mul_assoc, mul_comm _ (α k), h10 k]; simp
+      rw [sub_sub, ← mul_assoc, mul_comm _ (α k), h10 k]; simp; grind
     _ ≤ alg.γ k ^ 2 / (2 * alg.t k) * nr k := by
-      rw [mul_le_mul_left]; simp [nr]; apply div_pos
+      rw [mul_le_mul_iff_right₀]; simp [nr]; apply div_pos
       rw [sq_pos_iff]; linarith [(alg.γbound k).1]; linarith [alg.tbound k]
     _ ≤ alg.γ k ^ 2 / (2 * alg.t k) * nr 0 := by
-      rw [mul_le_mul_left]; exact bound; apply div_pos
+      rw [mul_le_mul_iff_right₀]; exact bound; apply div_pos
       rw [sq_pos_iff]; linarith [(alg.γbound k).1]; linarith [alg.tbound k]
     _ ≤ alg.γ k ^ 2 / (2 * alg.t k) * ‖x0 - xm‖ ^ 2 := by
-      rw [mul_le_mul_left]; simp [nr, v, α]; rw [alg.oriγ]; simp
+      rw [mul_le_mul_iff_right₀]; simp [nr, v, α]; rw [alg.oriγ]; simp
       specialize φieq3 0; rw [alg.oriγ] at φieq3; simp at φieq3
       calc
         2 * alg.t 0 * (φ (alg.x 1) - φ xm) + ‖alg.x 1 - xm‖ ^ 2 ≤ 2 * alg.t 0
             * ((alg.t 0)⁻¹ * ⟪alg.x 1 - alg.y 0, xm - alg.x 1⟫
             + (alg.t 0)⁻¹ * 2⁻¹ * ‖alg.x 1 - alg.y 0‖ ^ 2 + φ xm - φ xm)
             + ‖alg.x 1 - xm‖ ^ 2 := by
-          apply add_le_add_right; rw [mul_le_mul_left]; simp; linarith [φieq3]
+          apply add_le_add_right; rw [mul_le_mul_iff_right₀]; simp; linarith [φieq3]
           linarith [alg.tbound 0]
         _ = ‖alg.x 0 - xm‖ ^ 2 := by
           rw [← add_sub, sub_self, add_zero, mul_add, ← mul_assoc]; ring_nf
@@ -292,7 +297,7 @@ variable {f h : E → ℝ} {f' : E → E} {x0 : E}
 
 open Set Real PNat
 
-class Nesterov_first_fix_stepsize (f h: E → ℝ) (f' : E → E) (x0 : E) :=
+class Nesterov_first_fix_stepsize (f h: E → ℝ) (f' : E → E) (x0 : E) where
   (l : NNReal) (hl : l > (0 : ℝ))
   (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (convf: ConvexOn ℝ univ f)
   (h₂ : LipschitzWith l f') (convh : ConvexOn ℝ univ h)
@@ -314,8 +319,8 @@ instance {f h: E → ℝ} {f' : E → E} {x0 : E} [p : Nesterov_first_fix_stepsi
   initial := p.initial
   cond := by
     intro n; simp [p.teq n, p.teq (n - 1), p.γeq n, p.γeq (n - 1)]; field_simp
-    rw [mul_assoc, ← div_div, div_le_div_right, pow_two, ← mul_assoc, mul_div_assoc]
-    rw [div_self, add_sub]; ring_nf; simp; linarith; linarith [p.hl]
+    ring_nf
+    norm_num
   tbound := by
     intro k; rw [p.teq k]; simp; exact p.hl
   hl := p.hl
@@ -351,8 +356,6 @@ theorem Nesterov_first_fix_stepsize_converge (minφ : IsMinOn (f + h) univ xm):
       rw [h1, h2]; apply Nesterov_first_converge minφ
     _ ≤ 2 * alg.l / (k + 2) ^ 2 * ‖x0 - xm‖ ^ 2 := by
       apply mul_le_mul_of_nonneg_right; rw [alg.γeq k, alg.teq k]; field_simp
-      rw [pow_two, add_comm]; rw [mul_comm ((k + 2 : ℝ) ^ 2), ← div_div, div_le_div_right]
-      rw [mul_rotate, ← mul_div, div_self, mul_one]
-      simp; field_simp; apply sq_nonneg
+      rw [add_comm (2 : ℝ) (↑k)]; apply sq_nonneg
 
 end Nesterov_first_fix_stepsize

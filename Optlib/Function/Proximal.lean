@@ -17,6 +17,8 @@ set_option linter.unusedVariables false
 -/
 noncomputable section
 
+set_option linter.unusedSectionVars false
+
 open Set InnerProductSpace Topology Filter
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
@@ -64,11 +66,13 @@ theorem prox_set_compact_of_lowersemi (f : E → ℝ) (hc : LowerSemicontinuous 
       _ ≤ f z + ‖z - x‖ ^ 2 / 2 := by
         simp; linarith [sq_nonneg ‖z - x‖]
   have hg : LowerSemicontinuous g := by
-    apply LowerSemicontinuous.add hc
-    apply Continuous.lowerSemicontinuous
-    apply continuous_iff_continuousOn_univ.2
-    apply HasGradientAt.continuousOn
-    intro u _; apply gradient_of_sq u
+    refine hc.add ?_
+    have hcont : Continuous (fun z : E => ‖z - x‖ ^ 2 / 2) := by
+      have h1 : Continuous (fun z : E => ‖z - x‖) := (continuous_id.sub continuous_const).norm
+      have h2 : Continuous (fun z : E => ‖z - x‖ ^ 2) := h1.pow 2
+      have h3 : Continuous (fun z : E => ‖z - x‖ ^ 2 * (1 / 2)) := h2.mul continuous_const
+      simpa [div_eq_mul_inv, mul_comm] using h3
+    exact hcont.lowerSemicontinuous
   have S_bddbelow : BddBelow ImS := by
     use L; rw [mem_lowerBounds]
     rintro gy ⟨y0, _, gyeq⟩; rw [← gyeq]; exact boundg y0
@@ -101,7 +105,9 @@ theorem prox_set_compact_of_lowersemi (f : E → ℝ) (hc : LowerSemicontinuous 
               rw [add_right_comm, mul_comm]; simp; linarith [sq_nonneg b]
           calc
             0 ≤ a ^ 2 / 2 := by linarith [sq_nonneg a]
-            _ ≤ b * 2 / 2 := by rw [div_le_div_right]; exact h1; linarith
+            _ ≤ b * 2 / 2 := by
+              have h := mul_le_mul_of_nonneg_right h1 (by norm_num : 0 ≤ (1 / 2 : ℝ))
+              simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using h
             _ ≤ b + 1 := by simp
           linarith
         apply aux ieq
@@ -119,10 +125,13 @@ theorem prox_set_compact_of_lowersemi (f : E → ℝ) (hc : LowerSemicontinuous 
     apply Tendsto.comp cfx (StrictMono.tendsto_atTop mono)
   have inepi : (x', sInf ImS) ∈ epi := by
     let p := fun c ↦ (((fun n ↦ xn n) ∘ k) c, (g ∘ xn ∘ k) c)
-    have pnin :  ∀ c : ℕ, p c ∈ epi := by simp [epi]
+    have pnin :  ∀ c : ℕ, p c ∈ epi := by
+      simp [epi]
+      exact fun c ↦
+        Std.IsPreorder.le_refl (g (p c).1)
     apply IsClosed.isSeqClosed epi_closed pnin
     show Tendsto (fun c ↦ (((fun n ↦ xn n) ∘ k) c, (g ∘ xn ∘ k) c)) atTop (𝓝 (x', sInf ImS))
-    apply Tendsto.prod_mk_nhds cxk cfxk
+    apply Tendsto.prodMk_nhds cxk cfxk
   have minima_ieq : g x' ≤ sInf ImS := inepi
   have minima : ∀ w : E, g x' ≤ g w := by
     intro w
@@ -134,7 +143,7 @@ theorem prox_set_compact_of_lowersemi (f : E → ℝ) (hc : LowerSemicontinuous 
       linarith
     · have gwnin : g x < g w := by
         simp [g, S] at hw; simp [g]; exact hw
-      have gxin : g x ∈ ImS := by use x; simp [g, ImS, S]
+      have gxin : g x ∈ ImS := by use x; simp [g, S]
       have legw : sInf ImS ≤ g w := by
         rw [Real.sInf_le_iff S_bddbelow neImS]
         intro _ epos; use g x; use gxin; linarith
@@ -170,44 +179,60 @@ theorem prox_set_compact_of_convex (f : E → ℝ) (hc : ContinuousOn f univ)
   have subd: ∃ z : E, Nonempty (SubderivAt f z) := by
     use x; apply SubderivAt.nonempty hconv hc
   have hc : LowerSemicontinuous f :=
-    Continuous.lowerSemicontinuous (continuous_iff_continuousOn_univ.mpr hc)
+    Continuous.lowerSemicontinuous (continuousOn_univ.mp hc)
   rcases subd with ⟨z, a, ain⟩
   rw [← mem_SubderivAt, HasSubgradientAt] at ain
   let g := fun u ↦ f u + ‖u - x‖ ^ 2 / 2
   let epi := {p : (E × ℝ) | g p.1 ≤ p.2}
-  have second_lower_bound (y : E) : g y ≥ f z + inner a (y - z) + ‖y - x‖ ^ 2 / 2 := by
-    simp [g]
-    specialize ain y; linarith
-  have lower_bound (y : E) : f z + inner a (x - z) - ‖a‖ ^ 2 / 2 ≤ g y := by
+  have second_lower_bound (y : E) : g y ≥ f z + ⟪a, y - z⟫_ℝ + ‖y - x‖ ^ 2 / 2 := by
+    have h := ain y
+    have h' := add_le_add_right h (‖y - x‖ ^ 2 / 2)
+    simpa [g, add_comm, add_left_comm, add_assoc] using h'
+  have lower_bound (y : E) : f z + ⟪a, x - z⟫_ℝ - ‖a‖ ^ 2 / 2 ≤ g y := by
     have : y - z = x - z + (y - x) := by simp
     specialize second_lower_bound y
     rw [this, inner_add_right, ← add_assoc, add_assoc] at second_lower_bound
-    have : 0 ≤ ‖a‖ ^ 2 / 2 + inner a (y - x) + ‖y - x‖ ^ 2 / 2 := by
-      field_simp; rw [mul_comm, ← norm_add_sq_real]
-      apply div_nonneg (sq_nonneg ‖a + (y - x)‖)
-      norm_num
+    have : 0 ≤ ‖a‖ ^ 2 / 2 + ⟪a, y - x⟫_ℝ + ‖y - x‖ ^ 2 / 2 := by
+      have hrewrite :
+          ‖a‖ ^ 2 / 2 + ⟪a, y - x⟫_ℝ + ‖y - x‖ ^ 2 / 2
+            = ‖a + (y - x)‖ ^ 2 / 2 := by
+        have h1 :
+            (‖a‖ ^ 2 + 2 * ⟪a, y - x⟫_ℝ + ‖y - x‖ ^ 2) / 2
+              = ‖a + (y - x)‖ ^ 2 / 2 := by
+          simpa using
+            (congrArg (fun t : ℝ => t / 2) (norm_add_sq_real a (y - x))).symm
+        have h2 :
+            ‖a‖ ^ 2 / 2 + ⟪a, y - x⟫_ℝ + ‖y - x‖ ^ 2 / 2
+              = (‖a‖ ^ 2 + 2 * ⟪a, y - x⟫_ℝ + ‖y - x‖ ^ 2) / 2 := by
+          ring
+        simpa [h2] using h1
+      have hnonneg : 0 ≤ ‖a + (y - x)‖ ^ 2 / 2 := by
+        exact div_nonneg (sq_nonneg ‖a + (y - x)‖) (by norm_num)
+      simpa [hrewrite] using hnonneg
     calc
-      f z + inner a (x - z) - ‖a‖ ^ 2 / 2 ≤ f z + inner a (x - z) - ‖a‖ ^ 2 / 2 +
-        (‖a‖ ^ 2 / 2 + inner a (y - x) + ‖y - x‖ ^ 2 / 2) := le_add_of_nonneg_right this
-      _ = f z + inner a (x - z) + (inner a (y - x) + ‖y - x‖ ^ 2 / 2) := by ring
+      f z + ⟪a, x - z⟫_ℝ - ‖a‖ ^ 2 / 2 ≤ f z + ⟪a, x - z⟫_ℝ - ‖a‖ ^ 2 / 2 +
+        (‖a‖ ^ 2 / 2 + ⟪a, y - x⟫_ℝ + ‖y - x‖ ^ 2 / 2) := le_add_of_nonneg_right this
+      _ = f z + ⟪a, x - z⟫_ℝ + (⟪a, y - x⟫_ℝ + ‖y - x‖ ^ 2 / 2) := by ring
       _ ≤ g y := second_lower_bound
   have hg : LowerSemicontinuous g := by
-    apply LowerSemicontinuous.add hc
-    apply Continuous.lowerSemicontinuous
-    apply continuous_iff_continuousOn_univ.2
-    apply HasGradientAt.continuousOn
-    intro u _; apply gradient_of_sq u
+    have hcont : Continuous (fun z : E => ‖z - x‖ ^ 2 / 2) := by
+      have h1 : Continuous (fun z : E => ‖z - x‖) := (continuous_id.sub continuous_const).norm
+      have h2 : Continuous (fun z : E => ‖z - x‖ ^ 2) := h1.pow 2
+      have h3 : Continuous (fun z : E => ‖z - x‖ ^ 2 * (1 / 2)) := h2.mul continuous_const
+      simpa [div_eq_mul_inv, mul_comm] using h3
+    exact hc.add hcont.lowerSemicontinuous
   have epi_closed : IsClosed epi := by
     apply bounded_lowersemicontinuous_to_epi_closed
     · exact lowerSemicontinuousOn_univ_iff.2 hg
-    use (f z + inner a (x - z) - ‖a‖ ^ 2 / 2)
+    refine ⟨f z + ⟪a, x - z⟫_ℝ - ‖a‖ ^ 2 / 2, ?_⟩
+    intro y; exact lower_bound y
   let S := {y : E| g y ≤ g z}
   have eq : S = (g ⁻¹' Set.Iic (g z)) := by constructor
   let ImS := {g y | y ∈ S}
   have neImS : Set.Nonempty ImS := by
     use g z; simp [ImS, S]; use z
   have S_bddbelow : BddBelow ImS := by
-    use (f z + inner a (x - z) - ‖a‖ ^ 2 / 2)
+    use (f z + ⟪a, x - z⟫_ℝ - ‖a‖ ^ 2 / 2)
     rw [mem_lowerBounds]
     rintro gy ⟨y0, _, gyeq⟩
     rw [← gyeq]; exact lower_bound y0
@@ -221,33 +246,42 @@ theorem prox_set_compact_of_convex (f : E → ℝ) (hc : ContinuousOn f univ)
       intro u uin
       simp [S] at uin
       apply mem_closedBall_iff_norm.2
-      have norm_bound: ‖u - (x - a)‖ ≤ ‖z - (x - a)‖ + 2 := by
-        have ieq : f z + inner a (u - z) + ‖u - x‖ ^ 2 / 2 ≤ f z + ‖z - x‖ ^ 2 / 2 + 1 := by
-          calc
-            f z + inner a (u - z) + ‖u - x‖ ^ 2 / 2 ≤ g u := second_lower_bound u
-            _ ≤ f z + ‖z - x‖ ^ 2 / 2 := uin
-            _ ≤ f z + ‖z - x‖ ^ 2 / 2 + 1 := by linarith
-        rw [add_assoc, add_assoc, add_le_add_iff_left] at ieq
-        have eq : inner a (u - z) + ‖u - x‖ ^ 2 / 2 =
-            (‖u - (x - a)‖ ^ 2 - ‖a‖ ^ 2 + 2 * inner (x - z) a) / 2 := by
-          field_simp; rw [← sub_add, norm_add_sq_real]; ring_nf
-          rw [add_assoc, ← add_mul, ← inner_add_left, add_comm, real_inner_comm]; simp
-        rw [eq] at ieq
-        have ieq2 : ‖u - (x - a)‖ ^ 2 ≤ ‖z - (x - a)‖ ^ 2 + 2 := by
-          field_simp at ieq; rw [div_le_div_right, sub_add, sub_le_iff_le_add] at ieq
-          rw [add_right_comm, add_comm (‖z - x‖ ^ 2), norm_sub_rev z x] at ieq
-          rw [real_inner_comm, ← norm_sub_sq_real, ← sub_add a, sub_add_comm] at ieq
-          rw [sub_add] at ieq; exact ieq; norm_num
-        have : |‖z - (x - a)‖ + 2| = ‖z - (x - a)‖ + 2 := by
-          apply abs_of_pos; apply add_pos_of_nonneg_of_pos (norm_nonneg (z - (x - a)))
-          simp
-        rw [← abs_norm, ← this, ← sq_le_sq, add_sq]
+      have ieq : f z + ⟪a, u - z⟫_ℝ + ‖u - x‖ ^ 2 / 2 ≤ f z + ‖z - x‖ ^ 2 / 2 + 1 := by
         calc
-          ‖u - (x - a)‖ ^ 2 ≤ ‖z - (x - a)‖ ^ 2 + 2 := ieq2
-          _ ≤ ‖z - (x - a)‖ ^ 2 + 2 * ‖z - (x - a)‖ * 2 + 2 ^ 2 := by
-            rw [add_assoc, add_le_add_iff_left]; apply le_add_of_nonneg_of_le
-            simp; norm_num
-      exact norm_bound
+          f z + ⟪a, u - z⟫_ℝ + ‖u - x‖ ^ 2 / 2 ≤ g u := second_lower_bound u
+          _ ≤ f z + ‖z - x‖ ^ 2 / 2 := uin
+          _ ≤ f z + ‖z - x‖ ^ 2 / 2 + 1 := by linarith
+          _ ≤ f z + ‖z - x‖ ^ 2 / 2 + 1 := by linarith
+      rw [add_assoc, add_assoc, add_le_add_iff_left] at ieq
+      have eq : ⟪a, u - z⟫_ℝ + ‖u - x‖ ^ 2 / 2 =
+          (‖u - (x - a)‖ ^ 2 - ‖a‖ ^ 2 + 2 * ⟪x - z, a⟫_ℝ) / 2 := by
+        field_simp; rw [← sub_add, norm_add_sq_real]; ring_nf
+        rw [add_assoc, ← add_mul, ← inner_add_left, add_comm, real_inner_comm]; simp
+      rw [eq] at ieq
+      have ieq2 : ‖u - (x - a)‖ ^ 2 ≤ ‖z - (x - a)‖ ^ 2 + 2 := by
+        -- clear the division by 2 on both sides
+        have ieq' :=
+          (mul_le_mul_of_nonneg_right ieq (by norm_num : 0 ≤ (2 : ℝ)))
+        -- simplify ((·)/2)*2 = · and (·/2 + 1)*2 = · + 2
+        have ieq' :
+            ‖u - (x - a)‖ ^ 2 - ‖a‖ ^ 2 + 2 * ⟪x - z, a⟫_ℝ ≤ ‖z - x‖ ^ 2 + 2 := by
+          have h2 : (2 : ℝ) ≠ 0 := by norm_num
+          simpa [add_mul, mul_add, div_eq_mul_inv, h2] using ieq'
+        rw [sub_add, sub_le_iff_le_add] at ieq'
+        rw [add_right_comm, add_comm (‖z - x‖ ^ 2), norm_sub_rev z x] at ieq'
+        rw [real_inner_comm, ← norm_sub_sq_real, ← sub_add a, sub_add_comm] at ieq'
+        rw [sub_add] at ieq'
+        exact ieq'
+      have : |‖z - (x - a)‖ + 2| = ‖z - (x - a)‖ + 2 := by
+        apply abs_of_pos; apply add_pos_of_nonneg_of_pos (norm_nonneg (z - (x - a)))
+        simp
+      rw [← abs_norm, ← this, ← sq_le_sq, add_sq]
+      calc
+        ‖u - (x - a)‖ ^ 2 ≤ ‖z - (x - a)‖ ^ 2 + 2 := ieq2
+        _ ≤ ‖z - (x - a)‖ ^ 2 + 2 * ‖z - (x - a)‖ * 2 + 2 ^ 2 := by
+          rw [add_assoc, add_le_add_iff_left]; apply le_add_of_nonneg_of_le
+          simp; norm_num
+--      exact norm_bound
     have compactb : IsCompact B := isCompact_closedBall (x - a) (‖z - (x - a)‖ + 2)
     rw [← closure_eq_iff_isClosed] at closeds; rw [← closeds]
     apply IsCompact.closure_of_subset compactb sinb
@@ -260,10 +294,10 @@ theorem prox_set_compact_of_convex (f : E → ℝ) (hc : ContinuousOn f univ)
     apply Tendsto.comp cfx (StrictMono.tendsto_atTop mono)
   have inepi : (x', sInf ImS) ∈ epi := by
     let p := fun c ↦ (((fun n ↦ xn n) ∘ k) c, (g ∘ xn ∘ k) c)
-    have pnin :  ∀ c : ℕ, p c ∈ epi := by simp [epi]
+    have pnin :  ∀ c : ℕ, p c ∈ epi := by simp [epi]; exact fun c ↦ Std.IsPreorder.le_refl (g (p c).1)
     apply IsClosed.isSeqClosed epi_closed pnin
     show Tendsto (fun c ↦ (((fun n ↦ xn n) ∘ k) c, (g ∘ xn ∘ k) c)) atTop (𝓝 (x', sInf ImS))
-    apply Tendsto.prod_mk_nhds cxk cfxk
+    apply Tendsto.prodMk_nhds cxk cfxk
   have minima_ieq : g x' ≤ sInf ImS := inepi
   have minima : ∀ w : E, g x' ≤ g w := by
       intro w
@@ -275,7 +309,7 @@ theorem prox_set_compact_of_convex (f : E → ℝ) (hc : ContinuousOn f univ)
         linarith
       · have gwnin : g z < g w := by
           simp [S] at hw; simp [g]; exact hw
-        have gzin : g z ∈ ImS := by use z; simp [ImS, S]
+        have gzin : g z ∈ ImS := by use z; simp [S]
         have legw : sInf ImS ≤ g w := by
           rw [Real.sInf_le_iff S_bddbelow neImS]
           intro _ epos; use g z; use gzin; linarith
@@ -361,37 +395,42 @@ lemma convex_of_norm_sq {s : Set E} (x : E) (conv: Convex ℝ s) :
     ConvexOn ℝ s (fun (u : E) ↦ ‖u - x‖ ^ 2 / 2) := by
   rw [ConvexOn]; use conv
   intro y _ z _ a b anneg bnneg absum1
-  field_simp
   have eq1 : a • y + b • z - x = a • (y - x) + b • (z - x) := by
-    rw [smul_sub, smul_sub, add_comm_sub, sub_sub, ← add_smul, add_comm b a]
-    rw [absum1, one_smul, ← add_sub]
+    rw [smul_sub, smul_sub, add_comm_sub, sub_sub, ← add_smul, add_comm b a, absum1,
+        one_smul, ← add_sub]
   rw [eq1]
-  have ieq1 (u v : E) : ‖a • u + b • v‖ ^ 2 / 2 ≤ (a * ‖u‖ ^ 2 + b * ‖v‖ ^ 2) / 2 := by
-    rw [div_le_div_right, norm_add_sq_real, add_comm, ← add_assoc]
-    rw [norm_smul, norm_smul, mul_pow, mul_pow]; simp
-    nth_rw 3 [← mul_one a]; nth_rw 3 [← one_mul b]
-    rw [← absum1]; ring_nf; rw [add_right_comm]
-    apply add_le_add_right
-    rw [add_comm]; apply add_le_add_right
-    calc
-      inner (a • u) (b • v) * 2 ≤ ‖a • u‖ * ‖b • v‖ * 2 := by
-        rw [mul_le_mul_right]
-        apply real_inner_le_norm
-        simp
-      _ = a * b * (2 * ‖u‖ * ‖v‖) := by
-        rw [norm_smul, norm_smul]; simp
-        rw [abs_of_nonneg anneg, abs_of_nonneg bnneg]; ring
-      _ ≤ a * b * (‖u‖ ^ 2 + ‖v‖ ^ 2) := by
-        by_cases a * b > 0
-        · rw [mul_le_mul_left]
-          apply two_mul_le_add_pow_two
-          linarith
-        · have ieq2 : 0 ≤ a * b := by apply mul_nonneg anneg bnneg
-          have ieq3 : 0 = a * b := by linarith
-          rw [← ieq3]; simp
-      _ = b * ‖v‖ ^ 2 * a + b * a * ‖u‖ ^ 2 := by ring
-    simp
-  apply ieq1
+  have ieq1 (u v : E) :
+      ‖a • u + b • v‖ ^ 2 / 2 ≤ a * (‖u‖ ^ 2 / 2) + b * (‖v‖ ^ 2 / 2) := by
+    have hbase :
+        ‖a • u + b • v‖ ^ 2 ≤ a * ‖u‖ ^ 2 + b * ‖v‖ ^ 2 := by
+      rw [norm_add_sq_real, add_comm, ← add_assoc]
+      rw [norm_smul, norm_smul, mul_pow, mul_pow]; simp
+      nth_rw 3 [← mul_one a]; nth_rw 3 [← one_mul b]
+      rw [← absum1]; ring_nf; rw [add_right_comm]
+      apply add_le_add_right
+      rw [add_comm]; apply add_le_add_right
+      calc
+        ⟪a • u, b • v⟫_ℝ * 2
+            ≤ ‖a • u‖ * ‖b • v‖ * 2 := by
+              have h := real_inner_le_norm (a • u) (b • v)
+              exact mul_le_mul_of_nonneg_right h (by norm_num)
+        _ = a * b * (2 * ‖u‖ * ‖v‖) := by
+          rw [norm_smul, norm_smul]; simp
+          rw [abs_of_nonneg anneg, abs_of_nonneg bnneg]; ring
+        _ ≤ b * ‖v‖ ^ 2 * a + b * a * ‖u‖ ^ 2 := by
+          have hab_nonneg : 0 ≤ a * b := mul_nonneg anneg bnneg
+          have hineq : 2 * ‖u‖ * ‖v‖ ≤ ‖u‖ ^ 2 + ‖v‖ ^ 2 := by
+            simpa using two_mul_le_add_pow_two (‖u‖) (‖v‖)
+          have hmul :
+              a * b * (2 * ‖u‖ * ‖v‖) ≤ a * b * (‖u‖ ^ 2 + ‖v‖ ^ 2) :=
+            mul_le_mul_of_nonneg_left hineq hab_nonneg
+          simp; grind
+    have : (1 / 2 : ℝ) * ‖a • u + b • v‖ ^ 2
+              ≤ (1 / 2 : ℝ) * (a * ‖u‖ ^ 2 + b * ‖v‖ ^ 2) :=
+      mul_le_mul_of_nonneg_left hbase (by norm_num)
+    simp; grind
+  have h := ieq1 (y - x) (z - x)
+  simpa [smul_eq_mul, div_eq_mul_inv, mul_add, mul_comm, mul_left_comm, mul_assoc] using h
 
 /-
   Sub-derivative at x equal to sub-derivative within univ at x
@@ -425,20 +464,20 @@ theorem proximal_shift (a : E) {t : ℝ} (tnz : t ≠ 0) (f : E → ℝ):
     calc
       t ^ 2 * f (t • z + a) + ‖t • z - t • x‖ ^ 2 / 2 =
           t ^ 2 * (f (t • z + a) + ‖z - x‖ ^ 2 / 2) := by
-        rw [← smul_sub, norm_smul, mul_pow, mul_add]; field_simp
+        rw [← smul_sub, norm_smul, mul_pow, mul_add]; field_simp; simp; grind
       _ ≤ t ^ 2 * (f y + ‖t⁻¹ • (y - a) - x‖ ^ 2 / 2) := by
-        rw [mul_le_mul_left]; use cond; rw [sq_pos_iff]; use tnz
+        rw [mul_le_mul_iff_right₀]; use cond; rw [sq_pos_iff]; use tnz
       _ = t ^ 2 * f y + ‖t • ((1 / t) • (y - a) - x)‖ ^ 2 / 2 := by
-        rw [mul_add, norm_smul, mul_pow]; field_simp
+        rw [mul_add, norm_smul, mul_pow]; field_simp; simp; grind
       _ = t ^ 2 * f y + ‖y - (t • x + a)‖ ^ 2 / 2 := by
-        rw [smul_sub, ← smul_assoc, smul_eq_mul, ← sub_sub, sub_right_comm]; field_simp
+        rw [smul_sub, ← smul_assoc, smul_eq_mul, ← sub_sub, sub_right_comm]; field_simp; simp
     use tnz
   · intro cond y
     specialize cond (t • y + a)
     rw [← smul_sub, norm_smul, mul_pow] at cond; simp at cond
     rw [← smul_sub, norm_smul, mul_pow] at cond; simp at cond
     rw [mul_div_assoc, ← mul_add, mul_div_assoc, ← mul_add] at cond
-    rw [mul_le_mul_left] at cond; use cond; rw [sq_pos_iff]; use tnz
+    rw [mul_le_mul_iff_right₀] at cond; use cond; rw [sq_pos_iff]; use tnz
 
 /-
   relation of proximal between a function and its scale
@@ -452,8 +491,8 @@ theorem proximal_scale {t : ℝ} (tpos : 0 < t) (f : E → ℝ):
   constructor
   · intro cond y
     specialize cond (t • y)
-    have tsq : 0 < t ^ 2 := by field_simp
-    rw [← mul_le_mul_left tsq]
+    have tsq : 0 < t ^ 2 := by field_simp; aesop
+    rw [← mul_le_mul_iff_right₀ tsq]
     calc
       t ^ 2 * (t⁻¹ * f (t⁻¹ • z) + ‖t⁻¹ • z - t⁻¹ • x‖ ^ 2 / 2) =
           t * f (t⁻¹ • z) + ‖z - x‖ ^ 2 / 2 := by
@@ -466,11 +505,11 @@ theorem proximal_scale {t : ℝ} (tpos : 0 < t) (f : E → ℝ):
         rw [← smul_assoc, smul_eq_mul, inv_mul_cancel₀]; simp
         rw [smul_sub, ← smul_assoc, smul_eq_mul, mul_inv_cancel₀]; simp; repeat linarith
       _ = t ^ 2 * (t⁻¹ * f y + ‖y - t⁻¹ • x‖ ^ 2 / 2) := by
-        rw [mul_add, norm_smul, mul_pow]; field_simp
+        rw [mul_add, norm_smul, mul_pow]; field_simp; simp; grind
   · intro cond y
     specialize cond (t⁻¹ • y)
-    have tsq : 0 < t ^ 2 := by field_simp
-    rw [← mul_le_mul_left tsq] at cond
+    have tsq : 0 < t ^ 2 := by field_simp; exact sq_pos_of_pos tpos
+    rw [← mul_le_mul_iff_right₀ tsq] at cond
     calc
       t * f (t⁻¹ • z) + ‖z - x‖ ^ 2 / 2 =
           t ^ 2 * (t⁻¹ * f (t⁻¹ • z) + ‖t⁻¹ • z - t⁻¹ • x‖ ^ 2 / 2) := by
@@ -479,7 +518,7 @@ theorem proximal_scale {t : ℝ} (tpos : 0 < t) (f : E → ℝ):
         rw [← pow_two, mul_inv_cancel₀]; repeat simp; repeat linarith
       _ ≤ t ^ 2 * (t⁻¹ * f (t⁻¹ • y) + ‖t⁻¹ • y - t⁻¹ • x‖ ^ 2 / 2) := cond
       _ = t ^ 2 * (t⁻¹ * f (t⁻¹ • y)) + ‖t • (t⁻¹ • y - t⁻¹ • x)‖ ^ 2 / 2 := by
-        rw [mul_add, norm_smul, mul_pow]; field_simp
+        rw [mul_add, norm_smul, mul_pow]; field_simp; simp; grind
       _ = t * f (t⁻¹ • y) + ‖y - x‖ ^ 2 / 2 := by
         rw [pow_two t, ← mul_assoc, mul_assoc _ _ (t⁻¹), mul_inv_cancel₀]
         rw [smul_sub, ← smul_assoc, smul_eq_mul, mul_inv_cancel₀]; simp
@@ -489,22 +528,27 @@ theorem proximal_scale {t : ℝ} (tpos : 0 < t) (f : E → ℝ):
   change of proximal when added a linear components
 -/
 theorem proximal_add_linear (a : E) (f : E → ℝ):
-    ∀ z : E, prox_prop (fun x ↦ f x + inner a x) x z ↔
+    ∀ z : E, prox_prop (fun x ↦ f x + ⟪a, x⟫_ℝ) x z ↔
       prox_prop f (x - a) z := by
   intro z
   rw [prox_prop, prox_prop, isMinOn_univ_iff, isMinOn_univ_iff]
   have aux (v : E) : ‖v - (x - a)‖ ^ 2 / 2 =
-      ‖v - x‖ ^ 2 / 2 + inner a v + (‖a‖ ^ 2 / 2 - inner a x) := by
-    rw [← sub_add, norm_add_sq_real, real_inner_comm, inner_sub_right]; ring_nf
+      ‖v - x‖ ^ 2 / 2 + ⟪a, v⟫_ℝ + (‖a‖ ^ 2 / 2 - ⟪a, x⟫_ℝ) := by
+    have hx : v - (x - a) = (v - x) + a := by
+      simp [sub_eq_add_neg, add_comm, add_left_comm]
+    have h := norm_add_sq_real (v - x) a
+    have h' := congrArg (fun t : ℝ => t / 2) (by simpa [hx] using h)
+    have h2 : (2 : ℝ) ≠ 0 := by norm_num
+    have hinner : ⟪v - x, a⟫_ℝ = ⟪a, v⟫_ℝ - ⟪a, x⟫_ℝ := by
+      simp [real_inner_comm, inner_sub_right]
+    grind
   constructor
   · intro cond y
     specialize cond y
-    rw [aux, aux, add_comm _ (inner a z), add_comm _ (inner a y)]
-    linarith
+    grind
   · intro cond y
     specialize cond y
-    rw [aux, aux, add_comm _ (inner a z), add_comm _ (inner a y)] at cond
-    linarith
+    grind
 
 /-
   change of proximal when added a square components
@@ -525,15 +569,15 @@ theorem proximal_add_sq (a : E) {l : ℝ} (lpos : 0 < l) (f : E → ℝ):
     rw [add_sub_right_comm]; simp; rw [mul_sub, ← add_sub_right_comm, ← add_sub_assoc]
     nth_rw 3 [← one_mul (‖v‖ ^ 2)]; rw [← add_mul, ← mul_assoc l, mul_comm l 2, sub_sub]
     rw [mul_assoc, ← mul_add, ← inner_smul_right _ _ l, ← inner_add_right]
-    field_simp; rw [mul_comm]; simp
+    field_simp; simp
   constructor
   · intro cond y
     specialize cond y
-    rw [aux, aux]; simp; rw [← mul_add, ← mul_add, mul_le_mul_left]
+    rw [aux, aux]; simp; rw [← mul_add, ← mul_add, mul_le_mul_iff_right₀]
     linarith [cond]; simp; linarith
   · intro cond y
     specialize cond y
-    rw [aux, aux] at cond; simp at cond; rw [← mul_add, ← mul_add, mul_le_mul_left] at cond
+    rw [aux, aux] at cond; simp at cond; rw [← mul_add, ← mul_add, mul_le_mul_iff_right₀] at cond
     linarith [cond]; simp; linarith
 
 end properties
@@ -553,12 +597,11 @@ theorem prox_iff_subderiv (f : E → ℝ) (hfun : ConvexOn ℝ univ f) :
   let g := fun u ↦ ‖u - x‖ ^ 2 / 2
   have hg : ConvexOn ℝ Set.univ g := by apply convex_of_norm_sq x (convex_univ)
   have hcg : ContinuousOn g univ := by
-    simp [g]; apply ContinuousOn.div
-    apply ContinuousOn.pow _
-    · apply ContinuousOn.norm
-      apply ContinuousOn.sub continuousOn_id continuousOn_const
-    · apply continuousOn_const
-    · simp
+    have h1 : Continuous (fun z : E => ‖z - x‖) :=
+      (continuous_id.sub continuous_const).norm
+    have h2 : Continuous (fun z : E => ‖z - x‖ ^ 2) := h1.pow 2
+    have h3 : Continuous (fun z : E => ‖z - x‖ ^ 2 * (1 / 2)) := h2.mul continuous_const
+    simp; exact Continuous.div_const h2 2
   show 0 ∈ SubderivAt (f + g) u ↔ x - u ∈ SubderivAt f u
   have : SubderivAt (f + g) u = SubderivAt (g + f) u := by
     unfold SubderivAt; ext z; rw [Set.mem_setOf, Set.mem_setOf];
@@ -638,15 +681,17 @@ theorem prox_iff_subderiv_smul (f : E → ℝ) {t : ℝ} (hfun : ConvexOn ℝ un
   · intro cond y
     specialize cond y; simp at cond
     rw [inner_smul_left]; simp
-    rw [← mul_le_mul_left ht]; ring_nf; field_simp
+    rw [← mul_le_mul_iff_right₀ ht]; ring_nf; field_simp
     exact cond
   · intro cond y
-    specialize cond y; rw [inner_smul_left] at cond; field_simp at cond
-    simp
-    have hrect : 0 < t⁻¹ := by
-      simp; linarith
-    rw [← mul_le_mul_left hrect]; ring_nf; field_simp
-    exact cond
+    specialize cond y
+    have hmul0 := mul_le_mul_of_nonneg_left cond (le_of_lt ht)
+    have hmul : t * f y ≥ t * f u + t * ((1 / t) * ⟪x - u, y - u⟫_ℝ) := by
+      simpa [mul_add, mul_assoc, inner_smul_left] using hmul0
+    have htne : t ≠ 0 := ne_of_gt ht
+    have eqt : t * ((1 / t) * ⟪x - u, y - u⟫_ℝ) = ⟪x - u, y - u⟫_ℝ := by
+      field_simp [htne]
+    simp; grind
   exact gconv
 
 end

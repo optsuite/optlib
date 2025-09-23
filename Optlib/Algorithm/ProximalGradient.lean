@@ -20,13 +20,14 @@ import Optlib.Function.Proximal
 section method
 
 open Set
+open scoped RealInnerProductSpace InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 variable [ProperSpace E]
 variable {xm x₀: E} {s : Set E} {f : E → ℝ} {f' : E → E} {h : E → ℝ}
 variable {t : ℝ} {x : ℕ → E} {L : NNReal}
 
-class proximal_gradient_method (f h: E → ℝ) (f' : E → E) (x₀ : E) :=
+class proximal_gradient_method (f h: E → ℝ) (f' : E → E) (x₀ : E) where
   (xm : E) (t : ℝ) (x : ℕ → E) (L : NNReal)
   (fconv : ConvexOn ℝ univ f) (hconv : ConvexOn ℝ univ h)
   (h₁ : ∀ x₁ : E, HasGradientAt f (f' x₁) x₁) (h₂ : LipschitzWith L f')
@@ -58,78 +59,78 @@ theorem proximal_gradient_method_converge : ∀ (k : ℕ+),
     rw [one_div_mul_cancel, one_smul] at eq2; exact eq2
     linarith [alg.tpos]; exact alg.hconv; linarith [alg.tpos]
   have fieq1 : ∀ x : E, f (x - alg.t • Gt x) ≤
-      f x - alg.t * inner (f' x) (Gt x) + alg.t ^ 2 * alg.L / 2 * ‖Gt x‖ ^ 2 := by
+      f x - alg.t * ⟪f' x, Gt x⟫_ℝ + alg.t ^ 2 * alg.L / 2 * ‖Gt x‖ ^ 2 := by
     intro x
     let y := x - alg.t • Gt x
-    have ieq1 : f y ≤ f x + inner (f' x) (y - x) + alg.L / 2 * ‖y - x‖ ^ 2 := by
+    have ieq1 : f y ≤ f x + ⟪f' x, y - x⟫_ℝ + alg.L / 2 * ‖y - x‖ ^ 2 := by
       apply lipschitz_continuos_upper_bound' alg.h₁ alg.h₂
     have eq3 : y - x = - alg.t • Gt x := by simp [Gt, y]
     rw [eq3] at ieq1; rw [inner_smul_right, norm_smul, mul_pow] at ieq1
     rw [← mul_assoc, mul_comm ] at ieq1
     simp at ieq1; rw [← sub_eq_add_neg] at ieq1; simp; linarith [alg.tpos]
   have fieq2 : ∀ x : E,
-      f (x - alg.t • Gt x) ≤ f x - alg.t * inner (f' x) (Gt x) + alg.t / 2 * ‖Gt x‖ ^ 2 := by
+      f (x - alg.t • Gt x) ≤ f x - alg.t * ⟪f' x, Gt x⟫_ℝ + alg.t / 2 * ‖Gt x‖ ^ 2 := by
     intro x
     calc
       f (x - alg.t • Gt x) ≤
-          f x - alg.t * inner (f' x) (Gt x) + alg.t ^ 2 * alg.L / 2 * ‖Gt x‖ ^ 2 := fieq1 x
-      _ ≤ f x - alg.t * inner (f' x) (Gt x) + alg.t / 2 * ‖Gt x‖ ^ 2 := by
+          f x - alg.t * ⟪f' x, Gt x⟫_ℝ + alg.t ^ 2 * alg.L / 2 * ‖Gt x‖ ^ 2 := fieq1 x
+      _ ≤ f x - alg.t * ⟪f' x, Gt x⟫_ℝ + alg.t / 2 * ‖Gt x‖ ^ 2 := by
         apply add_le_add_left
         apply mul_le_mul_of_nonneg_right
         apply div_le_div_of_nonneg_right _ (by norm_num)
         calc
           alg.t ^ 2 * alg.L ≤ alg.t * (1 / alg.L) * alg.L := by
             rw [pow_two]; apply mul_le_mul_of_nonneg_right
-            rw [mul_le_mul_left alg.tpos]; exact alg.step; simp
+            rw [mul_le_mul_iff_right₀ alg.tpos]; exact alg.step; simp
           _ = alg.t := by field_simp; rw [← mul_div, div_self (by linarith [alg.hL]), mul_one]
         exact sq_nonneg _
-  have fieq3 : ∀ x z : E, f x + inner (f' x) (z - x) ≤ f z := by
+  have fieq3 : ∀ x z : E, f x + ⟪f' x, z - x⟫_ℝ ≤ f z := by
     intro x z
     apply Convex_first_order_condition' (alg.h₁ x) alg.fconv
     simp; simp
   have hieq1 : ∀ x z : E,
-      h (x - alg.t • Gt x) + inner (Gt x - f' x) (z - x + alg.t • Gt x) ≤ h z := by
+      h (x - alg.t • Gt x) + ⟪Gt x - f' x, z - x + alg.t • Gt x⟫_ℝ ≤ h z := by
     intro x z
     specialize hG x
     rw [← mem_SubderivAt, HasSubgradientAt] at hG
     specialize hG z; rw [sub_add]; apply hG
   have hieq2 : ∀ x z : E,
-      h (x - alg.t • Gt x) ≤ h z - inner (Gt x - f' x) (z - x + alg.t • Gt x) := by
+      h (x - alg.t • Gt x) ≤ h z - ⟪Gt x - f' x, z - x + alg.t • Gt x⟫_ℝ := by
     intro x z; linarith [hieq1 x z]
   have univieq : ∀ x z : E,
-      φ (x - alg.t • Gt x) ≤ φ z + inner (Gt x) (x - z) - alg.t / 2 * ‖Gt x‖ ^ 2 := by
+      φ (x - alg.t • Gt x) ≤ φ z + ⟪Gt x, x - z⟫_ℝ - alg.t / 2 * ‖Gt x‖ ^ 2 := by
     intro x z
     calc
-      φ (x - alg.t • Gt x) ≤ (f x - alg.t * inner (f' x) (Gt x) + alg.t / 2 * ‖Gt x‖ ^ 2)
-        + (h z - inner (Gt x - f' x) (z - x + alg.t • Gt x)) := by
+      φ (x - alg.t • Gt x) ≤ (f x - alg.t * ⟪f' x, Gt x⟫_ℝ + alg.t / 2 * ‖Gt x‖ ^ 2)
+        + (h z - ⟪Gt x - f' x, z - x + alg.t • Gt x⟫_ℝ) := by
         linarith [fieq2 x, hieq2 x z]
-      _ ≤ (f z - inner (f' x) (z - x) - alg.t * inner (f' x) (Gt x) + alg.t / 2 * ‖Gt x‖ ^ 2)
-        + (h z - inner (Gt x - f' x) (z - x + alg.t • Gt x)) := by
+      _ ≤ (f z - ⟪f' x, z - x⟫_ℝ - alg.t * ⟪f' x, Gt x⟫_ℝ + alg.t / 2 * ‖Gt x‖ ^ 2)
+        + (h z - ⟪Gt x - f' x, z - x + alg.t • Gt x⟫_ℝ) := by
         linarith [fieq3 x z]
-      _ = φ z + inner (Gt x) (x - z) - alg.t / 2 * ‖Gt x‖ ^ 2 := by
+      _ = φ z + ⟪Gt x, x - z⟫_ℝ - alg.t / 2 * ‖Gt x‖ ^ 2 := by
         rw [← inner_smul_right, sub_sub, ← inner_add_right]
         rw [inner_sub_left, ← sub_add, add_rotate, ← add_comm_sub, ← add_sub]
         rw [← add_sub, sub_self, add_zero, add_rotate, inner_add_right, ← neg_sub x z]
-        rw [inner_neg_right, ← sub_sub, sub_neg_eq_add, add_comm _ (inner (Gt x) (x - z))]
-        rw [add_comm _ (inner (Gt x) (x - z)), ← add_sub _ (φ z), ← add_sub, add_assoc]
+        rw [inner_neg_right, ← sub_sub, sub_neg_eq_add, add_comm _ ⟪Gt x, x - z⟫_ℝ]
+        rw [add_comm _ ⟪Gt x, x - z⟫_ℝ, ← add_sub _ (φ z), ← add_sub, add_assoc]
         rw [add_assoc, add_left_cancel_iff]
         rw [inner_smul_right, real_inner_self_eq_norm_sq]
         rw [add_comm_sub, ← add_sub]
         have (a : ℝ): alg.t / 2 * a - alg.t * a = - alg.t / 2 * a := by ring
-        rw [this, sub_eq_add_neg, ← add_assoc, add_comm (h z) (f z)]; field_simp
+        rw [this, sub_eq_add_neg, ← add_assoc, add_comm (h z) (f z)]; field_simp; grind
   have φieq1 : ∀ x : E, φ (x - alg.t • Gt x) - φ alg.xm ≤
       (1 / (2 * alg.t)) * (‖x - alg.xm‖ ^ 2 - ‖x - alg.t • Gt x - alg.xm‖ ^ 2) := by
     intro x
     calc
-      φ (x - alg.t • Gt x) - φ alg.xm ≤ inner (Gt x) (x - alg.xm) - alg.t / 2 * ‖Gt x‖ ^ 2 := by
+      φ (x - alg.t • Gt x) - φ alg.xm ≤ ⟪Gt x, x - alg.xm⟫_ℝ - alg.t / 2 * ‖Gt x‖ ^ 2 := by
         linarith [univieq x alg.xm]
       _ = (1 / (2 * alg.t)) * (‖x - alg.xm‖ ^ 2 - ‖x - alg.t • Gt x - alg.xm‖ ^ 2) := by
-        have aux (p q : E) : inner p q - alg.t / 2 * ‖p‖ ^ 2 =
+        have aux (p q : E) : ⟪p, q⟫_ℝ - alg.t / 2 * ‖p‖ ^ 2 =
             1 / (2 * alg.t) * (‖q‖ ^ 2 - ‖q - alg.t • p‖ ^ 2) := by
           rw [norm_sub_sq_real]; field_simp; ring_nf
           rw [inner_smul_right, real_inner_comm];
           nth_rw 2 [mul_comm _ (alg.t)⁻¹]; rw [norm_smul, mul_pow, pow_two ‖alg.t‖]
-          simp; rw [mul_comm _ (inner q p), mul_assoc _ alg.t, mul_inv_cancel₀, ← mul_assoc]
+          simp; rw [mul_comm _ ⟪q, p⟫_ℝ, mul_assoc _ alg.t, mul_inv_cancel₀, ← mul_assoc]
           rw [← mul_assoc, inv_mul_cancel₀]; simp
           repeat linarith [alg.tpos]
         rw [sub_right_comm]; apply aux
@@ -144,7 +145,7 @@ theorem proximal_gradient_method_converge : ∀ (k : ℕ+),
     rw [iter i]
     calc
       φ ((alg.x i) - alg.t • Gt (alg.x i)) ≤ φ (alg.x i)
-        + inner (Gt (alg.x i)) ((alg.x i) - (alg.x i))
+        + ⟪Gt (alg.x i), (alg.x i) - (alg.x i)⟫_ℝ
         - alg.t / 2 * ‖Gt (alg.x i)‖ ^ 2 := by
         linarith [univieq (alg.x i) (alg.x i)]
       _ ≤ φ (alg.x i) := by
@@ -194,12 +195,14 @@ theorem proximal_gradient_method_converge : ∀ (k : ℕ+),
     _ ≤ 2 * alg.t *
         ((1 / (2 * alg.t)) * ‖(alg.x 0) - alg.xm‖ ^ 2
         - (1 / (2 * alg.t)) * ‖(alg.x k) - alg.xm‖ ^ 2) := by
-      rw [mul_le_mul_left]
+      rw [mul_le_mul_iff_right₀]
       let ieq' := ieq k; simp at ieq'
       simp; apply ieq'; linarith [alg.tpos]
     _ = ‖(alg.x 0) - alg.xm‖ ^ 2 - ‖(alg.x k) - alg.xm‖ ^ 2 := by
       rw [← mul_sub, ← mul_assoc, mul_one_div_cancel]; simp; linarith [alg.tpos]
     _ ≤ ‖x₀ - alg.xm‖ ^ 2 := by rw [alg.ori]; simp
-  field_simp; linarith [alg.tpos]
+  · field_simp
+    simp only [Nat.ofNat_pos, mul_pos_iff_of_pos_left, Nat.cast_pos, PNat.pos];
+    exact proximal_gradient_method.tpos
 
 end method

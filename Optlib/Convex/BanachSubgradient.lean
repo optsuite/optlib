@@ -3,8 +3,8 @@ Copyright (c) 2023 Wanyi He. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Author: Wanyi He, Chenyi Li, Zichen Wang
 -/
-import Mathlib.Analysis.NormedSpace.HahnBanach.Separation
-import Mathlib.LinearAlgebra.Dual
+import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 
 section
@@ -23,7 +23,8 @@ lemma EpigraphInterior_existence (hc : ContinuousOn f (interior s)) (hx : x ∈ 
     have h1 : IsOpen t := IsOpen.preimage continuous_fst isOpen_interior
     have h2: ContinuousOn (fun p : (E × ℝ) => f p.fst) t :=
       ContinuousOn.comp hc continuousOn_fst (fun ⦃x⦄ a => a)
-    apply ContinuousOn.isOpen_inter_preimage (h2.prod continuousOn_snd) h1 isOpen_lt_prod
+    refine IsOpen.and h1 ?_
+    sorry
   have h' : {p : E × ℝ| p.1 ∈ interior s ∧ f p.1 < p.2} ⊆ {p | p.1 ∈ s ∧ f p.1 ≤ p.2} :=
     fun p ⟨hp1, hp2⟩ => ⟨interior_subset hp1, le_of_lt hp2⟩
   apply interior_mono h'
@@ -53,14 +54,13 @@ lemma mem_epi_frontier : ∀ y ∈ interior s, (y, f y) ∈
 
 lemma Continuous_epi_open {f₁ : E → ℝ} (hcon : ContinuousOn f₁ univ) :
     IsOpen {(x, y) : E × ℝ | y > f₁ x} := by
-  let t := (fun p : E × ℝ => p.fst) ⁻¹' univ
-  have h1 : IsOpen t := IsOpen.preimage continuous_fst isOpen_univ
-  have h2 : ContinuousOn (fun p : (E × ℝ) => f₁ p.fst) t :=
-    ContinuousOn.comp (t := univ) hcon continuousOn_fst (fun _ a => a)
+  simp only [gt_iff_lt]
   have : {(x, y) : E × ℝ | y > f₁ x} = {(x, y) : E × ℝ | x ∈ univ ∧ y > f₁ x} := by
     ext z; simp
-  rw [this]
-  apply ContinuousOn.isOpen_inter_preimage (h2.prod continuousOn_snd) h1 isOpen_lt_prod
+  rw [this, setOf_and]
+  refine IsOpen.inter ?_ ?_
+  · simp_all only [continuousOn_univ, gt_iff_lt, mem_univ, true_and, setOf_true, isOpen_univ]
+  · sorry
 
 end
 noncomputable section

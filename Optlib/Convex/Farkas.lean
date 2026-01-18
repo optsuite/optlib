@@ -330,17 +330,11 @@ theorem Farkas :
   have sc : IsClosed S := by exact general_polyhedra_is_closed
   have scon : Convex ℝ S := by
     apply convex_iff_forall_pos.mpr
-    intro x xs y ys a1 b1 anng bnng _
-    rcases xs with ⟨sx, ⟨tx, ⟨txcond, eqx⟩⟩⟩
-    rcases ys with ⟨sy, ⟨ty, ⟨tycond, eqy⟩⟩⟩
-    use (a1 • sx + b1 • sy)
-    use (a1 • tx + b1 • ty)
+    intro x ⟨sx, ⟨tx, ⟨txcond, eqx⟩⟩⟩ y ⟨sy, ⟨ty, ⟨tycond, eqy⟩⟩⟩ a1 b1 anng bnng _
+    use (a1 • sx + b1 • sy), (a1 • tx + b1 • ty)
     constructor
     . show 0 ≤ (a1 • tx + b1 • ty)
-      apply add_nonneg; apply smul_nonneg
-      apply le_of_lt anng; apply txcond
-      apply smul_nonneg; apply le_of_lt bnng
-      apply tycond
+      exact add_nonneg (smul_nonneg (le_of_lt anng) txcond) (smul_nonneg (le_of_lt bnng) tycond)
     . rw [eqx, eqy, smul_add, smul_add]
       simp
       rw [Finset.smul_sum, Finset.smul_sum, Finset.smul_sum, Finset.smul_sum]

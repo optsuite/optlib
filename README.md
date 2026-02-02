@@ -1,4 +1,4 @@
-# optlib
+# Optlib
 
 We aim to formalize the broad area of **mathematical optimization** including convex analysis, convex optimization, nonlinear programming, integer programming and etc in Lean4. Related topics include but are not limited to the definition and properties of convex and nonconvex functions, optimality conditions, convergence of various algorithms.
 
@@ -191,19 +191,27 @@ We mainly follow the book [High-Dimensional Probability (Roman Vershynin)](https
 
 ### Formalization of Optimization
 
-- [Chenyi Li, Ziyu Wang, Wanyi He, Yuxuan Wu, Shengyang Xu, Zaiwen Wen. Formalization of Complexity Analysis of the First-order Optimization Algorithms](https://arxiv.org/abs/2403.11437)
-- [Chenyi Li, Zichen Wang, Yifan Bai, Yunxi Duan, Yuqing Gao, Pengfei Hao, Zaiwen Wen, Formalization of Algorithms for Optimization with Block Structures](http://arxiv.org/abs/2503.18806)
-- [Chenyi Li, Shengyang Xu, Chumin Sun, Li Zhou, Zaiwen Wen, Formalization of Optimality Conditions for Smooth Constrained Optimization Problems](https://arxiv.org/abs/2503.18821)
-- [Chenyi Li, Zaiwen Wen, An Introduction to Mathematics Formalization Based on Lean (in Chinese)](http://faculty.bicmr.pku.edu.cn/~wenzw/paper/OptLean.pdf)
+- Chenyi Li, Ziyu Wang, Wanyi He, Yuxuan Wu, Shengyang Xu, Zaiwen Wen. Formalization of Complexity Analysis of the First-order Optimization Algorithms, Journal of Automated Reasoning [(Paper)](https://arxiv.org/abs/2403.11437)
+- Chenyi Li, Zichen Wang, Yifan Bai, Yunxi Duan, Yuqing Gao, Pengfei Hao, Zaiwen Wen, Formalization of Algorithms for Optimization with Block Structures, Science in China Series A: Mathematics [(Paper)](http://arxiv.org/abs/2503.18806)
+- Chenyi Li, Shengyang Xu, Chumin Sun, Li Zhou, Zaiwen Wen, Formalization of Optimality Conditions for Smooth Constrained Optimization Problems [(Paper)](https://arxiv.org/abs/2503.18821)
+- Chenyi Li, Zaiwen Wen, An Introduction to Mathematics Formalization Based on Lean (in Chinese) [(Paper)](http://faculty.bicmr.pku.edu.cn/~wenzw/paper/OptLean.pdf)
 
 ### Autoformalization and Automatic Theorem Proving
 
-- Ziyu Wang, Bowen Yang, Shihao Zhou, Chenyi Li, Yuan Zhang, Bin Dong, Zaiwen Wen, Translating Informal Proofs into Formal Proofs Using  a Chain of States
-- Chenyi Li, Wanli Ma, Zichen Wang, Zaiwen Wen, SITA: A Framework for Structure-to-Instance  Theorem Autoformalization
+- Ziyu Wang, Bowen Yang, Chenyi Li, Yuan Zhang, Shihao Zhou, Bin Dong, Zaiwen Wen, Translating Informal Proofs into Formal Proofs Using a Chain of States [(Paper)](https://arxiv.org/abs/2512.10317)
+- Chenyi Li, Wanli Ma, Zichen Wang, Zaiwen Wen, SITA: A Framework for Structure-to-Instance  Theorem Autoformalization, AAAI, 2026 [(Paper)](https://arxiv.org/abs/2511.10356)
+- Chenyi Li, Yanchen Nie, Zhenyu Ming, Gong Zhang, Kun Yuan, Zaiwen Wen, OptProver: Bridging Olympiad and Optimization through Continual Training in Formal Theorem Proving
+- Zichen Wang, Wanli Ma, Zhenyu Ming, Gong Zhang, Kun Yuan, Zaiwen Wen, M2F: Automated Formalization of Mathematical Literature at Scale
 
 ### Premise Selection
 
-- Zichen Wang, Anjie Dong, Zaiwen Wen, Tree-Based Premise Selection for Lean4
+- Zichen Wang, Anjie Dong, Zaiwen Wen, Tree-Based Premise Selection for Lean4, Nips, 2025 [(Paper)](https://neurips.cc/virtual/2025/loc/san-diego/poster/116011)
+- Shu Miao, Zichen Wang, Anjie Dong, Yishan Wu, Weixi Zhang, Zaiwen Wen, Directed Multi-Relational GCNs for Premise Selection
+
+### Benchmark
+
+- Bowen Yang, Yi Yuan, Chenyi Li, Ziyu Wang, Liangqi Li, Bo Zhang, Zhe Li, Zaiwen Wen, Construction–Verification: A Benchmark for Formalizing Applied Mathematics in Lean 4 
+
 
 ## References
 
@@ -250,6 +258,6 @@ We are a group of scholars and students with a keen interest in mathematical for
 
 ## Copyright
 
-Copyright (c) 2025 Chenyi Li, Zichen Wang, Ziyu Wang, Zaiwen Wen. All rights reserved.
+Copyright (c) 2026 Chenyi Li, Zichen Wang, Ziyu Wang, Zaiwen Wen. All rights reserved.
 
 Released under Apache 2.0 license as described in the file LICENSE.

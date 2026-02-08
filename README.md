@@ -254,7 +254,7 @@ We are a group of scholars and students with a keen interest in mathematical for
 
 - Other collaborators:
 
-  Anjie Dong, ...
+  Anjie Dong, Zhiyan Wang, Siyuan Shao, Yijie Wang, Yuhao Jiang, Yunfei Zhang, Zhenxi Liu, Xuran Sun, Junren Si, Xuan Tang, Mingyue Xu, Guangxuan Pan, Suwan Wu, Gongxun Li, Siyuan Ma, Changyun Zou, Xinyi Guo, Zebo Liu, Weiran Shi, Zixi Wang
 
 ## Copyright
 

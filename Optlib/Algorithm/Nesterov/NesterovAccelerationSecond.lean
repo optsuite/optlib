@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Yuxuan Wu, Chenyi Li
 -/
 import Optlib.Function.Proximal
+import Mathlib.Tactic
 
 /-!
 # NesterovAccelerationSecond
@@ -26,7 +27,7 @@ variable {f h : E → ℝ} {f' : E → E}
 
 open Set Real
 
-class Nesterov_second (f h : E → ℝ) (f' : E → E) (x0 : E) :=
+class Nesterov_second (f h : E → ℝ) (f' : E → E) (x0 : E) where
   (l : NNReal) (hl : l > (0 : ℝ)) (x y : ℕ → E) (z : ℕ+ → E) (t γ : ℕ → ℝ)
   (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (convf: ConvexOn ℝ Set.univ f)
   (h₂ : LipschitzWith l f') (convh : ConvexOn ℝ univ h)
@@ -45,7 +46,7 @@ theorem Nesterov_second_convergence (minφ : IsMinOn (f + h) Set.univ xm):
     ∀ (k : ℕ), f (alg.x (k + 1)) + h (alg.x (k + 1)) - f xm - h xm ≤
       (alg.γ (k + 1)) ^ 2 / (2 * alg.t (k + 1)) * ‖x0 - xm‖ ^ 2 := by
   let φ := fun z : E ↦ f z + h z
-  have φdef : ∀ z : E, φ z = f z + h z := by simp
+  have φdef : ∀ z : E, φ z = f z + h z := by aesop
   have h1 : ∀ k : ℕ+, alg.γ k • (alg.y (k - 1) - alg.y k) - alg.t k • (f' (alg.z k))
       ∈ (SubderivAt (alg.t k • h) (alg.y k)) := by
     intro k; obtain h1 := alg.update2 k
@@ -103,7 +104,7 @@ theorem Nesterov_second_convergence (minφ : IsMinOn (f + h) Set.univ xm):
      ⟪alg.γ k • (alg.y (k - 1) - alg.y k) - alg.t k • (f' (alg.z k)), w - (alg.y k)⟫ := by
     intro w k
     rw [← mul_div_right_comm, ← mul_div, ← mul_sub]
-    apply (mul_le_mul_right (bsc1 k)).mp
+    apply (mul_le_mul_iff_left₀ (bsc1 k)).mp
     rw [mul_comm, ← mul_assoc, div_mul, div_self, div_one]
     rw [mul_assoc]
     nth_rw 3 [mul_comm]
@@ -138,7 +139,7 @@ theorem Nesterov_second_convergence (minφ : IsMinOn (f + h) Set.univ xm):
         simp
         symm
         apply nm0
-      apply (mul_le_mul_right ax).mpr
+      apply (mul_le_mul_iff_left₀ ax).mpr
       have lc2 : alg.l / 2 > (0 : ℝ) := by linarith [alg.hl]
       have tc2 : (2 * alg.t ↑k) > 0 := by linarith [(alg.tbound k).1]
       rw [one_div]
@@ -193,7 +194,7 @@ theorem Nesterov_second_convergence (minφ : IsMinOn (f + h) Set.univ xm):
             . contrapose eq1
               push_neg at *
               linarith [eq1]
-          apply (mul_le_mul_left pos).mpr
+          apply (mul_le_mul_iff_right₀ pos).mpr
           apply Convex_first_order_condition' (alg.h₁ (alg.z k)) alg.convf
           simp
           simp
@@ -227,7 +228,7 @@ theorem Nesterov_second_convergence (minφ : IsMinOn (f + h) Set.univ xm):
           + alg.γ ↑k ^ 2 / (2 * alg.t ↑k) * ‖alg.y ↑k - alg.y (↑k - 1)‖ ^ 2 := by
         simp
         have gpos : alg.γ k > 0 := by exact (alg.γbound k).1
-        apply (mul_le_mul_left gpos).mpr
+        apply (mul_le_mul_iff_right₀ gpos).mpr
         apply Convex_first_order_condition' (alg.h₁ (alg.z k)) alg.convf
         simp
         simp
@@ -367,7 +368,7 @@ variable {f h : E → ℝ} {f' : E → E} {x0 : E}
 
 open Set Real PNat
 
-class Nesterov_second_fix_stepsize (f h: E → ℝ) (f' : E → E) (x0 : E) :=
+class Nesterov_second_fix_stepsize (f h: E → ℝ) (f' : E → E) (x0 : E) where
   (l : NNReal) (hl : l > (0 : ℝ)) (x y : ℕ → E) (z : ℕ+ → E) (t γ : ℕ → ℝ)
   (h₁ : ∀ x : E, HasGradientAt f (f' x) x) (convf: ConvexOn ℝ Set.univ f)
   (h₂ : LipschitzWith l f') (convh : ConvexOn ℝ univ h)
@@ -385,20 +386,24 @@ instance {f h : E → ℝ} {f' : E → E} {x0 : E} [p : Nesterov_second_fix_step
   convf := p.convf
   h₂ := p.h₂
   convh := p.convh
-  x := p.x; y := p.y; t := p.t; γ := p.γ;
+  x := p.x; y := p.y; z := p.z; t := p.t; γ := p.γ;
   oriy := p.oriy
   oriγ := by simp [p.γeq 1]; norm_num
   initial := p.initial
   cond := by
-    intro n; rw [p.teq n, p.teq (n + 1), p.γeq n, p.γeq (n + 1)]; field_simp [p.hl]
-    rw [← div_div, ← div_div, ← div_div]
-    repeat apply div_le_div_of_nonneg_right _ (by positivity)
-    rw [pow_two, ← mul_assoc, mul_div_assoc, div_self, mul_one]
-    · calc
-        _ = n ^ 2 + (2 : ℝ) * n := by ring_nf
-        _ ≤ 1 + (2 : ℝ) * n + n ^ 2 := by linarith
-        _ = (1 + n) ^ 2 := by rw [add_pow_two]; simp
-    · linarith
+    intro n
+    have hn0 : (↑n : ℕ) ≠ 0 := by
+      have : 1 ≤ (↑n : ℕ) := by simpa using n.2
+      exact Nat.pos_iff_ne_zero.mp ((Nat.succ_le_iff).1 (by simpa using this))
+    have h1 : 0 < (1 + (↑n : ℕ) : ℝ) := by positivity
+    have h2 : 0 < (1 + (↑n : ℕ) + 1 : ℝ) := by positivity
+    simp [p.γeq, p.teq, hn0, pow_two]
+    have hn1 : (↑n + 1 : ℕ) ≠ 0 := by simp
+    simp only [ge_iff_le]
+    field_simp [h1, h2]
+    ring_nf
+    simp_all only [ne_eq, ne_zero, not_false_eq_true, Nat.add_eq_zero, one_ne_zero, and_self, one_div,
+      le_add_iff_nonneg_right, inv_pos, Nat.ofNat_pos, mul_nonneg_iff_of_pos_right, inv_nonneg, NNReal.zero_le_coe]
   tbound := by
     intro k; rw [p.teq k]; simp; exact p.hl
   hl := p.hl
@@ -409,7 +414,7 @@ instance {f h : E → ℝ} {f' : E → E} {x0 : E} [p : Nesterov_second_fix_step
       simp [hk]; positivity
     · by_cases hk : k = 0
       rw [hk]; simp; norm_num; push_neg at hk
-      simp [hk]; rw [div_le_iff₀ (by positivity)]; simp [hk]
+      simp [hk]; rw [div_le_iff₀ (by positivity)]; simp
       have : (k : ℝ) ≥ 1 := by
         rw [← Nat.pos_iff_ne_zero, Nat.lt_iff_add_one_le, zero_add] at hk; simp [hk]
       linarith
@@ -443,7 +448,12 @@ theorem Nesterov_second_fix_stepsize_converge (minφ : IsMinOn (f + h) Set.univ 
     _ ≤ 2 * alg.l / (k + 2) ^ 2 * ‖x0 - xm‖ ^ 2 := by
       apply mul_le_mul_of_nonneg_right _ (sq_nonneg _)
       rw [alg.γeq (k + 1), alg.teq (k + 1)]; field_simp
-      rw [pow_two, add_comm]; rw [add_assoc, one_add_one_eq_two, ← div_div]
-      apply le_of_eq; ring_nf
+      simp only [pow_two]
+      have h_nonzero : 1 + k ≠ 0 := by simp
+      simp only [Nat.add_eq_zero, one_ne_zero, and_false, ↓reduceIte, Nat.cast_add, Nat.cast_one,
+        ge_iff_le]
+      field_simp
+      ring_nf
+      simp_all only [ne_eq, Nat.add_eq_zero, one_ne_zero, false_and, not_false_eq_true, le_refl]
 
 end Nesterov_second_fix_stepsize

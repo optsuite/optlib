@@ -3,8 +3,8 @@ Copyright (c) 2024 Chenyi Li, Bowen Yang, Yifan Bai. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Bowen Yang, Yifan Bai
 -/
+import Mathlib.Tactic
 import Optlib.Algorithm.BCD.Scheme
-
 /-!
 # Block Coordinate Descent
 
@@ -59,7 +59,6 @@ lemma f_subdiff_block (hf : u ∈ f_subdifferential f x) (hg : v ∈ f_subdiffer
   have ε2pos : 0 < ε / 2 := by positivity
   filter_upwards [Eventually.prod_nhds (hf _ ε2pos) (hg _ ε2pos)] with z ⟨hfz, hyz⟩
   rw [WithLp.prod_inner_apply]
-  simp only [WithLp.sub_fst, WithLp.sub_snd]
   let z' : WithLp 2 (E × F) := (x, y)
   show f z.1 + g z.2 - (f x + g y) - (⟪u, z.1 - x⟫ + ⟪v, z.2 - y⟫) ≥ -ε * ‖z - z'‖
   have h1 : ‖z.1 - x‖ ≤ ‖z - z'‖ := fst_norm_le_prod_L2 (z - z')
@@ -91,16 +90,16 @@ theorem PALM_Descent (h : E → ℝ) {h' : E → E} (Lₕ : NNReal)
   rw [this] at u₁prox
   have : u₁ - (u - t • h' u) = (u₁ - u) + t • h' u := by abel
   rw [this] at u₁prox
-  simp [norm_add_sq_real, this] at u₁prox
+  simp [norm_add_sq_real] at u₁prox
   have ha : t * σ u₁ + ‖u₁ - u‖ ^ 2 / 2 +  ⟪u₁ - u, t • h' u⟫ ≤ t * σ u := by linarith [u₁prox]
   rw [inner_smul_right] at ha
-  have : t * (‖u₁ - u‖ ^ 2 / (2 * t)) = ‖u₁ - u‖ ^ 2 / 2 := by field_simp; ring
+  have : t * (‖u₁ - u‖ ^ 2 / (2 * t)) = ‖u₁ - u‖ ^ 2 / 2 := by field_simp
   rw [← this] at ha
   have : t * σ u₁ + t * (‖u₁ - u‖ ^ 2 / (2 * t)) + t * ⟪u₁ - u, h' u⟫
         = t * (σ u₁ + ‖u₁ - u‖ ^ 2 / (2 * t) + ⟪u₁ - u, h' u⟫) := by ring
   rw [this] at ha
   have hne : ⟪u₁ - u, h' u⟫ ≤ σ u - σ u₁ - ‖u₁ - u‖ ^ 2 / (2 * t) := by
-    linarith [(mul_le_mul_left h₅).1 ha]
+    linarith [(mul_le_mul_iff_right₀ h₅).1 ha]
   rw [real_inner_comm] at hne
   calc
     _ ≤ h u + σ u - σ u₁ - ‖u₁ - u‖ ^ 2 / (2 * t) + ↑Lₕ / 2 * ‖u₁ - u‖ ^ 2 + σ u₁ := by
@@ -156,7 +155,7 @@ theorem Sufficient_Descent1 (γ : ℝ) (hγ : γ > 1)
     _ = _ := by
       simp only [WithLp.prod_norm_sq_eq_of_L2]
       rw [Prod.fst_sub, Prod.snd_sub, BCD.z, BCD.z]
-      ring_nf; simp
+      ring_nf; simp; grind
 
 /- the value is monotone -/
 theorem Sufficient_Descent2 (γ : ℝ) (hγ : γ > 1)
@@ -274,7 +273,7 @@ theorem Ψ_subdiff_bound (γ : ℝ) (hγ : γ > 1)
   have cpos' : (alg.c k)⁻¹ ≥ 0 := by simp; apply le_of_lt (alg.cpos γ hγ ck k)
   have dpos' : (alg.d k)⁻¹ ≥ 0 := by simp; apply le_of_lt (alg.dpos γ hγ dk k)
   have h1 : ‖(alg.subdiff k).1‖ ≤ l * (γ + 1) * ‖alg.z (k + 1) - alg.z k‖ := by
-    simp only [BCD.subdiff, BCD.A_kx, Prod.fst_add, grad_fun_comp, grad_comp, sub_add];
+    simp only [BCD.subdiff];
     rw [A_k, A_kx, A_ky]; simp
     let a := (alg.c k)⁻¹ • (alg.x k - alg.x (k + 1))
     calc
@@ -296,7 +295,7 @@ theorem Ψ_subdiff_bound (γ : ℝ) (hγ : γ > 1)
         _ = (1 / alg.c k) * ‖(alg.z (k + 1) - alg.z k).1‖ := by rw [z]; simp; left; rw [z]; simp
         _ ≤ (1 / alg.c k) * ‖alg.z (k + 1) - alg.z k‖ := by
           have : ‖(alg.z (k + 1) - alg.z k).1‖ ≤ ‖alg.z (k + 1) - alg.z k‖ := fst_norm_le_prod_L2 _
-          simp; apply mul_le_mul_of_nonneg_left this cpos'
+          simp; apply mul_le_mul_of_nonneg_left this; apply cpos'
         _ = (γ * l) * ‖alg.z (k + 1) - alg.z k‖ := by rw [ck k]; simp
     have inequ₂ : ‖gradient H (alg.x (k + 1), alg.y (k + 1)) - gradient H (alg.x k, alg.y k)‖
         ≤ l * ‖alg.z (k+1) - alg.z k‖ := by
@@ -307,7 +306,7 @@ theorem Ψ_subdiff_bound (γ : ℝ) (hγ : γ > 1)
         _ = l * ‖alg.z (k+1) - alg.z k‖ := by repeat rw [z]; simp; left; rfl
     linarith
   have h2 : ‖(alg.subdiff k).2‖ ≤ l * (γ + 1) * ‖alg.z (k + 1) - alg.z k‖ := by
-    simp only [BCD.subdiff, BCD.A_kx, Prod.fst_add, grad_fun_comp, grad_comp, sub_add];
+    simp only [BCD.subdiff]
     rw [A_k, A_kx, A_ky]; simp
     let a := (alg.d k)⁻¹ • (alg.y k - alg.y (k + 1))
     calc
@@ -452,7 +451,18 @@ lemma fconv (γ : ℝ) (hγ : γ > 1) (ck : ∀ k, alg.c k = 1 / (γ * l)) (dk :
       rintro ε epos
       simp at defle; simp
       by_cases Cpos : 0 < C
-      · rcases defle (ε / (C / (γ * l))) (by field_simp [alg.lpos, Cpos]) with ⟨nn,ieq⟩
+      · rcases
+          defle (ε / (C / (γ * ↑l)))
+            (by
+              have hγpos  : (0 : ℝ) < γ := by
+                have : γ > 1 := hγ; linarith
+              have hlpos  : (0 : ℝ) < (↑l : ℝ) := alg.lpos
+              have hden   : 0 < C / (γ * (↑l)) := by
+                exact div_pos Cpos (mul_pos hγpos hlpos)
+              have hnum   : 0 < ε := epos
+              have : 0 < ε / (C / (γ * (↑l))) := div_pos hnum hden
+              simpa [div_div_eq_mul_div, mul_comm, mul_left_comm, mul_assoc] using this)
+          with ⟨nn, ieq⟩
         use nn; rintro b nleb; rw [ck]
         calc
           _ ≤ ‖k b‖ * ‖(1 / (γ * ↑l)) • grad_fst H (alg.y (α b - 1)) (alg.x (α b - 1))‖
@@ -460,7 +470,13 @@ lemma fconv (γ : ℝ) (hγ : γ > 1) (ck : ∀ k, alg.c k = 1 / (γ * l)) (dk :
           _ ≤ ε / (C / (γ * ↑l))*‖(1 / (γ * ↑l)) • grad_fst H (alg.y (α b - 1)) (alg.x (α b - 1))‖:= by
             apply mul_le_mul (le_of_lt (ieq b nleb)); trivial
             repeat apply norm_nonneg
-            field_simp [alg.lpos, Cpos]; positivity
+            have hγlpos : 0 < γ * (↑l : ℝ) := by
+              have hγpos : (0 : ℝ) < γ := by
+                have : γ > 1 := hγ
+                linarith
+              exact mul_pos hγpos alg.lpos
+            field_simp [alg.lpos, Cpos, hγlpos] at *
+            positivity
           _ = ε / (C / (γ * ↑l))*(1 / (γ * ↑l)) * ‖grad_fst H (alg.y (α b - 1)) (alg.x (α b - 1))‖:= by
             rw [mul_assoc]; apply mul_eq_mul_left_iff.mpr
             left; exact norm_smul_of_nonneg (by positivity) (grad_fst H _ _)
@@ -505,13 +521,12 @@ lemma fconv (γ : ℝ) (hγ : γ > 1) (ck : ∀ k, alg.c k = 1 / (γ * l)) (dk :
         apply norm_nonneg
         exact assx
       calc
-        ‖z_.1 - alg.x (α x - 1)‖ ^ 2 / 2<(2*(ε/(γ*l)/3))/2:= by
-          apply (div_lt_div_right _).mpr
-          apply this
-          linarith
-        _=(ε/(γ*l)/3):= by
-          apply mul_div_cancel_left₀
-          linarith
+        ‖z_.1 - alg.x (α x - 1)‖ ^ 2 / 2
+            < (2 * (ε / (γ * l) / 3)) / 2 := by
+          have h := this
+          linarith [h]
+        _ = (ε / (γ * l) / 3) := by
+          ring
     simp at h1 h2 h3; simp only [ck] at h1 h2 h3; simp
     rcases h1 with ⟨m1,ie1⟩
     rcases h2 with ⟨m2,ie2⟩
@@ -761,14 +776,12 @@ lemma gconv (γ : ℝ) (hγ : γ > 1) (ck: ∀ k, alg.c k = 1 / (γ * l)) (dk: �
         refine (Real.lt_sqrt ?hy).mp ?_
         apply norm_nonneg
         exact assx
-      calc
-        ‖z_.2 - alg.y (α x - 1)‖ ^ 2 / 2<(2*(ε/(γ*l)/3))/2:= by
-          apply (div_lt_div_right _).mpr
-          apply this
-          linarith
-        _=(ε/(γ*l)/3):= by
-          apply mul_div_cancel_left₀
-          linarith
+      have h_sq : ‖z_.2 - alg.y (α x - 1)‖ ^ 2 / 2 < ε / (γ * l) / 3 := by
+        have h := this
+        have hpos : (0 : ℝ) < 2 := by norm_num
+        have this' := (div_lt_div_of_pos_right h hpos)
+        rwa [mul_div_cancel_left₀ _ (ne_of_gt hpos)] at this'
+      exact h_sq
     simp at h1 h2 h3
     simp only [dk] at h1 h2 h3
     simp
@@ -820,7 +833,7 @@ lemma limitset_property_1 (γ : ℝ) (hγ : γ > 1)
   have hz : ∀ (n : ℕ), alg.z n ∈ alg.z '' univ:= by intro n; use n; constructor; exact Set.mem_univ n; rfl
   rcases (tendsto_subseq_of_bounded (bd) (hz)) with ⟨a, _ , φ, ⟨hmφ,haφ⟩⟩
   use a; simp [limit_set]
-  rw [mapClusterPt_iff]; intro s hs
+  rw [mapClusterPt_iff_frequently]; intro s hs
   apply Filter.frequently_iff.mpr
   intro U hU; rw [Filter.mem_atTop_sets] at hU
   rcases hU with ⟨ax,hax⟩; rw [mem_nhds_iff] at hs
@@ -935,21 +948,33 @@ lemma limitset_property_3 (γ : ℝ) (hγ : γ > 1)
   have sum_ne_zero : ∀ z, (EMetric.infEdist z A).toReal + (EMetric.infEdist z B).toReal ≠ 0:= by
     intro z eq0
     have inA : z ∈ A := by
-      apply EMetric.mem_closure_iff_infEdist_zero.mpr
-      have : (EMetric.infEdist z A).toReal = 0 := by
-        linarith [eq0, @ENNReal.toReal_nonneg (EMetric.infEdist z A),
-          @ENNReal.toReal_nonneg (EMetric.infEdist z B)]
-      exact (((fun {x y} hx hy ↦ (ENNReal.toReal_eq_toReal_iff' hx hy).mp)
-          ENNReal.top_ne_zero.symm (Metric.infEdist_ne_top nez_a) (id (Eq.symm this)))).symm
-      simp; constructor; rw [isOpen_compl_iff]; apply IsClosed.inter isClosed_setOf_clusterPt closea
-    have inB : z ∈ B :=by
-      apply EMetric.mem_closure_iff_infEdist_zero.mpr
-      have : (EMetric.infEdist z B).toReal = 0 := by
-        linarith [eq0, @ENNReal.toReal_nonneg (EMetric.infEdist z A),
-          @ENNReal.toReal_nonneg (EMetric.infEdist z B)]
-      exact (((fun {x y} hx hy ↦ (ENNReal.toReal_eq_toReal_iff' hx hy).mp)
-          ENNReal.top_ne_zero.symm (Metric.infEdist_ne_top nez_b) (id (Eq.symm this)))).symm
-      simp; constructor; rw [isOpen_compl_iff]; apply IsClosed.inter isClosed_setOf_clusterPt closeb
+      -- first show z ∈ closure A from infEdist z A = 0
+      have hzcl : z ∈ closure A := by
+        apply EMetric.mem_closure_iff_infEdist_zero.mpr
+        have h0 : (EMetric.infEdist z A).toReal = 0 := by
+          linarith [eq0, @ENNReal.toReal_nonneg (EMetric.infEdist z A),
+            @ENNReal.toReal_nonneg (EMetric.infEdist z B)]
+        exact (((fun {x y} hx hy ↦ (ENNReal.toReal_eq_toReal_iff' hx hy).mp)
+            ENNReal.top_ne_zero.symm (Metric.infEdist_ne_top nez_a) (id (Eq.symm h0)))).symm
+      -- A is closed, so closure A = A
+      have hAclosed : IsClosed A := by
+        have hlim : IsClosed (limit_set alg.z) := isClosed_setOf_clusterPt
+        simpa [A] using hlim.inter closea
+      simpa [hAclosed.closure_eq] using hzcl
+    have inB : z ∈ B := by
+      -- first show z ∈ closure B from infEdist z B = 0
+      have hzcl : z ∈ closure B := by
+        apply EMetric.mem_closure_iff_infEdist_zero.mpr
+        have h0 : (EMetric.infEdist z B).toReal = 0 := by
+          linarith [eq0, @ENNReal.toReal_nonneg (EMetric.infEdist z A),
+            @ENNReal.toReal_nonneg (EMetric.infEdist z B)]
+        exact (((fun {x y} hx hy ↦ (ENNReal.toReal_eq_toReal_iff' hx hy).mp)
+            ENNReal.top_ne_zero.symm (Metric.infEdist_ne_top nez_b) (id (Eq.symm h0)))).symm
+      -- B is closed, so closure B = B
+      have hBclosed : IsClosed B := by
+        have hlim : IsClosed (limit_set alg.z) := isClosed_setOf_clusterPt
+        simpa [B] using hlim.inter closeb
+      simpa [hBclosed.closure_eq] using hzcl
     obtain hzin : z ∈ A ∩ B := mem_inter inA inB
     rw [disjoint_AB] at hzin; contradiction
   have contω : Continuous ω := by
@@ -1086,7 +1111,7 @@ lemma limitset_property_4 (γ : ℝ) (hγ : γ > 1)
     have monopsi : Antitone (alg.ψ ∘ alg.z) :=
       antitone_nat_of_succ_le (Sufficient_Descent2 γ hγ ck dk)
     rcases tendsto_of_antitone monopsi with h1 | h2
-    obtain notbd := unbounded_of_tendsto_atBot h1
+    obtain notbd := Filter.not_bddBelow_of_tendsto_atBot h1
     apply absurd notbd; push_neg
     exact BddBelow.mono (by simp; apply range_comp_subset_range) lbdψ; exact h2
   rcases decent_ψ with ⟨ψ_final, hψ⟩
@@ -1139,7 +1164,7 @@ theorem Limited_length (γ : ℝ) (hγ : γ > 1)
     (ck : ∀ k, alg.c k = 1 / (γ * l)) (dk : ∀ k, alg.d k = 1 / (γ * l))
     (bd : Bornology.IsBounded (alg.z '' univ)) (hψ : KL_function alg.ψ)
     (lbdψ : BddBelow (alg.ψ '' univ)): ∃ M : ℝ, ∀ n,
-    ∑ k in Finset.range n, ‖alg.z (k + 1) - alg.z k‖ ≤ M := by
+    ∑ k ∈ Finset.range n, ‖alg.z (k + 1) - alg.z k‖ ≤ M := by
   have :∃ z_∈ closure (alg.z '' univ), ∃ α:ℕ → ℕ,StrictMono α∧Tendsto
       (fun n ↦ alg.z (α n)) atTop (𝓝 z_):= by
     have hcs : IsSeqCompact (closure (alg.z '' univ)) := by
@@ -1268,15 +1293,18 @@ theorem Limited_length (γ : ℝ) (hγ : γ > 1)
             repeat rw [← ENNReal.ofReal_mul]
             apply (ENNReal.ofReal_le_ofReal_iff _).2
             apply (mul_le_mul_iff_of_pos_right hposd).mpr hub
-            field_simp; simp [c]; simp; field_simp; simp [c]
+            all_goals
+              try { exact mul_nonneg (le_of_lt ρpos) (norm_nonneg _) }
+              try { exact norm_nonneg _ }
+              try { simp [c] }
+            aesop
           _ ≥ (EMetric.infEdist 0 (subdifferential ψ (z (n + LL + 1)))) * ENNReal.ofReal (d n) := by
               apply mul_le_mul_right' this
           _ ≥ 1 := by rw [mul_comm]; exact (ieq (n + LL + 1) (by linarith)).2
-        simp
-        field_simp
-        simp [c]
-        field_simp
-        simp [c]
+        all_goals
+          try { simp [c] }
+          try { exact mul_nonneg (le_of_lt ρpos) (norm_nonneg _) }
+        aesop
       have hsd : ρ1 / 2 * (c (n + 1)) ^ 2 ≤ b n := by
         obtain h := suff_des.2 (n + LL + 1)
         rw [add_right_comm n LL 1] at h
@@ -1357,12 +1385,12 @@ theorem Limited_length (γ : ℝ) (hγ : γ > 1)
         _ ≤ alg.ψ (alg.z i) -alg.ψ (alg.z (i + 1)) := suff_des.2 i
         _ = 0 := by simp [this i ige,this (i+1) (Nat.le_add_right_of_le ige)]
     apply dist_eq_zero.mp (by rw [NormedAddCommGroup.dist_eq, this])
-  use ∑ k in Finset.range N, ‖alg.z (k + 1) - alg.z k‖
+  use ∑ k ∈ Finset.range N, ‖alg.z (k + 1) - alg.z k‖
   intro n; by_cases nlen : n ≤ N
   · refine Finset.sum_le_sum_of_subset_of_nonneg (GCongr.finset_range_subset_of_le nlen) ?_
     exact fun a _ _ ↦norm_nonneg (alg.z (a + 1) - alg.z a)
   push_neg at nlen
-  have eq0 : ∑ i in (Finset.range n \ Finset.range N), ‖alg.z (i + 1) - alg.z i‖ = 0 := by
+  have eq0 : ∑ i ∈ (Finset.range n \ Finset.range N), ‖alg.z (i + 1) - alg.z i‖ = 0 := by
     apply Finset.sum_eq_zero; rintro x xin; simp at xin
     exact norm_sub_eq_zero_iff.mpr (eq0 x xin.2)
   refine Finset.sum_sdiff_le_sum_sdiff.mp ?_
@@ -1380,7 +1408,7 @@ theorem Convergence_to_critpt (γ : ℝ) (hγ : γ > 1)
     apply cauchySeq_of_summable_dist
     rcases Limited_length γ hγ ck dk bd hψ lbdψ with ⟨M,sumle⟩
     apply @summable_of_sum_range_le _ M _ _
-    intro n; simp; exact dist_nonneg
+    intro n; exact dist_nonneg
     intro n
     calc
       _ = ∑ k ∈ Finset.range n, ‖alg.z (k + 1) - alg.z k‖ :=

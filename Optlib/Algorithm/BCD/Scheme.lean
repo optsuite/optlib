@@ -12,6 +12,7 @@ import Optlib.Function.Proximal
 import Optlib.Differential.Subdifferential
 import Mathlib.Topology.EMetricSpace.Lipschitz
 
+
 /-!
 # Block Coordinate Descent
 
@@ -32,7 +33,7 @@ variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 variable [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 variable {H : WithLp 2 (E × F) → ℝ}
 
-lemma diff_from_l2 (h : Differentiable ℝ H) : @Differentiable ℝ _ (E × F) _ _ ℝ _ _ H := by
+lemma diff_from_l2 (h : Differentiable ℝ H) : @Differentiable ℝ _ (E × F) _ _ _ ℝ _ _ _ H := by
   apply Differentiable.comp h
   apply IsBoundedLinearMap.differentiable
   exact instIsBoundedLinearMapL2equiv
@@ -40,12 +41,12 @@ lemma diff_from_l2 (h : Differentiable ℝ H) : @Differentiable ℝ _ (E × F) _
 theorem diff_prod₁ (h : Differentiable ℝ H) (y : F) :
     Differentiable ℝ (fun x ↦ H (x, y)) := by
   apply Differentiable.comp (diff_from_l2 h)
-  exact Differentiable.prod differentiable_id' (differentiable_const y)
+  exact Differentiable.prodMk differentiable_fun_id (differentiable_const y)
 
 theorem diff_prod₂ (h : Differentiable ℝ H) (x : E) :
     Differentiable ℝ (fun y ↦ H (x, y)) := by
   apply Differentiable.comp (diff_from_l2 h)
-  exact Differentiable.prod (differentiable_const x) differentiable_id'
+  exact Differentiable.prodMk (differentiable_const x) differentiable_fun_id
 
 end diff
 
@@ -185,7 +186,7 @@ instance Proper_Prod : ProperSpace (WithLp 2 (E × F)) where
       constructor
       · exact le_trans this hball
       · exact le_trans this ((add_comm (‖x' - x‖ ^ 2) _) ▸ hball)
-    apply IsCompact.of_isClosed_subset h (@Metric.isClosed_ball (WithLp 2 (E × F)) _ _ _) hsub
+    apply IsCompact.of_isClosed_subset h (@Metric.isClosed_closedBall (WithLp 2 (E × F)) _ _ _) hsub
 
 /--
   Assumption: f and g are lower semicontinuous, H is continuously differentiable

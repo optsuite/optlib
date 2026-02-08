@@ -35,7 +35,7 @@ theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs
   let ε := (f' x) (y - x) / (2 * ‖x-y‖)
   have εpos: 0 < ε := by
     apply div_pos H
-    exact Real.mul_pos two_pos h₃
+    simp; grind
   specialize h₁ ε εpos
   rcases h₁ with ⟨δ, dpos, converge⟩
   let b1:= δ /(‖x - y‖)
@@ -60,7 +60,7 @@ theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs
       _= (1 : ℝ) • x - a • x - b • y:= by
         rw [one_smul]
       _= b • (x - y) := by
-        rw [← sub_smul 1 a]; simp [a, b, sum_a_b]; rw[smul_sub b x y]
+        rw [← sub_smul 1 a]; simp [a, b]; rw[smul_sub b x y]
   have h01 : x' - x =  b • (y - x) :=by
     rw [← neg_inj, ← smul_neg, neg_sub, neg_sub]; exact h10
   have h1 : ‖x - x'‖ = ‖b • (x - y)‖ := by
@@ -71,7 +71,7 @@ theorem Quasiconvex_first_order_condition_right (h : HasFDerivAt f (f' x) x) (xs
   have x1nbhd: ‖x - x'‖ ≤ δ := by
     rw [h1, h2]
     have h3: b * ‖x - y‖ ≤ b1 * ‖x - y‖:= by
-      rw [mul_le_mul_right]
+      rw [mul_le_mul_iff_left₀]
       apply min_le_left
       exact h₃
     have h4: b1 * ‖x - y‖= δ := by

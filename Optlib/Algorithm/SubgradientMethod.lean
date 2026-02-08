@@ -20,7 +20,7 @@ import Optlib.Convex.Subgradient
 -/
 
 open Filter Topology Set InnerProductSpace Finset
-
+open scoped Set InnerProductSpace RealInnerProductSpace Mathlib
 /-! ### Convergence of Subgradient method -/
 
 section
@@ -39,21 +39,21 @@ theorem bounded_subgradient_to_Lipschitz (hf : ConvexOn ℝ univ f) (hc : Contin
   simp at hx₂'
   rcases hx₂' with ⟨gx, hx₁⟩
   have hx₃ : ‖gx‖ ≤ G := by rcases h hx₁ with hx; apply hx
-  rcases hx₁ y with hx₂
-  have hx₄ : f x - f y ≤ inner gx (x - y) := by
+  have hx₂ := hx₁ y
+  have hx₄ : f x - f y ≤ @inner ℝ E _ gx (x - y) := by
     rw [add_comm] at hx₂
-    have : f x ≤ f y - inner gx (y - x) := le_sub_left_of_add_le hx₂
+    have : f x ≤ f y - @inner ℝ E _ gx (y - x) := le_sub_left_of_add_le hx₂
     rw [sub_eq_add_neg, ← inner_neg_right, neg_sub] at this
     exact sub_left_le_of_le_add this
   have hy₂' : Nonempty (SubderivAt f y) := SubderivAt.nonempty hf hc y
   simp at hy₂'
   rcases hy₂' with ⟨gy, hy₁⟩
   have hy₃ : ‖gy‖ ≤ G := by rcases h hy₁ with hy; apply hy
-  rcases hy₁ x with hy₂
-  have hy₄: f x - f y ≥ inner gy (x - y) := by
+  have hy₂ := hy₁ x
+  have hy₄: f x - f y ≥ @inner ℝ E _ gy (x - y) := by
     calc
-      _ ≥ f y + inner gy (x - y) - f y := by apply sub_le_sub_right hy₂
-      _ = inner gy (x - y) := by ring
+      _ ≥ f y + @inner ℝ E _ gy (x - y) - f y := by apply sub_le_sub_right hy₂
+      _ = @inner ℝ E _ gy (x - y) := by ring
   have hG₁: ↑G = ENNReal.ofReal ↑G := by simp
   rw [edist_dist, edist_dist, hG₁]
   have hG₂ : ENNReal.ofReal (↑G * (dist x y)) = ENNReal.ofReal ↑G * ENNReal.ofReal (dist x y) := by
@@ -66,14 +66,14 @@ theorem bounded_subgradient_to_Lipschitz (hf : ConvexOn ℝ univ f) (hc : Contin
   apply abs_le.mpr
   constructor
   · calc
-      f x - f y ≥ inner gy (x - y) := hy₄
+      f x - f y ≥ @inner ℝ E _ gy (x - y) := hy₄
       _ ≥ - (‖gy‖ * ‖x - y‖) := by
         apply neg_le_of_neg_le
         rw  [← inner_neg_right, neg_sub, norm_sub_rev]
         apply real_inner_le_norm
       _ ≥ - (↑G * ‖x - y‖) := neg_le_neg (mul_le_mul_of_nonneg_right hy₃ (norm_nonneg _))
   · calc
-      f x - f y ≤ inner gx (x - y) := hx₄
+      f x - f y ≤ @inner ℝ E _ gx (x - y) := hx₄
       _ ≤ ‖gx‖ * ‖x - y‖ := real_inner_le_norm _ _
       _ ≤ ↑G * ‖x - y‖ := mul_le_mul_of_nonneg_right hx₃ (norm_nonneg _)
 
@@ -85,14 +85,14 @@ theorem Lipschitz_to_bounded_subgradient (h : LipschitzWith G f ) :
   rcases h₁ with ⟨x, g, h₂, h₃⟩
   let y : E := x + ((1 / ‖g‖) • g)
   have hy : y = x + ((1 / ‖g‖) • g) := by rfl
-  rcases h₂ y with hy₂
+  have hy₂ := h₂ y
   rw[LipschitzWith] at h
   have hg₁ : ‖g‖ ≠ 0 := by
     apply ne_of_gt (lt_of_le_of_lt _ h₃)
     simp only [NNReal.zero_le_coe]
-  have hl : inner g (y - x) = ‖g‖ := by
+  have hl : @inner ℝ E _ g (y - x) = ‖g‖ := by
     rw[hy ,add_comm, ← add_sub, sub_self, add_zero, inner_smul_right, inner_self_eq_norm_sq_to_K]
-    field_simp; apply pow_two
+    field_simp; simp
   rw [hl] at hy₂
   have _ : f y - f x ≥ ‖g‖ := by
     calc
@@ -113,7 +113,15 @@ theorem Lipschitz_to_bounded_subgradient (h : LipschitzWith G f ) :
     calc
       f y - f x ≤ |f y - f x|:= by apply le_abs_self
       _ ≤ ↑G * (‖1 / ‖g‖‖ * ‖g‖) := by apply h₃'
-      _ = ↑G := by field_simp
+      _ = ↑G := by
+        have hgnz : ‖g‖ ≠ 0 := hg₁
+        have hnorm : ‖(1 / ‖g‖ : ℝ)‖ = 1 / ‖g‖ := by
+          have hnonneg : 0 ≤ (1 / ‖g‖ : ℝ) := by
+            rw [one_div]; exact inv_nonneg.mpr (norm_nonneg g)
+          rw [Real.norm_of_nonneg hnonneg]
+        have hcancel : (1 / ‖g‖) * ‖g‖ = (1 : ℝ) := by
+          rw [one_div]; exact inv_mul_cancel₀ hg₁
+        rw [hnorm, hcancel]; simp
       _ < ‖g‖ := by apply h₃
   linarith
 
@@ -134,7 +142,7 @@ variable (hf : ConvexOn ℝ univ f)
 
 open Finset
 
-class subgradient_method (f : E → ℝ) (x₀ : E) :=
+class subgradient_method (f : E → ℝ) (x₀ : E) where
   (x g : ℕ → E)
   (a : ℕ → ℝ) (ha : ∀ n, a n > 0)
   (G : NNReal) (lipschitz : LipschitzWith G f)
@@ -151,86 +159,110 @@ theorem subgradient_method_converge:
     (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm)
     ≤ ‖x₀ - xm‖ ^ 2 + alg.G ^ 2 * (Finset.range (k + 1)).sum (fun i => alg.a i ^ 2) := by
   intro k
-  have h' : ∀ ⦃x : E⦄ , ∀ ⦃g⦄ , g ∈ SubderivAt f x → ‖g‖ ≤ alg.G := Lipschitz_to_bounded_subgradient alg.lipschitz
-  by_cases k₀ : k = 0
-  · simp [k₀]
-    rcases (alg.hg 0) xm with hk₀
-    rcases h' (alg.hg 0) with h₀'
-    rw [← mul_pow]
-    apply le_trans _ (two_mul_le_add_sq _ _)
-    rw [mul_assoc, mul_assoc]; apply (mul_le_mul_left two_pos).mpr
-    rw [mul_comm, ← mul_assoc]; apply (mul_le_mul_right (alg.ha 0)).mpr
-    have : f (alg.x 0) - f xm ≤ - inner (alg.g 0) (xm - alg.x 0) := by
-      simp [hk₀]; rw[add_comm]; apply hk₀
-    apply le_trans this _
-    rw [← inner_neg_right,neg_sub, alg.initial]
-    apply le_trans (real_inner_le_norm _ _) _; rw [mul_comm]
-    apply mul_le_mul_of_nonneg_left h₀' (norm_nonneg _)
-  · have heq : (Set.range fun (x : Finset.range (k + 1)) => f (alg.x x)) =
-        {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} := by simp [Set.ext_iff]
-    have h₁ :  ∀ ⦃i : ℕ⦄, i ≥ 0 ∧ i ≤ k → ‖alg.x (i+1) - xm‖ ^ 2 ≤ ‖alg.x i - xm‖ ^ 2 - 2 * alg.a i
-        * (sInf {f (alg.x i) | i ∈ Finset.range (k + 1)} - f xm) + alg.G ^ 2 * alg.a i ^ 2 := by
-      intro i ⟨ _ ,hi₂⟩
-      rw [alg.update i, sub_right_comm, norm_sub_sq_real, norm_smul, mul_pow, sub_eq_add_neg]
-      have : ‖alg.x i - xm‖ ^ 2 - 2 * alg.a i * (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) =
-          x} - f xm) + ↑alg.G ^ 2 * alg.a i ^ 2 = ‖alg.x i - xm‖ ^ 2 + - (2 * alg.a i * (sInf {x | ∃ i ∈
-          Finset.range (k + 1), f (alg.x i) = x} - f xm)) + ↑alg.G ^ 2 * alg.a i ^ 2 := by ring
-      rw [this]
-      have inq₁: ‖alg.a i‖ ^ 2 * ‖alg.g i‖ ^ 2 ≤ ↑alg.G ^ 2 * alg.a i ^ 2 := by
-        rw[mul_comm]; simp
-        rcases h' (alg.hg i) with hi
-        apply mul_le_mul_of_nonneg_right _ (sq_nonneg _)
-        · apply pow_le_pow_left; apply norm_nonneg; apply hi
-      have inq₂: 2 * alg.a i * (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm)
-          ≤ 2 * inner (alg.x i - xm) (alg.a i • alg.g i) := by
-        rw [mul_assoc]; apply (mul_le_mul_left two_pos).mpr
-        rw [inner_smul_right]; apply (mul_le_mul_left (alg.ha i)).mpr
-        rcases (alg.hg i) xm with hxm
-        calc
-          _ = sInf (Set.range fun (x : Finset.range (k + 1)) => f (alg.x x)) - f xm := by rw [← heq]
-          _ ≤ f (alg.x i) - f xm := by
-            simp
-            have : f (alg.x i) ∈ Set.range fun (x : Finset.range (k + 1)) => f (alg.x x) := by
-              simp; use i
-              constructor
-              · apply lt_of_le_of_lt hi₂; apply (Nat.lt_succ_self k)
-              · simp
-            apply csInf_le _ this; apply Finite.bddBelow_range
-          _ ≤ inner (alg.x i - xm) (alg.g i) := by
-            simp; apply le_add_of_sub_left_le
-            rw [sub_eq_add_neg, ← inner_neg_left, neg_sub, real_inner_comm]
-            apply hxm
-      rw [add_assoc, add_assoc]
-      apply add_le_add_left; apply add_le_add
-      · apply neg_le_neg; apply inq₂
-      · apply inq₁
-    have h₁' : ∀ ⦃i : ℕ⦄, i ≥ 0 ∧ i ≤ k → alg.a i * (2 * (sInf {f (alg.x i) | i ∈ Finset.range (k +
-        1)} - f xm)) ≤ ‖alg.x i - xm‖ ^ 2 - ‖alg.x (i+1) - xm‖ ^ 2 + alg.G ^ 2 * (alg.a i) ^ 2 := by
-      intro i ⟨hi₁, hi₂⟩
-      rcases h₁ ⟨hi₁, hi₂⟩ with hii
-      have : 2 * (alg.a i) * (sInf {f (alg.x i) | i ∈ Finset.range (k + 1)} - f xm) ≤
-          ‖alg.x i - xm‖ ^ 2 - ‖alg.x (i+1) - xm‖ ^ 2 + alg.G ^ 2 * (alg.a i) ^ 2:= by
-        linarith [hii]
-      rw [mul_assoc, mul_comm, mul_assoc, mul_comm _ 2] at this
-      apply this
-    have h₂ : (Finset.range (k + 1)).sum (fun i => (alg.a i) * (2 * (sInf {f (alg.x i) | i ∈
-        Finset.range (k + 1)} - f xm))) ≤ (Finset.range (k + 1)).sum
-        (fun i => ‖alg.x i - xm‖ ^ 2 - ‖alg.x (i+1) - xm‖ ^ 2 + alg.G ^ 2 * (alg.a i) ^ 2) := by
-      apply Finset.sum_le_sum; intro i hi; apply h₁'
-      constructor
-      · simp
-      · have : i < k + 1 := by
-          apply Finset.mem_range.mp; apply hi
-        apply (Nat.lt_add_one_iff).mp this
-    rw [← sum_mul, ← mul_assoc, mul_comm _ 2, sum_add_distrib] at h₂
-    rw [sum_range_sub' _, ← mul_sum, alg.initial] at h₂
-    calc
-      _ = (2 * Finset.sum (Finset.range (k + 1)) fun x => alg.a x) * (sInf {x | ∃ i ∈
-          Finset.range (k + 1), f (alg.x i) = x} - f xm) := by simp
-      _ ≤ ‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2 + ↑alg.G ^ 2 * Finset.sum (Finset.range
-          (k + 1)) fun x => alg.a x ^ 2 := by apply h₂
-      _ ≤ ‖x₀ - xm‖ ^ 2 + alg.G ^ 2 * Finset.sum (Finset.range (k + 1)) fun x => alg.a x ^ 2 := by simp
+  have h' : ∀ ⦃x : E⦄ , ∀ ⦃g⦄ , g ∈ SubderivAt f x → ‖g‖ ≤ alg.G :=
+    Lipschitz_to_bounded_subgradient alg.lipschitz
+  have heq :
+      (Set.range fun (x : Finset.range (k + 1)) => f (alg.x x)) =
+        {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} := by
+    simp [Set.ext_iff]
+  have h₁ :
+      ∀ ⦃i : ℕ⦄, i ≥ 0 ∧ i ≤ k →
+        ‖alg.x (i+1) - xm‖ ^ 2 ≤
+          ‖alg.x i - xm‖ ^ 2
+          - 2 * alg.a i * (sInf {f (alg.x i) | i ∈ Finset.range (k + 1)} - f xm)
+          + alg.G ^ 2 * alg.a i ^ 2 := by
+    intro i ⟨_, hi₂⟩
+    rw [alg.update i, sub_right_comm, norm_sub_sq_real, norm_smul, mul_pow, sub_eq_add_neg]
+    have : ‖alg.x i - xm‖ ^ 2
+          - 2 * alg.a i * (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm)
+          + ↑alg.G ^ 2 * alg.a i ^ 2
+          = ‖alg.x i - xm‖ ^ 2
+            + - (2 * alg.a i * (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm))
+            + ↑alg.G ^ 2 * alg.a i ^ 2 := by
+      ring
+    rw [this]
+    have inq₁ : ‖alg.a i‖ ^ 2 * ‖alg.g i‖ ^ 2 ≤ ↑alg.G ^ 2 * alg.a i ^ 2 := by
+      rw [mul_comm]; simp
+      have hi := h' (alg.hg i)
+      have hi_sq : ‖alg.g i‖ ^ 2 ≤ (alg.G : ℝ) ^ 2 := by
+        apply pow_le_pow_left₀ (norm_nonneg _) hi 2
+      exact mul_le_mul_of_nonneg_right hi_sq (sq_nonneg _)
+    have inq₂ :
+        2 * alg.a i * (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm)
+        ≤ 2 * @inner ℝ E _ (alg.x i - xm) (alg.a i • alg.g i) := by
+      have hxm := (alg.hg i) xm
+      have base_range :
+          sInf (Set.range fun (x : Finset.range (k + 1)) => f (alg.x x)) - f xm
+          ≤ @inner ℝ E _ (alg.x i - xm) (alg.g i) := by
+        have hxmem :
+            f (alg.x i) ∈ Set.range (fun (x : Finset.range (k + 1)) => f (alg.x x)) := by
+          simp; use i
+          constructor
+          · exact lt_of_le_of_lt hi₂ (Nat.lt_succ_self k)
+          · simp
+        have h₁ :
+            sInf (Set.range fun (x : Finset.range (k + 1)) => f (alg.x x)) ≤ f (alg.x i) := by
+          apply csInf_le _ hxmem
+          apply Finite.bddBelow_range
+        have h₂ :
+            f (alg.x i) - f xm ≤ @inner ℝ E _ (alg.x i - xm) (alg.g i) := by
+          have h3 : f (alg.x i) - f xm ≤ - @inner ℝ E _ (alg.g i) (xm - alg.x i) :=
+            (sub_le_iff_le_add).2 (by simpa [add_comm, sub_eq_add_neg] using hxm)
+          rw [← inner_neg_right, neg_sub, real_inner_comm] at h3
+          exact h3
+        exact le_trans (sub_le_sub_right h₁ _) h₂
+      have base :
+          sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm
+          ≤ @inner ℝ E _ (alg.x i - xm) (alg.g i) := by
+        simpa [heq] using base_range
+      have hnonneg : 0 ≤ 2 * alg.a i := by
+        have h2 : (0 : ℝ) ≤ 2 := by norm_num
+        exact mul_nonneg h2 (le_of_lt (alg.ha i))
+      have hmul :=
+        mul_le_mul_of_nonneg_left base hnonneg
+      simpa [mul_left_comm, mul_comm, mul_assoc, inner_smul_right] using hmul
+    apply add_le_add
+    · apply add_le_add
+      · rfl
+      · apply neg_le_neg; exact inq₂
+    · exact inq₁
+  have h₁' :
+      ∀ ⦃i : ℕ⦄, i ≥ 0 ∧ i ≤ k →
+        alg.a i * (2 * (sInf {f (alg.x i) | i ∈ Finset.range (k + 1)} - f xm))
+        ≤ ‖alg.x i - xm‖ ^ 2 - ‖alg.x (i+1) - xm‖ ^ 2 + alg.G ^ 2 * (alg.a i) ^ 2 := by
+    intro i ⟨hi₁, hi₂⟩
+    rcases h₁ ⟨hi₁, hi₂⟩ with hii
+    have : 2 * (alg.a i) * (sInf {f (alg.x i) | i ∈ Finset.range (k + 1)} - f xm)
+        ≤ ‖alg.x i - xm‖ ^ 2 - ‖alg.x (i+1) - xm‖ ^ 2 + alg.G ^ 2 * (alg.a i) ^ 2 := by
+      linarith [hii]
+    rw [mul_assoc, mul_comm, mul_assoc, mul_comm _ 2] at this
+    exact this
+  have h₂ :
+      (Finset.range (k + 1)).sum (fun i => (alg.a i) * (2 * (sInf {f (alg.x i) | i ∈ Finset.range (k + 1)} - f xm)))
+      ≤ (Finset.range (k + 1)).sum
+          (fun i => ‖alg.x i - xm‖ ^ 2 - ‖alg.x (i+1) - xm‖ ^ 2 + alg.G ^ 2 * (alg.a i) ^ 2) := by
+    apply Finset.sum_le_sum
+    intro i hi
+    apply h₁'
+    constructor
+    · simp
+    · have : i < k + 1 := Finset.mem_range.mp hi
+      exact (Nat.lt_add_one_iff).mp this
+  rw [← sum_mul, ← mul_assoc, mul_comm _ 2, sum_add_distrib] at h₂
+  have h₃ : ∑ x ∈ Finset.range (k + 1), (‖alg.x x - xm‖ ^ 2 - ‖alg.x (x + 1) - xm‖ ^ 2) =
+    ‖alg.x 0 - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2 := by
+    exact sum_range_sub' (fun i ↦ ‖subgradient_method.x f x₀ i - xm‖ ^ 2) (k + 1)
+  rw [h₃, ← mul_sum, alg.initial] at h₂
+  calc
+    _ = (2 * Finset.sum (Finset.range (k + 1)) fun x => alg.a x) *
+          (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm) := by simp
+    _ ≤ ‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2
+          + ↑alg.G ^ 2 * Finset.sum (Finset.range (k + 1)) fun x => alg.a x ^ 2 := by
+      exact h₂
+    _ ≤ ‖x₀ - xm‖ ^ 2 + alg.G ^ 2 * Finset.sum (Finset.range (k + 1)) fun x => alg.a x ^ 2 := by
+      simp
 
+omit [CompleteSpace E] in
 /-- convergence with fixed step size --/
 theorem subgradient_method_fix_step_size {t : ℝ}
     (ha' : ∀ (n : ℕ), alg.a n = t) :
@@ -248,14 +280,15 @@ theorem subgradient_method_fix_step_size {t : ℝ}
     simp
     apply mul_pos _ ht
     · apply add_pos_of_nonneg_of_pos (Nat.cast_nonneg k) zero_lt_one
-  apply (mul_le_mul_left hpos).mp
+  apply (mul_le_mul_iff_right₀ hpos).mp
   calc
     2 * ((↑k + 1) * t) * (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm)
       = 2 * ((↑k + 1) * t) * (sInf {x | ∃ i < k + 1, f (alg.x i) = x} - f xm) := by simp
     _ ≤ ‖x₀ - xm‖ ^ 2 + ↑alg.G ^ 2 * ((↑k + 1) * t ^ 2) := by apply hk
     _ = 2 * ((↑k + 1) * t) * (‖x₀ - xm‖ ^ 2 / (2 * (↑k + 1) * t) + ↑alg.G ^ 2 * t / 2) := by
-      field_simp; ring
+      field_simp
 
+omit [CompleteSpace E] in
 /-- convergence with fixed $‖x^{i+1}-x^{i}‖$ --/
 theorem subgradient_method_fixed_distance {s : ℝ} (hm : IsMinOn f univ xm)
    (ha' : ∀ (n : ℕ), alg.a n * ‖alg.g n‖ = s) (hs : s > 0):
@@ -270,17 +303,11 @@ theorem subgradient_method_fixed_distance {s : ℝ} (hm : IsMinOn f univ xm)
   have h₁ :  ∀ ⦃i : ℕ⦄ , i ≥ 0 ∧ i ≤ k → ‖alg.x (i+1) - xm‖ ^ 2 ≤ ‖alg.x i - xm‖ ^ 2 - 2 * (alg.a i)
       * (sInf {f (alg.x i) | i ∈ Finset.range (k + 1)} - f xm) + ‖alg.a i‖ ^ 2 * ‖alg.g i‖ ^ 2:= by
     intro i ⟨_, hi₂⟩
-    rw [alg.update i, sub_right_comm, norm_sub_sq_real, norm_smul,mul_pow, sub_eq_add_neg]
-    have : ‖alg.x i - xm‖ ^ 2 - 2 * alg.a i * (sInf {x | ∃ i ∈ Finset.range (k + 1),
-        f (alg.x i) = x} - f xm) + ‖alg.a i‖ ^ 2 * ‖alg.g i‖ ^ 2 = ‖alg.x i - xm‖ ^ 2 +
-        -(2 * alg.a i * (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm))
-        + ‖alg.a i‖ ^ 2 * ‖alg.g i‖ ^ 2 := by ring
-    rw [this]
     have inq₂: 2 * alg.a i * (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm)
-        ≤ 2 * inner (alg.x i - xm) (alg.a i • alg.g i) := by
-      rw [mul_assoc]; apply (mul_le_mul_left two_pos).mpr
-      rw[inner_smul_right]; apply (mul_le_mul_left (alg.ha i)).mpr
-      rcases (alg.hg i) xm with hxm
+        ≤ 2 * @inner ℝ E _ (alg.x i - xm) (alg.a i • alg.g i) := by
+      rw [mul_assoc]; apply (mul_le_mul_iff_right₀ two_pos).mpr
+      rw[inner_smul_right]; apply (mul_le_mul_iff_right₀ (alg.ha i)).mpr
+      have hxm := (alg.hg i) xm
       calc
         _ = sInf (Set.range fun (x : Finset.range (k + 1)) => f (alg.x x)) - f xm := by rw [← heq]
         _ ≤ f (alg.x i)- f xm := by
@@ -291,14 +318,24 @@ theorem subgradient_method_fixed_distance {s : ℝ} (hm : IsMinOn f univ xm)
             · apply lt_of_le_of_lt hi₂; apply (Nat.lt_succ_self k)
             · simp
           apply csInf_le _ this; apply Finite.bddBelow_range
-        _ ≤ inner (alg.x i - xm) (alg.g i) := by
-          simp; apply le_add_of_sub_left_le
-          rw[sub_eq_add_neg, ← inner_neg_left, neg_sub, real_inner_comm]; apply hxm
-    rw[add_assoc, add_assoc]
-    apply add_le_add_left
-    apply add_le_add
-    · apply neg_le_neg; apply inq₂
-    · simp
+        _ ≤ @inner ℝ E _ (alg.x i - xm) (alg.g i) := by
+          have h3 : f (alg.x i) - f xm ≤ - @inner ℝ E _ (alg.g i) (xm - alg.x i) := by
+            exact (sub_le_iff_le_add).2 (by simpa [add_comm, sub_eq_add_neg] using hxm)
+          rw [← inner_neg_right, neg_sub, real_inner_comm] at h3
+          exact h3
+    rw [alg.update i, sub_right_comm, norm_sub_sq_real, norm_smul, mul_pow, sub_eq_add_neg]
+    have hneg :
+        -(2 * @inner ℝ E _ (alg.x i - xm) (alg.a i • alg.g i))
+        ≤ -(2 * alg.a i * (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm)) := by
+      exact neg_le_neg inq₂
+    have :
+        ‖alg.x i - xm‖ ^ 2 +
+          (-(2 * @inner ℝ E _ (alg.x i - xm) (alg.a i • alg.g i)))
+        ≤
+        ‖alg.x i - xm‖ ^ 2 +
+          (-(2 * alg.a i * (sInf {x | ∃ i ∈ Finset.range (k + 1), f (alg.x i) = x} - f xm))) := by
+      exact add_le_add_left hneg _
+    simpa [sub_eq_add_neg, mul_assoc] using this
   have h₁' :  ∀ ⦃i : ℕ⦄ , i ≥ 0 ∧ i ≤ k → alg.a i * (2 * (sInf {f (alg.x i) | i ∈ Finset.range (k + 1)}
        - f xm)) ≤ ‖alg.x i - xm‖ ^ 2 - ‖alg.x (i+1) - xm‖ ^ 2 + s ^ 2 := by
     intro i ⟨hi₁, hi₂⟩
@@ -319,7 +356,7 @@ theorem subgradient_method_fixed_distance {s : ℝ} (hm : IsMinOn f univ xm)
     · have : i < k + 1 := Finset.mem_range.mp hi
       apply (Nat.lt_add_one_iff).mp this
   rw [← Finset.sum_mul, ← mul_assoc, mul_comm _ 2, Finset.sum_add_distrib] at h₂
-  rw [Finset.sum_range_sub', alg.initial, Finset.sum_const] at h₂
+  rw [Finset.sum_range_sub' (fun i => ‖alg.x i - xm‖ ^ 2) (k + 1), alg.initial, Finset.sum_const] at h₂
   simp at h₂
   have hG : (NNReal.toReal alg.G) > 0 := by
       apply lt_of_lt_of_le _ (h' (alg.hg 0))
@@ -332,7 +369,7 @@ theorem subgradient_method_fixed_distance {s : ℝ} (hm : IsMinOn f univ xm)
     apply Finset.sum_le_sum
     intro i _
     rw [← (ha' i)]
-    apply (div_le_iff₀ hG).mpr ((mul_le_mul_left (alg.ha i)).mpr (h' (alg.hg i)))
+    apply (div_le_iff₀ hG).mpr ((mul_le_mul_iff_right₀ (alg.ha i)).mpr (h' (alg.hg i)))
   have hpos₁ : (↑k + 1) * (s / ↑alg.G) > 0 := by
     apply mul_pos
     · apply add_pos_of_nonneg_of_pos (Nat.cast_nonneg k) zero_lt_one
@@ -367,9 +404,15 @@ theorem subgradient_method_fixed_distance {s : ℝ} (hm : IsMinOn f univ xm)
     _ ≤ (‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2 + (k + 1) * s ^ 2) / (2 * (k + 1) * (s / alg.G)) := by
       apply (le_div_iff₀' hpos₁').mpr h₂'
     _ ≤ (‖x₀ - xm‖ ^ 2 + (↑k + 1) * s ^ 2) / (2 * (↑k + 1) * (s / ↑alg.G)) := by
-      apply (div_le_div_right hpos₁').mpr; simp
+      apply (div_le_div_iff_of_pos_right hpos₁').mpr
+      have hneg_le_zero : - ‖alg.x (k + 1) - xm‖ ^ 2 ≤ 0 := by
+        exact neg_nonpos.mpr (sq_nonneg _)
+      have hA :
+          ‖x₀ - xm‖ ^ 2 - ‖alg.x (k + 1) - xm‖ ^ 2 ≤ ‖x₀ - xm‖ ^ 2 := by
+        simp
+      simp
     _ = alg.G * ‖x₀ - xm‖ ^ 2 / (2 * (k + 1) * s) + alg.G * s / 2 := by
-      field_simp; ring
+      field_simp
 
 
 /-
@@ -411,7 +454,7 @@ lemma subgradient_method_diminishing_step_size (hm : IsMinOn f univ xm)
       calc
         ‖x₀ - xm‖ ^ 2 < Finset.sum (Finset.range (b + 1)) alg.a * ε := by apply h₂
         _ = 2 * Finset.sum (Finset.range (b + 1)) alg.a * (ε / 2) := by
-          field_simp;ring
+          field_simp
     have ha₂ : ∃ a₂, ∀ (b : ℕ), a₂ ≤ b → alg.G ^ 2 * (Finset.range (b + 1)).sum
         (fun i => (alg.a i) ^ 2) / (2 * (Finset.range (b + 1)).sum alg.a) < ε / 2 := by
       by_cases hG : ↑alg.G = 0
@@ -486,18 +529,22 @@ lemma subgradient_method_diminishing_step_size (hm : IsMinOn f univ xm)
                   (2 * Finset.sum (Finset.range (b + 1)) alg.a) + (↑alg.G ^ 2 * Finset.sum
                   (Finset.range (b - a₂)) fun x => alg.a (a₂ + 1 + x) ^ 2) /
                   (2 * Finset.sum (Finset.range (b + 1)) alg.a) := by
-                field_simp; rw[← mul_add]; simp
-                left
+                field_simp
                 obtain heq := Finset.sum_range_add (fun i => alg.a i ^ 2) (a₂ + 1) (b - a₂)
-                have h₃' : (b + 1) = a₂ + 1 + (b - a₂) := by
-                  rw[(Nat.add_comm a₂ 1), Nat.add_assoc, (Nat.add_sub_cancel' hba₂), Nat.add_comm]
-                rw[h₃']; apply heq
+                have h₃' : a₂ + 1 + (b - a₂) = b + 1 := by
+                  have hb' : a₂ + (b - a₂) = b := Nat.add_sub_cancel' hba₂
+                  simp [ Nat.add_comm, Nat.add_left_comm]; grind
+                simpa [h₃'.symm] using heq
           _ < ε / 4 + ε / 4 := by
             apply add_lt_add
             · rcases hasA b hba₁ with h₃; simp [s₁] at h₃
               obtain h₃₁ := (div_lt_iff₀ εpos).mp h₃
               obtain h₃₂ := (div_lt_iff₀' hpos'').mpr h₃₁
-              obtain h₃₃ := (div_lt_div_right zero_lt_four).mpr h₃₂
+              have h₃₃ :
+                  (2 * ↑alg.G ^ 2 * Finset.sum (Finset.range (a₂ + 1)) (fun x => alg.a x ^ 2)) /
+                    Finset.sum (Finset.range (b + 1)) alg.a / 4 < ε / 4 := by
+                have hmul := (mul_lt_mul_of_pos_right h₃₂ (by norm_num : (0 : ℝ) < (1 / 4)))
+                simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using hmul
               calc
                 _ = (2 * ↑alg.G ^ 2 * Finset.sum (Finset.range (a₂ + 1)) fun x => alg.a x ^ 2) /
                       Finset.sum (Finset.range (b + 1)) alg.a / 4 := by field_simp;ring
@@ -506,9 +553,9 @@ lemma subgradient_method_diminishing_step_size (hm : IsMinOn f univ xm)
               calc
                 _ ≤ ↑alg.G ^ 2 * Finset.sum (Finset.range (b - a₂)) (fun x => (ε / (2 * ↑alg.G ^ 2))
                       * alg.a (a₂ + 1 + x)) := by
-                    apply (mul_le_mul_left hpos').mpr; apply Finset.sum_le_sum; intro i _
+                    apply (mul_le_mul_iff_right₀ hpos').mpr; apply Finset.sum_le_sum; intro i _
                     have hposi : alg.a (a₂ + 1 + i) > 0 := by apply (alg.ha (a₂ + 1 + i))
-                    rw [pow_two]; apply (mul_le_mul_right hposi).mpr
+                    rw [pow_two]; apply (mul_le_mul_iff_left₀ hposi).mpr
                     have : a₂ + 1 + i ≥ a₂ := by
                       rw[Nat.add_assoc]; apply Nat.le_add_right
                     rcases ha₂ (a₂ + 1 + i) this with hai₂
@@ -574,13 +621,13 @@ lemma subgradient_method_diminishing_step_size (hm : IsMinOn f univ xm)
       _ ≤ (‖x₀ - xm‖ ^ 2 + ↑alg.G ^ 2 * Finset.sum (Finset.range (b + 1)) fun i => alg.a i ^ 2)
             / (2 * Finset.sum (Finset.range (b + 1)) alg.a) := by
           apply (le_div_iff₀' hpos).mpr; simp at hb₁; apply hb₁
-      _ = ‖x₀ - xm‖ ^ 2 / (2 * Finset.sum (Finset.range (b + 1)) alg.a) + (↑alg.G ^ 2 *
-            Finset.sum (Finset.range (b + 1)) fun i => alg.a i ^ 2) /
-            (2 * Finset.sum (Finset.range (b + 1)) alg.a) := by
-          simp [div_add_div_same]
+      _ = ‖x₀ - xm‖ ^ 2 / (2 * Finset.sum (Finset.range (b + 1)) alg.a) +
+            (↑alg.G ^ 2 * Finset.sum (Finset.range (b + 1)) fun i => alg.a i ^ 2) /
+              (2 * Finset.sum (Finset.range (b + 1)) alg.a) := by
+        field_simp
       _ < ε / 2 + ε / 2 := by
-        apply add_lt_add; apply hba₁'; apply hba₂'
-      _ = ε := by field_simp
+        apply add_lt_add; exact hba₁'; exact hba₂'
+      _ = ε := by field_simp; ring
   obtain h₁' := Filter.Tendsto.add_const (f xm) h₁
   simp at h₁'; simp; apply h₁'
 

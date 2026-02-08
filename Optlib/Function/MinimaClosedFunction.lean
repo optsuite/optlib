@@ -33,14 +33,14 @@ private lemma l0 {f : E → F}(y : F) (h : (f ⁻¹' Set.Iic y).Nonempty) :
       · exact Exists.intro x xeq
       · exact Exists.intro x xeq
   have h₁ : sInf {f x | x ∈ f ⁻¹' Set.Iic y} ≤ sInf {f x | x ∈ (f ⁻¹' Set.Iic y)ᶜ} := by
-    apply sInf_le_sInf_of_forall_exists_le
+    apply sInf_le_sInf_of_isCoinitialFor
     intro y' ynsub
     rcases h with ⟨x', xsub⟩; use f x'
     constructor
     · exact ⟨x', xsub, rfl⟩
     rcases ynsub with ⟨x, xnsub, xeq⟩
     apply le_trans xsub (Eq.trans_ge xeq (le_of_lt _))
-    simp only [← Set.preimage_setOf_eq, ← Set.preimage_compl, Set.compl_Iic, Set.Ioi_def] at xnsub
+    simp only [← Set.preimage_compl, Set.compl_Iic] at xnsub
     assumption
   calc
     sInf {f x | x ∈ f ⁻¹' Set.Iic y} =
@@ -63,6 +63,7 @@ variable [TopologicalSpace E] [TopologicalSpace F] [OrderTopology F]
 
 variable [FirstCountableTopology E] [FirstCountableTopology F]
 
+omit [DenselyOrdered F] in
 /- If a premiage of `f` is nonempty and compact,
   then its minimum point set `{x | IsMinOn f univ x}` is nonempty -/
 theorem IsMinOn.of_isCompact_preimage (hf : LowerSemicontinuous f) {y : F}
@@ -82,13 +83,14 @@ theorem IsMinOn.of_isCompact_preimage (hf : LowerSemicontinuous f) {y : F}
     apply Tendsto.comp cfx (StrictMono.tendsto_atTop mono)
   have inepi : (x', sInf {f x | x ∈ (f ⁻¹' Set.Iic y)}) ∈ {p : E × F | f p.1 ≤ p.2} :=
     (IsClosed.isSeqClosed (LowerSemicontinuous.isClosed_epigraph hf))
-      (fun n => Eq.le (by rfl)) (Tendsto.prod_mk_nhds cxk cfxk)
+      (fun n => Eq.le (by rfl)) (Filter.Tendsto.prodMk_nhds cxk cfxk)
   use x'; intro xx _
   apply le_of_eq_of_le
   · apply le_antisymm inepi (sInf_le (Exists.intro x' ⟨xsub', rfl⟩))
   · apply le_of_eq_of_le (l0 y h1) (sInf_le (by use xx))
 
-/- If a premiage of `f` is nonempty and compact,
+omit [DenselyOrdered F] in
+/- If a preimage of `f` is nonempty and compact,
   then its minimum point set `{x | IsMinOn f univ x}` is compact -/
 
 theorem IsCompact_isMinOn_of_isCompact_preimage (hf : LowerSemicontinuous f) {y : F}
@@ -114,9 +116,9 @@ section
 
 variable {𝕜 : Type _} {f : E → F}
 variable [AddCommMonoid E] [CompleteLinearOrder F]
-variable [LinearOrderedRing 𝕜] [DenselyOrdered 𝕜] [Module 𝕜 E]
+variable [Ring 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [DenselyOrdered 𝕜] [Module 𝕜 E]
 
-def strong_quasi (f : E → F) (𝕜 : Type _) [LinearOrderedRing 𝕜] [Module 𝕜 E] : Prop :=
+def strong_quasi (f : E → F) (𝕜 : Type _) [Ring 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [Module 𝕜 E] : Prop :=
   ∀ ⦃x⦄, ∀ ⦃y⦄, x ≠ y → ∀ ⦃a b : 𝕜⦄, 0 < a → 0 < b → a + b = 1
     → f ((a • x : E) + (b • y : E)) < max (f x) (f y)
 
@@ -133,6 +135,6 @@ theorem isMinOn_unique {x y : E} (hf' : strong_quasi f 𝕜)
     apply hf' neq lta lta' eqone
   simp only [isMinOn_iff] at hy
   specialize hy (a • x + (1 - a) • y) trivial
-  apply not_le_of_lt h hy
+  apply not_le_of_gt h hy
 
 end

@@ -187,6 +187,33 @@ We mainly follow the book [High-Dimensional Probability (Roman Vershynin)](https
 - Great Bay University
 - National Natural Science Foundation of China
 
+## Lean Projects
+
+### Formalization Platform
+
+- [ReasLab](https://prove.reaslab.io)
+  - An online Lean formalization platform for collaborative theorem development and verification.
+
+### Formalization Projects
+
+- [Optlib](https://github.com/optsuite/optlib)
+  - A Lean4 library for mathematical optimization, covering convex analysis, optimality conditions, and algorithm convergence.
+- [ReasBook](https://github.com/optsuite/ReasBook)
+  - A Lean4 project for textbook and paper formalization, including both theorem proving and computational problems.
+
+### Benchmark
+
+- [AMBER](https://github.com/optsuite/AMBER)
+  - A Lean4 benchmark for applied mathematics formalization including proving and computational problems.
+
+### Autoformalization and Theorem Proving Systems
+
+- [M2F](https://github.com/optsuite/M2F)
+  - A toolkit for converting natural-language mathematical textbooks into formalization-ready Lean projects.
+
+- [SITA](https://github.com/chenyili0818/SITA)
+  - A structure-to-instance autoformalization framework for generating Lean definitions/theorems with verification feedback.
+
 ## Publications
 
 ### Formalization of Optimization
@@ -254,7 +281,7 @@ We are a group of scholars and students with a keen interest in mathematical for
 
 - Other collaborators:
 
-  Anjie Dong, ...
+  Anjie Dong, Zhiyan Wang, Siyuan Shao, Yijie Wang, Yuhao Jiang, Yunfei Zhang, Zhenxi Liu, Xuran Sun, Junren Si, Xuan Tang, Mingyue Xu, Guangxuan Pan, Suwan Wu, Gongxun Li, Siyuan Ma, Changyun Zou, Xinyi Guo, Zebo Liu, Weiran Shi, Zixi Wang
 
 ## Copyright
 

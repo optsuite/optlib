@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2024 Zichen Wang, Yifan Bai, Pengfei Hao, Yuqing Gao, Anqing Shen. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Author: Zichen Wang, Yifan Bai, Pengfei Hao, Yuqing Gao, Anqing Shen
+-/
 import Optlib.Function.Proximal
 import Mathlib.Topology.MetricSpace.Sequences
 

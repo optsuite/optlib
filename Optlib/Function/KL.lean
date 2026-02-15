@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2024 Zichen Wang, Yifan Bai, Chenyi Li. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Author: Zichen Wang, Yifan Bai, Chenyi Li
+-/
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Optlib.Function.Proximal
 import Optlib.Differential.Subdifferential

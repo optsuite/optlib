@@ -198,7 +198,7 @@ We mainly follow the book [High-Dimensional Probability (Roman Vershynin)](https
 
 - [Optlib](https://github.com/optsuite/optlib)
   - A Lean4 library for mathematical optimization, covering convex analysis, optimality conditions, and algorithm convergence.
-- [ReasBook](https://github.com/optsuite/ReasBook)
+- [ReasBook](https://github.com/optpku/ReasBook)
   - A Lean4 project for textbook and paper formalization, including both theorem proving and computational problems.
 
 ### Benchmark

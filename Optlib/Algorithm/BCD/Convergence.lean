@@ -456,7 +456,6 @@ end Upperbound_subd
 
 end Convergence
 
-/-
 section limit_point
 
 open BCD
@@ -1500,4 +1499,3 @@ theorem Convergence_to_critpt (γ : ℝ) (hγ : γ > 1)
   apply (limitset_property_1 γ hγ ck dk bd lbdψ).2 z_in
 
 end Limited_length
--/

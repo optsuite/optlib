@@ -1,18 +1,16 @@
-import subprocess
 import sys
-import threading
 from collections import deque
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import datetime
 from pathlib import Path
-import re
 
-DEPENDCY_FILE = "Dependcy.md"
+from dependcy import load_dependency_graph
+from lean_file_processor import FileProcessor
+
 PROMPT_FILE = "PROMPT.md"
 PLACEHOLDER = "__________________"
 MAX_RETRIES = 3
 WORKERS = 8
-FORBIDDEN_PATTERN = re.compile(r"\b(?:axiom|admit)\b")
 
 GREEN = "\033[32m"
 RED = "\033[31m"
@@ -23,22 +21,6 @@ FAIL = f"{RED}fail{RESET}"
 TAG = f"{GREEN}[pipeline]{RESET}"
 LOG_ROOT = Path(".log")
 RUN_LOG_DIR = LOG_ROOT / datetime.now().strftime("%Y%m%d-%H%M%S")
-git_lock = threading.Lock()
-
-
-def read_paths(dependcy_file):
-    paths = []
-    seen = set()
-    with open(dependcy_file, "r") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line == "---":
-                continue
-            if line in seen:
-                continue
-            paths.append(line)
-            seen.add(line)
-    return paths
 
 
 def read_prompt(prompt_file):
@@ -46,53 +28,8 @@ def read_prompt(prompt_file):
         return f.read()
 
 
-def make_prompt(prompt_template, path):
-    return prompt_template.replace(PLACEHOLDER, path)
-
-
 def ensure_log_dir():
     RUN_LOG_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def log_stem_from_path(path):
-    return Path(path).with_suffix("").as_posix().replace("/", "__")
-
-
-def codex_log_path(path, attempt):
-    return RUN_LOG_DIR / f"{log_stem_from_path(path)}.attempt{attempt}.codex.log"
-
-
-def module_name_from_path(path):
-    return Path(path).with_suffix("").as_posix().replace("/", ".")
-
-
-def parse_imports(file_path):
-    imports = []
-    with open(file_path, "r", encoding="utf-8") as f:
-        for line in f:
-            stripped = line.lstrip()
-            if not stripped.startswith("import "):
-                continue
-            parts = stripped.split()
-            if len(parts) >= 2:
-                imports.extend(parts[1:])
-    return imports
-
-
-def build_dependencies(paths):
-    module_to_path = {module_name_from_path(path): path for path in paths}
-    deps_by_path = {}
-    for path in paths:
-        file_path = Path(path)
-        if not file_path.exists():
-            raise FileNotFoundError(f"missing path from dependency list: {path}")
-        deps = set()
-        for dep_module in parse_imports(path):
-            dep_path = module_to_path.get(dep_module)
-            if dep_path and dep_path != path:
-                deps.add(dep_path)
-        deps_by_path[path] = deps
-    return deps_by_path
 
 
 def enqueue_ready_paths(remaining, deps_by_path, resolved, queued, ready_queue):
@@ -107,177 +44,21 @@ def enqueue_ready_paths(remaining, deps_by_path, resolved, queued, ready_queue):
     return newly_added
 
 
-def run_codex(prompt, log_path):
-    with open(log_path, "w", encoding="utf-8") as log_file:
-        result = subprocess.run(
-            ["codex", "--search", "exec", "-", "--color", "never"],
-            input=prompt,
-            text=True,
-            stdout=log_file,
-            stderr=subprocess.STDOUT,
-        )
-    if result.returncode == 0:
-        print(f"{TAG} codex {SUCCESS}: {log_path}")
-        return True
-    if result.returncode != 0:
-        print(
-            f"{TAG} codex {FAIL} (code {result.returncode}): {log_path}",
-            file=sys.stderr,
-        )
-    return False
-
-
-def run_lean(path):
-    result = subprocess.run(
-        ["lake", "env", "lean", path],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    return result.returncode == 0
-
-
-def has_forbidden_terms(path):
-    with open(path, "r", encoding="utf-8") as f:
-        content = f.read()
-    return bool(FORBIDDEN_PATTERN.search(content))
-
-
-def git_restore(path):
-    with git_lock:
-        result = subprocess.run(
-            ["git", "restore", "--", path],
-            capture_output=True,
-            text=True,
-        )
-    if result.returncode != 0:
-        if result.stdout:
-            print(result.stdout)
-        if result.stderr:
-            print(result.stderr, file=sys.stderr)
-        print(f"{TAG} git restore {path} {FAIL}.", file=sys.stderr)
-        return False
-    print(f"{TAG} {path} contains forbidden terms, restored with git restore.")
-    return True
-
-
-def validate_no_forbidden_terms(path):
-    if not has_forbidden_terms(path):
-        return True
-    print(
-        f"{TAG} {path} compile {SUCCESS} but found forbidden term(s): axiom/admit.",
-        file=sys.stderr,
-    )
-    git_restore(path)
-    return False
-
-
-def git_commit(path):
-    with git_lock:
-        result = subprocess.run(
-            ["git", "add", path],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            print(result.stderr, file=sys.stderr)
-            return False
-        staged_check = subprocess.run(
-            ["git", "diff", "--cached", "--quiet", "--", path],
-            capture_output=True,
-            text=True,
-        )
-        if staged_check.returncode == 0:
-            print(f"{TAG} {path} has no staged changes, skipping commit.")
-            return True
-        if staged_check.returncode != 1:
-            if staged_check.stderr:
-                print(staged_check.stderr, file=sys.stderr)
-            return False
-        result = subprocess.run(
-            ["git", "commit", "-m", f"fix: {path}"],
-            capture_output=True,
-            text=True,
-        )
-        print(result.stdout)
-        if result.stderr:
-            print(result.stderr, file=sys.stderr)
-        return result.returncode == 0
-
-
-def git_push():
-    with git_lock:
-        result = subprocess.run(
-            ["git", "push"],
-            capture_output=True,
-            text=True,
-        )
-        print(result.stdout)
-        if result.stderr:
-            print(result.stderr, file=sys.stderr)
-        if result.returncode != 0:
-            print(f"{TAG} git push failed with code {result.returncode}", file=sys.stderr)
-        return result.returncode == 0
-
-
-def commit_and_push(path):
-    if not git_commit(path):
-        print(f"{TAG} {path} git commit step {FAIL}.", file=sys.stderr)
-        return False
-    if not git_push():
-        print(f"{TAG} {path} git push step {FAIL}.", file=sys.stderr)
-        return False
-    print(f"{TAG} {path} git push {SUCCESS}.")
-    return True
-
-
-def process_path(path, prompt_template):
-    print(f"\n{TAG} {path} — pre-check compilation")
-    if run_lean(path):
-        if not validate_no_forbidden_terms(path):
-            print(
-                f"{TAG} {path} forbidden terms check {FAIL}, retrying with codex.",
-                file=sys.stderr,
-            )
-        else:
-            print(f"{TAG} {path} pre-check {SUCCESS}, committing and pushing...")
-            return commit_and_push(path)
-
-    for attempt in range(1, MAX_RETRIES + 1):
-        print(f"\n{TAG} {path} — attempt {attempt}/{MAX_RETRIES}")
-
-        prompt = make_prompt(prompt_template, path)
-        log_path = codex_log_path(path, attempt)
-        if not run_codex(prompt, log_path):
-            print(f"{TAG} {path} codex step {FAIL}.", file=sys.stderr)
-            continue
-
-        if run_lean(path):
-            if not validate_no_forbidden_terms(path):
-                print(
-                    f"{TAG} {path} forbidden terms check {FAIL}.",
-                    file=sys.stderr,
-                )
-                continue
-            print(f"{TAG} {path} compile {SUCCESS}, committing and pushing...")
-            return commit_and_push(path)
-        else:
-            print(f"{TAG} {path} compile {FAIL}.", file=sys.stderr)
-
-    print(
-        f"{TAG} {path} exceeded {MAX_RETRIES} retries — {FAIL}.",
-        file=sys.stderr,
-    )
-    return False
-
-
 def main():
     ensure_log_dir()
     print(f"{TAG} codex logs will be written to: {RUN_LOG_DIR}")
 
-    paths = read_paths(DEPENDCY_FILE)
+    paths, deps_by_path = load_dependency_graph(Path.cwd())
+    print(f"{TAG} analyzed dependencies for {len(paths)} Lean files")
     prompt_template = read_prompt(PROMPT_FILE)
-
-    deps_by_path = build_dependencies(paths)
+    file_processor = FileProcessor(
+        run_log_dir=RUN_LOG_DIR,
+        max_retries=MAX_RETRIES,
+        placeholder=PLACEHOLDER,
+        tag=TAG,
+        success_label=SUCCESS,
+        fail_label=FAIL,
+    )
     remaining = set(paths)
     resolved = set()
     queued = set()
@@ -293,7 +74,7 @@ def main():
         while remaining or running:
             while ready_queue and len(running) < WORKERS:
                 path = ready_queue.popleft()
-                future = executor.submit(process_path, path, prompt_template)
+                future = executor.submit(file_processor.process_path, path, prompt_template)
                 running[future] = path
                 print(
                     f"{TAG} scheduled {path}; running={len(running)}/{WORKERS}, "

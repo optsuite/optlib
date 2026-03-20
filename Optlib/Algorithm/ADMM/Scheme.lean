@@ -35,7 +35,7 @@ def Admm_sub_Isunique {E : Type*}(f : E → ℝ)(x : E)(_h : IsMinOn f univ x): 
 -- Augmented Lagrangian Function
 def Augmented_Lagrangian_Function (opt : OptProblem E₁ E₂ F) (ρ : ℝ) : E₁ × E₂ × F → ℝ :=
    fun (x₁ , x₂ , y) => (opt.f₁ x₁) + (opt.f₂ x₂) +
-      inner y  ((opt.A₁ x₁) + (opt.A₂ x₂) - opt.b) + ρ / 2 * ‖(opt.A₁ x₁) + (opt.A₂ x₂) - opt.b‖ ^ 2
+      inner ℝ y ((opt.A₁ x₁) + (opt.A₂ x₂) - opt.b) + ρ / 2 * ‖(opt.A₁ x₁) + (opt.A₂ x₂) - opt.b‖ ^ 2
 
 -- The basic iteration format of ADMM
 class ADMM extends (OptProblem E₁ E₂ F) where

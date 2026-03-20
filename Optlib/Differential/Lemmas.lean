@@ -4,9 +4,12 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li
 -/
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Defs
-import Mathlib.Topology.Semicontinuous
+import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Normed.Lp.ProdLp
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import Mathlib.Topology.Semicontinuity.Basic
 import Optlib.Differential.Calculation
 
 /-!
@@ -44,7 +47,9 @@ lemma bounded_lowersemicontinuous_to_epi_closed (f : E → ℝ) (hc : LowerSemic
   rcases xntend with ⟨xtend, ytend⟩
   rw [LowerSemicontinuousOn] at hc
   specialize hc p.1
-  simp at hc; rw [LowerSemicontinuousWithinAt, nhdsWithin_univ] at hc
+  simp at hc
+  have hc' : ∀ y < f p.1, ∀ᶠ x' in 𝓝 p.1, y < f x' := by
+    simpa [SemicontinuousWithinAt, nhdsWithin_univ] using hc
   let linf := liminf (fun n ↦ f (xn n).1) atTop
   have aux : Tendsto (fun n ↦ (xn n).2) atTop (nhds p.2) ↔
         ∀ ε > 0, ∃ N, ∀ n ≥ N, (fun n ↦ (xn n).2) n ∈ Ioo (p.2 - ε) (p.2 + ε) := by
@@ -55,7 +60,7 @@ lemma bounded_lowersemicontinuous_to_epi_closed (f : E → ℝ) (hc : LowerSemic
     by_contra h; push_neg at h
     let t := (linf + f p.1) / 2
     have tin : t < f p.1 := add_div_two_lt_right.2 h
-    specialize hc t tin
+    specialize hc' t tin
     have ieq2 : t ≤ linf := by
       apply le_liminf_of_le
       · rw [Filter.IsCoboundedUnder, Filter.IsCobounded]
@@ -74,7 +79,7 @@ lemma bounded_lowersemicontinuous_to_epi_closed (f : E → ℝ) (hc : LowerSemic
         let auxlt := fun x : E ↦ (t < f x)
         have le_of_lt : ∀ x : E, auxlt x → auxle x := by
           simp [auxlt]; intro x cd; exact le_of_lt cd
-        apply Eventually.mono hc le_of_lt
+        apply Eventually.mono hc' le_of_lt
     contrapose! ieq2
     apply left_lt_add_div_two.2 h
   have ieq3 : linf ≤ p.2 := by
@@ -164,7 +169,7 @@ lemma continuous_positive_direction [NormedSpace ℝ E] (h : ContinuousAt f x) (
   obtain ⟨δ, hδ1, hδ2⟩ := continuous_positive_neighborhood h hx
   by_cases hv : v = 0
   · rw [hv]; simp; use 1; constructor; linarith; intro t _ _; exact hx
-  have : ‖v‖ > 0 := norm_pos_iff'.mpr hv
+  have : ‖v‖ > 0 := by simpa [gt_iff_lt] using (norm_pos_iff.2 hv)
   use δ / (2 * ‖v‖); constructor; positivity
   intro y hy
   obtain hδ2 := hδ2 (x + y • v)
@@ -173,7 +178,7 @@ lemma continuous_positive_direction [NormedSpace ℝ E] (h : ContinuousAt f x) (
     simp at hy; rw [norm_smul]; simp; rw [abs_of_nonneg hy.1]
     calc
       _ ≤ δ / (2 * ‖v‖) * ‖v‖ := (mul_le_mul_iff_of_pos_right this).mpr hy.2
-      _ = δ / 2 := by field_simp; ring
+      _ = δ / 2 := by field_simp
       _ < δ := by linarith
   exact hδ2 this
 
@@ -207,43 +212,41 @@ theorem deriv_function_comp_segment (x y : E) (h₁ : ∀ x₁ : E, HasFDerivAt 
 theorem HasFDeriv_Convergence (h: HasFDerivAt f (f' x) x) :
   ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ
     → ‖f x' - f x - (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
-  rw [HasFDerivAt, hasFDerivAtFilter_iff_isLittleO, Asymptotics.isLittleO_iff] at h
+  rw [hasFDerivAt_iff_isLittleO_nhds_zero, Asymptotics.isLittleO_iff] at h
   intro ε epos
   specialize h epos
   rw [Filter.Eventually] at h
-  let t := {x_1 | ‖f x_1 - f x - (f' x) (x_1 - x)‖ ≤ ε * ‖x_1 - x‖}
-  have h₁: ∃ ε1 > (0 : ℝ), Metric.ball x ε1 ⊆ t := Iff.mp Metric.mem_nhds_iff h
+  let t := {h : E | ‖f (x + h) - f x - (f' x) h‖ ≤ ε * ‖h‖}
+  have h₁ : ∃ ε1 > (0 : ℝ), Metric.ball (0 : E) ε1 ⊆ t := Iff.mp Metric.mem_nhds_iff h
   rcases h₁ with ⟨e1, e1pos, h₁⟩
   use (e1 / 2); constructor
   exact (half_pos e1pos)
   intro x' xnhds
-  have h₂: x' ∈ Metric.ball x e1:= by
-    rw [Metric.mem_ball, dist_comm]
-    rw [← dist_eq_norm] at xnhds
+  have h₂ : x' - x ∈ Metric.ball (0 : E) e1 := by
+    rw [Metric.mem_ball, dist_zero_right]
+    rw [← norm_neg (x - x'), neg_sub] at xnhds
     apply lt_of_le_of_lt xnhds (half_lt_self e1pos)
-  have h₃: x' ∈ t := h₁ h₂
+  have h₃ : x' - x ∈ t := h₁ h₂
   rw [Set.mem_setOf] at h₃
-  rw [norm_sub_rev x]
-  exact h₃
+  simpa [add_sub_cancel, ContinuousLinearMap.map_sub, norm_sub_rev] using h₃
 
 theorem Convergence_HasFDeriv (h : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E),
     ‖x - x'‖ ≤ δ → ‖f x' - f x - (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖) :
       HasFDerivAt f (f' x) x := by
-  rw [HasFDerivAt, hasFDerivAtFilter_iff_isLittleO, Asymptotics.isLittleO_iff]
+  rw [hasFDerivAt_iff_isLittleO_nhds_zero, Asymptotics.isLittleO_iff]
   intro ε epos
-  rw [Filter.Eventually]
   specialize h ε epos
   rcases h with ⟨δ, dpos, h⟩
+  rw [Filter.Eventually]
   rw [Metric.mem_nhds_iff]
-  use δ ; constructor
+  use δ; constructor
   apply dpos
-  intro x' x1mem
-  have h1: ‖x - x'‖ ≤ δ:= by
-    rw [Metric.ball, Set.mem_setOf, dist_comm, dist_eq_norm] at x1mem
-    exact LT.lt.le x1mem
-  specialize h x' h1
-  rw[Set.mem_setOf, norm_sub_rev x']
-  apply h
+  intro h' x1mem
+  have h1 : ‖x - (x + h')‖ ≤ δ := by
+    rw [Metric.mem_ball, dist_comm, dist_eq_norm] at x1mem
+    simpa [sub_eq_add_neg, add_assoc] using LT.lt.le x1mem
+  specialize h (x + h') h1
+  simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using h
 
 theorem HasFDeriv_iff_Convergence_Point {f'x : (E →L[ℝ] ℝ)}:
   HasFDerivAt f (f'x) x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E),
@@ -273,7 +276,7 @@ open Topology InnerProductSpace Set Filter Tendsto
 
 theorem HasGradient_Convergence (h : HasGradientAt f (f' x) x) :
     ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E, ‖x - x'‖ ≤ δ
-    → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
+    → ‖f x' - f x - inner ℝ (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
   rw [hasGradientAt_iff_hasFDerivAt] at h
   show ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ (x' : E), ‖x - x'‖ ≤ δ
     → ‖f x' - f x - ((toDual ℝ E) (f' x)) (x' - x)‖ ≤ ε * ‖x - x'‖
@@ -281,14 +284,15 @@ theorem HasGradient_Convergence (h : HasGradientAt f (f' x) x) :
   exact h
 
 theorem Convergence_HasGradient (h : ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
-    ‖x - x'‖ ≤ δ → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖) :
+    ‖x - x'‖ ≤ δ → ‖f x' - f x - inner ℝ (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖) :
     HasGradientAt f (f' x) x := by
   rw [hasGradientAt_iff_hasFDerivAt]
-  exact HasFDeriv_iff_Convergence_Point.mpr h
+  simpa using (HasFDeriv_iff_Convergence_Point (f := f) (x := x)
+    (f'x := (toDual ℝ E) (f' x))).2 h
 
 theorem HasGradient_iff_Convergence_Point {f'x : E}:
       HasGradientAt f f'x x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
-     ‖x - x'‖ ≤ δ → ‖f x' - f x - inner (f'x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
+     ‖x - x'‖ ≤ δ → ‖f x' - f x - inner ℝ f'x (x' - x)‖ ≤ ε * ‖x - x'‖ := by
   constructor
   · intro h; apply HasGradient_Convergence
     exact h
@@ -296,7 +300,7 @@ theorem HasGradient_iff_Convergence_Point {f'x : E}:
 
 theorem HasGradient_iff_Convergence :
       HasGradientAt f (f' x) x ↔ ∀ ε > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x' : E,
-      ‖x - x'‖ ≤ δ → ‖f x' - f x - inner (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
+      ‖x - x'‖ ≤ δ → ‖f x' - f x - inner ℝ (f' x) (x' - x)‖ ≤ ε * ‖x - x'‖ := by
   constructor
   apply HasGradient_Convergence
   apply Convergence_HasGradient
@@ -321,7 +325,7 @@ lemma gradient_norm_sq_eq_two_self (x : E) :
     apply pow_two_nonneg
 
 lemma gradient_of_inner_const (x : E) (a : E):
-    HasGradientAt (fun x ↦ (inner a x : ℝ)) a x := by
+    HasGradientAt (fun x ↦ (inner ℝ a x : ℝ)) a x := by
   apply HasGradient_iff_Convergence_Point.mpr
   simp only [gt_iff_lt, Real.norm_eq_abs]
   intros ε εpos
@@ -335,10 +339,9 @@ lemma gradient_of_const_mul_norm (l : ℝ) (z : E) :
     HasGradientAt (fun (x : E) => l / 2 * ‖x‖ ^ 2) (l • z) z := by
   let h := fun x : E => ‖x‖ ^ 2
   have e1 : (l • z) = (l / 2) • (2 : ℝ) • z := by rw [smul_smul]; simp
-  have : (fun (x : E) => l / 2 * ‖x‖ ^ 2) = (fun (x : E) => (l / 2) • h x) := by
-    ext; simp
   have h1 : HasGradientAt h ((2 : ℝ) • z) z := gradient_norm_sq_eq_two_self z
-  rw [this, e1]; refine HasGradientAt.const_smul' (l / 2) h1
+  rw [show (fun x : E => l / 2 * ‖x‖ ^ 2) = fun x ↦ (l / 2 : ℝ) • h x by ext x; simp [h]]
+  simpa [e1] using HasGradientAt.const_smul h1 (l / 2)
 
 lemma gradient_of_sq : ∀ u : E, HasGradientAt (fun u ↦ ‖u - x‖ ^ 2 / 2) (u - x) u := by
   intro s
@@ -348,7 +351,7 @@ lemma gradient_of_sq : ∀ u : E, HasGradientAt (fun u ↦ ‖u - x‖ ^ 2 / 2) 
   · linarith
   · intro x' dles; field_simp; rw [abs_div]; simp
     have eq1 (u v : E) (e : ℝ) (dle : ‖u - v‖ ≤ e) :
-      |‖v‖ ^ 2 - ‖u‖ ^ 2 - inner ((2 : ℝ) • u) (v - u)| ≤ e * ‖u - v‖ := by
+      |‖v‖ ^ 2 - ‖u‖ ^ 2 - inner ℝ ((2 : ℝ) • u) (v - u)| ≤ e * ‖u - v‖ := by
       rw [← norm_neg (u - v), neg_sub] at dle;
       rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, inner_sub_right]
       rw [real_inner_smul_left, real_inner_smul_left]; ring_nf
@@ -366,13 +369,13 @@ lemma gradient_of_sq : ∀ u : E, HasGradientAt (fun u ↦ ‖u - x‖ ^ 2 / 2) 
     have eq2 : s - x' = u - v := by rw [hu, hv]; simp
     have eq3 : x' - s = v - u := by rw [hu, hv]; simp
     rw [eq2, eq3]
-    show |‖v‖ ^ 2 - ‖u‖ ^ 2 - inner ((2 : ℝ) • u) (v - u)| / 2 ≤ e * ‖u - v‖
+    show |‖v‖ ^ 2 - ‖u‖ ^ 2 - inner ℝ ((2 : ℝ) • u) (v - u)| / 2 ≤ e * ‖u - v‖
     calc
-      |‖v‖ ^ 2 - ‖u‖ ^ 2 - inner ((2 : ℝ) • u) (v - u)| / 2 ≤ (e * ‖u - v‖) / 2 := by
-        rw [div_le_div_right]
-        apply eq1; rw [hu, hv]; simp; apply dles; simp
+      |‖v‖ ^ 2 - ‖u‖ ^ 2 - inner ℝ ((2 : ℝ) • u) (v - u)| / 2 ≤ (e * ‖u - v‖) / 2 := by
+        have hle := eq1 u v e (by rw [hu, hv]; simpa using dles)
+        nlinarith
       _ ≤ e * ‖u - v‖ := by
-        field_simp
+        nlinarith [norm_nonneg (u - v), le_of_lt ep]
 
 lemma sub_normsquare_gradient (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) (m : ℝ):
     ∀ x ∈ s, HasGradientAt (fun x ↦ f x - m / 2 * ‖x‖ ^ 2) (f' x - m • x) x := by
@@ -431,14 +434,14 @@ open InnerProductSpace Set
 -/
 
 lemma expansion (hf : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
-    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner (f' (x + t • p)) p := by
+    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner ℝ (f' (x + t • p)) p := by
   let g := fun r : ℝ ↦ f (x + r • p)
-  let g' := fun r : ℝ ↦ (inner (f' (x + r • p)) p : ℝ)
+  let g' := fun r : ℝ ↦ (inner ℝ (f' (x + r • p)) p : ℝ)
   have h1 : ∀ r , HasDerivAt g (g' r) r := by
     let h := fun r : ℝ ↦ x + r • p
     have : g = f ∘ h := by rfl
     rw [this]; intro r
-    have : inner (f' (x + r • p)) p = toDual ℝ E (f' (x + r • p)) p := rfl
+    have : inner ℝ (f' (x + r • p)) p = toDual ℝ E (f' (x + r • p)) p := rfl
     simp [g']; rw [this]; apply HasFDerivAt.comp_hasDerivAt
     · apply hasGradientAt_iff_hasFDerivAt.mp
       exact hf (x + r • p)
@@ -449,7 +452,7 @@ lemma expansion (hf : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
       rw [one_smul] at this; exact this
   have e1 : f (x + p) = g 1 := by simp [g]
   have e2 : f x = g 0 := by simp [g]
-  have e3 : ∀ t, inner (f' (x + t • p)) p = g' t := by simp []
+  have e3 : ∀ t, inner ℝ (f' (x + t • p)) p = g' t := by intro t; rfl
   rw [e1, e2]
   have : ∃ c ∈ Set.Ioo 0 1, g' c = (g 1 - g 0) / (1 - 0) := by
     apply exists_hasDerivAt_eq_slope g g' (by norm_num)
@@ -465,14 +468,14 @@ lemma expansion (hf : ∀ x : E, HasGradientAt f (f' x) x) (x p : E) :
   rw [e3 c]; simp [h2]
 
 lemma general_expansion (x p : E) (hf : ∀ y ∈ Metric.closedBall x ‖p‖, HasGradientAt f (f' y) y) :
-    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner (f' (x + t • p)) p := by
+    ∃ t : ℝ, t > 0 ∧ t < 1 ∧ f (x + p) = f x + inner ℝ (f' (x + t • p)) p := by
   let g := fun r : ℝ ↦ f (x + r • p)
-  let g' := fun r : ℝ ↦ (inner (f' (x + r • p)) p : ℝ)
+  let g' := fun r : ℝ ↦ (inner ℝ (f' (x + r • p)) p : ℝ)
   have h1 : ∀ r ∈ Icc 0 1, HasDerivAt g (g' r) r := by
     let h := fun r : ℝ ↦ x + r • p
     have : g = f ∘ h := by rfl
     rw [this]; intro r hr
-    have : inner (f' (x + r • p)) p = toDual ℝ E (f' (x + r • p)) p := rfl
+    have : inner ℝ (f' (x + r • p)) p = toDual ℝ E (f' (x + r • p)) p := rfl
     simp [g']; rw [this]; apply HasFDerivAt.comp_hasDerivAt
     · apply hasGradientAt_iff_hasFDerivAt.mp
       have : x + r • p ∈ Metric.closedBall x ‖p‖ := by
@@ -486,7 +489,7 @@ lemma general_expansion (x p : E) (hf : ∀ y ∈ Metric.closedBall x ‖p‖, H
       rw [one_smul] at this; exact this
   have e1 : f (x + p) = g 1 := by simp [g]
   have e2 : f x = g 0 := by simp [g]
-  have e3 : ∀ t, inner (f' (x + t • p)) p = g' t := by simp []
+  have e3 : ∀ t, inner ℝ (f' (x + t • p)) p = g' t := by intro t; rfl
   rw [e1, e2]
   have : ∃ c ∈ Set.Ioo 0 1, g' c = (g 1 - g 0) / (1 - 0) := by
     apply exists_hasDerivAt_eq_slope g g' (by norm_num)
@@ -501,15 +504,15 @@ lemma general_expansion (x p : E) (hf : ∀ y ∈ Metric.closedBall x ‖p‖, H
 
 theorem lagrange (hs : Convex ℝ s) (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) :
     ∀ x ∈ s, ∀ y ∈ s, ∃ c : ℝ, c ∈ Set.Ioo 0 1 ∧
-    inner (f' (x + c • (y - x))) (y - x) = f y - f x := by
+    inner ℝ (f' (x + c • (y - x))) (y - x) = f y - f x := by
   intro x xs y ys
   let g := fun t : ℝ ↦ f (x + t • (y - x))
-  let g' := fun t : ℝ ↦ (inner (f' (x + t • (y - x))) (y - x) : ℝ)
+  let g' := fun t : ℝ ↦ (inner ℝ (f' (x + t • (y - x))) (y - x) : ℝ)
   have h1 : ∀ r ∈ Icc 0 1 , HasDerivAt g (g' r) r := by
     let h := fun r : ℝ ↦ (x + r • (y - x))
     have : g = f ∘ h := rfl
     rw [this]; intro t ht
-    have : inner (f' (x + t • (y - x))) (y - x) = toDual ℝ E (f' (x + t • (y - x))) (y - x) := rfl
+    have : inner ℝ (f' (x + t • (y - x))) (y - x) = toDual ℝ E (f' (x + t • (y - x))) (y - x) := rfl
     simp [g']; rw [this]; apply HasFDerivAt.comp_hasDerivAt
     · apply hasGradientAt_iff_hasFDerivAt.mp
       have : x + t • (y - x) ∈ s := by
@@ -546,21 +549,26 @@ variable {x : E} {y : F} {z : WithLp 2 (E × F)}
 
 open Set Bornology Filter BigOperators Topology
 
-lemma fst_norm_le_prod_L2 (z : WithLp 2 (E × F)) : ‖z.1‖ ≤ ‖z‖ := by
-  have h : ‖z.1‖ ^ 2 ≤ ‖z‖ ^ 2 := by linarith [WithLp.prod_norm_sq_eq_of_L2 z, sq_nonneg ‖z.2‖]
+instance instCoeProdWithLpL2 : CoeTC (E × F) (WithLp 2 (E × F)) where
+  coe := WithLp.toLp 2
+
+lemma fst_norm_le_prod_L2 (z : WithLp 2 (E × F)) : ‖z.fst‖ ≤ ‖z‖ := by
+  have h : ‖z.fst‖ ^ 2 ≤ ‖z‖ ^ 2 := by
+    linarith [WithLp.prod_norm_sq_eq_of_L2 z, sq_nonneg ‖z.snd‖]
   apply nonneg_le_nonneg_of_sq_le_sq (norm_nonneg _)
   rwa [← pow_two, ← pow_two]
 
-lemma snd_norm_le_prod_L2 (z : WithLp 2 (E × F)) : ‖z.2‖ ≤ ‖z‖ := by
-  have h : ‖z.2‖ ^ 2 ≤ ‖z‖ ^ 2 := by linarith [WithLp.prod_norm_sq_eq_of_L2 z, sq_nonneg ‖z.1‖]
+lemma snd_norm_le_prod_L2 (z : WithLp 2 (E × F)) : ‖z.snd‖ ≤ ‖z‖ := by
+  have h : ‖z.snd‖ ^ 2 ≤ ‖z‖ ^ 2 := by
+    linarith [WithLp.prod_norm_sq_eq_of_L2 z, sq_nonneg ‖z.fst‖]
   apply nonneg_le_nonneg_of_sq_le_sq (norm_nonneg _)
   rwa [← pow_two, ← pow_two]
 
-lemma prod_norm_le_block_sum_L2 (z : WithLp 2 (E × F)) : ‖z‖ ≤ ‖z.1‖ + ‖z.2‖ := by
-  have : ‖z‖ ^ 2 ≤ (‖z.1‖ + ‖z.2‖) ^ 2:= by
+lemma prod_norm_le_block_sum_L2 (z : WithLp 2 (E × F)) : ‖z‖ ≤ ‖z.fst‖ + ‖z.snd‖ := by
+  have : ‖z‖ ^ 2 ≤ (‖z.fst‖ + ‖z.snd‖) ^ 2 := by
     simp [WithLp.prod_norm_sq_eq_of_L2, add_sq]
     positivity
-  apply nonneg_le_nonneg_of_sq_le_sq (Left.add_nonneg (norm_nonneg z.1) (norm_nonneg z.2))
+  apply nonneg_le_nonneg_of_sq_le_sq (Left.add_nonneg (norm_nonneg z.fst) (norm_nonneg z.snd))
   rwa [← pow_two, ← pow_two]
 
 lemma norm_prod_right_zero (x : E) :
@@ -590,17 +598,21 @@ instance instNormedSpaceProdL2 : NormedSpace ℝ (WithLp 2 (E × F)) where
     exact norm_smul_le a b
 
 instance instIsBoundedLinearMapL2equiv :
-    @IsBoundedLinearMap ℝ _ (E × F) _ _ (WithLp 2 (E × F)) _ _ id where
-  map_add := fun x ↦ congrFun rfl
-  map_smul := fun c ↦ congrFun rfl
+    IsBoundedLinearMap ℝ (WithLp.toLp 2 : E × F → WithLp 2 (E × F)) where
+  map_add := by intro x y; simp
+  map_smul := by intro c z; simp
   bound := by
     use 2
     constructor
     · norm_num
     · intro z
+      have h := prod_norm_le_block_sum_L2 (WithLp.toLp 2 z)
       rw [Prod.norm_def]
-      have h := prod_norm_le_block_sum_L2 z
-      simp only [id_eq]
-      linarith [h, le_max_left ‖z.1‖ ‖z.2‖, le_max_right ‖z.1‖ ‖z.2‖]
+      calc
+        ‖WithLp.toLp 2 z‖ ≤ ‖(WithLp.toLp 2 z).fst‖ + ‖(WithLp.toLp 2 z).snd‖ := h
+        _ = ‖z.fst‖ + ‖z.snd‖ := by simp
+        _ ≤ max ‖z.fst‖ ‖z.snd‖ + max ‖z.fst‖ ‖z.snd‖ :=
+          add_le_add (le_max_left _ _) (le_max_right _ _)
+        _ = 2 * max ‖z.fst‖ ‖z.snd‖ := by ring
 
 end ProdLp_diff

@@ -734,7 +734,7 @@ lemma comap1 {x : EuclideanSpace ℝ (Fin n)} {m : ℕ}
     have zin' : z ∈ Metric.ball 0 a := by
       simp; calc
         ‖z‖ ≤ c * ‖Mx z‖ := antil
-        _ < c * (a / c) := by rw [mul_lt_mul_left]; linarith [zin]; simp [hc']
+        _ < c * (a / c) := by exact mul_lt_mul_of_pos_left zin hc'
         _ = a := by field_simp
     exact ha zin'
 
@@ -745,14 +745,21 @@ lemma comap2 (hv : v ≠ 0):
   rw [Metric.mem_nhds_iff] at smem; rcases smem with ⟨a, apos, ha⟩
   let μ := a / (a + ‖v‖)
   have eq : μ * ‖v‖ = (1 - μ) * a := by
-    field_simp [μ]; rw [mul_comm]
+    have hden : a + ‖v‖ ≠ 0 := by linarith [apos, norm_nonneg v]
+    change (a / (a + ‖v‖)) * ‖v‖ = (1 - a / (a + ‖v‖)) * a
+    field_simp [hden]
+    ring
   have vpos : 0 < ‖v‖ := by
     refine lt_of_le_of_ne (norm_nonneg v) ?_; symm; simp [hv]
   have μle : 0 < 1 - μ := by
-    field_simp [μ, hv]
-    apply add_pos ?_ vpos; linarith
+    have hden : 0 < a + ‖v‖ := by linarith [apos, norm_nonneg v]
+    have hμ : μ < 1 := by
+      change a / (a + ‖v‖) < 1
+      exact (div_lt_one hden).2 (by linarith [vpos])
+    linarith
   have μpos : 0 < μ := by
-    field_simp [μ]; apply add_pos_of_pos_of_nonneg _ (norm_nonneg v); linarith
+    have hden : 0 < a + ‖v‖ := by linarith [apos, norm_nonneg v]
+    simpa [μ] using (div_pos apos hden)
   let r := min μ ‖v‖
   use Metric.ball 0 r; constructor
   · apply Metric.ball_mem_nhds; simp [r]; exact ⟨μpos, hv⟩
@@ -761,16 +768,21 @@ lemma comap2 (hv : v ≠ 0):
       by_contra hz; simp [hz] at zin; simp [r] at zin
     simp [ze] at zin; rw [norm_smul] at zin; field_simp at zin
     have : 0 < ‖z‖ := by refine lt_of_le_of_ne (norm_nonneg z) ?_; symm; simp [ze]
-    rw [div_lt_iff₀ this] at zin
+    have zin' : ‖z - v‖ / ‖z‖ < r := by
+      simpa [div_eq_mul_inv, Real.norm_eq_abs, abs_of_pos (one_div_pos.mpr this), mul_comm] using zin
+    have zin : ‖z - v‖ < r * ‖z‖ := (div_lt_iff₀ this).1 zin'
     have ieq : ‖z - v‖ < μ * ‖z - v‖ + (1 - μ) * a := by
       calc
         _ < r * ‖z‖ := zin
-        _ ≤ μ * ‖z‖ := by rw [mul_le_mul_right this]; simp [r]
+        _ ≤ μ * ‖z‖ := by
+          exact mul_le_mul_of_nonneg_right (by simp [r]) (norm_nonneg z)
         _ ≤ μ * (‖z - v‖ + ‖v‖) := by
-          rw [mul_le_mul_left μpos, add_comm]; apply norm_le_norm_add_norm_sub'
-        _ ≤ μ * ‖z - v‖ + (1 - μ) * a := by rw [mul_add]; apply add_le_add_left; rw [eq]
+          exact mul_le_mul_of_nonneg_left (by simpa [add_comm] using norm_le_norm_add_norm_sub' z v)
+            (le_of_lt μpos)
+        _ ≤ μ * ‖z - v‖ + (1 - μ) * a := by linarith [eq]
     rw [← sub_lt_iff_lt_add'] at ieq; nth_rw 1 [← one_mul (‖z - v‖)] at ieq
-    rw [← sub_mul, mul_lt_mul_left μle] at ieq
+    have ieq' : (1 - μ) * ‖z - v‖ < (1 - μ) * a := by linarith [ieq]
+    have ieq : ‖z - v‖ < a := lt_of_mul_lt_mul_left ieq' (le_of_lt μle)
     apply ha; simp; rw [dist_eq_norm]; simp [ieq]
 
 lemma LICQ_tendsto {x : EuclideanSpace ℝ (Fin n)} {m N : ℕ}
@@ -825,7 +837,11 @@ lemma LICQ_tendsto {x : EuclideanSpace ℝ (Fin n)} {m N : ℕ}
     have neq : ‖(i : ℝ) • (d i - x)‖ ≠ 0 := by
       rw [norm_smul]; apply mul_ne_zero; simp; linarith [Nat.lt_of_add_one_le igeN.2]
       specialize dne i igeN.2; simp; apply sub_ne_zero_of_ne dne
-    field_simp [deriv', φ, neq]; apply eq_lemma neq
+    have hne : ¬(i = 0 ∨ d i - x = 0) := by
+      intro h; rcases h with hi | hz
+      · exact neq (by simp [hi])
+      · exact neq (by simp [hz])
+    simpa [deriv', φ, neq, hne] using (eq_lemma (y := d i - x) (z := v) neq)
   obtain lim' := Filter.Tendsto.congr' eq5 lim
   refine Filter.Tendsto.of_tendsto_comp lim' ?_
   simp only [φ]; exact comap2 vne0

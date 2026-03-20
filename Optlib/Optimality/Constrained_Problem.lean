@@ -612,7 +612,7 @@ lemma LICQ_strictfderiv_Ax_elem {x : EuclideanSpace ℝ (Fin n)}
     (gradceq : gradc = fun z ↦ (fun i : (p.active_set x) ↦ if i.1 ∈ τ then
       gradient (p.equality_constraints i) z else gradient (p.inequality_constraints i) z))
     (A : EuclideanSpace ℝ (Fin n) → Matrix (p.active_set x) (Fin n) ℝ)
-    (Aeq : A = fun z ↦ (fun i ↦ gradc z i))
+    (Aeq : A = fun z ↦ (fun i j ↦ gradc z i j))
     (Jz : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (p.active_set x))
     (Jzeq : Jz = fun z ↦ (LinearMap.toContinuousLinearMap (toEuclideanLin (A z))))
     (conte : ∀ i ∈ τ, ContDiffAt ℝ (1 : ℕ) (equality_constraints p i) x)
@@ -623,15 +623,20 @@ lemma LICQ_strictfderiv_Ax_elem {x : EuclideanSpace ℝ (Fin n)}
   rw [eventually_iff, Metric.mem_nhds_iff] at h; rcases h with ⟨ε, _, _⟩
   intro i; by_cases hi : i.1 ∈ τ
   · rw [ceq, Jzeq, Aeq]; simp [hi]
-    rw [HasStrictFDerivAt];
+    rw [hasStrictFDerivAt_iff_isLittleO]
     have eq : (fun p_1 : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) ↦
         p.equality_constraints i.1 p_1.1 - p.equality_constraints i.1 p_1.2 -
-        ((EuclideanSpace.proj i).comp (LinearMap.toContinuousLinearMap (toEuclideanLin fun i ↦ gradc x i)))
+        ((EuclideanSpace.proj i).comp
+          (LinearMap.toContinuousLinearMap (toEuclideanLin fun i j ↦ (gradc x i).ofLp j)))
         (p_1.1 - p_1.2)) = (fun p_1 : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) ↦
         p.equality_constraints i.1 p_1.1 - p.equality_constraints i.1 p_1.2 -
-        inner (gradient (p.equality_constraints ↑i) x) (p_1.1 - p_1.2) ):= by
-      ext q; rw [inner_sub_right, gradceq]; simp [toEuclideanLin_apply, mulVec, dotProduct, hi]
-      rw [← Finset.sum_sub_distrib]; apply Finset.sum_congr; rfl; exact fun _ _ ↦ by ring_nf
+        inner ℝ (gradient (p.equality_constraints ↑i) x) (p_1.1 - p_1.2) ):= by
+      ext q; rw [inner_sub_right, gradceq]
+      simp [toLpLin_apply, mulVec, dotProduct, hi]
+      rw [← inner_sub_right]
+      simpa [dotProduct, mul_comm] using
+        (EuclideanSpace.inner_eq_star_dotProduct (x := gradient (p.equality_constraints ↑i) x)
+          (y := q.1 - q.2)).symm
     rw [eq]
     specialize conte i hi
     exact StrictFderivAt_of_FderivAt_of_ContinuousAt conte
@@ -642,15 +647,20 @@ lemma LICQ_strictfderiv_Ax_elem {x : EuclideanSpace ℝ (Fin n)}
       rw [Finset.mem_filter] at hi2
       exact hi2.1
     rw [ceq, Jzeq, Aeq]; simp [hi]
-    rw [HasStrictFDerivAt];
+    rw [hasStrictFDerivAt_iff_isLittleO]
     have eq : (fun p_1 : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) ↦
         p.inequality_constraints i.1 p_1.1 - p.inequality_constraints i.1 p_1.2 -
-        ((EuclideanSpace.proj i).comp (LinearMap.toContinuousLinearMap (toEuclideanLin fun i ↦ gradc x i)))
+        ((EuclideanSpace.proj i).comp
+          (LinearMap.toContinuousLinearMap (toEuclideanLin fun i j ↦ (gradc x i).ofLp j)))
         (p_1.1 - p_1.2)) = (fun p_1 : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) ↦
         p.inequality_constraints i.1 p_1.1 - p.inequality_constraints i.1 p_1.2 -
         ⟪gradient (p.inequality_constraints ↑i) x, p_1.1 - p_1.2⟫_ℝ ):= by
-      ext q; rw [inner_sub_right, gradceq]; simp [toEuclideanLin_apply, mulVec, dotProduct, hi]
-      rw [← Finset.sum_sub_distrib]; apply Finset.sum_congr; rfl; exact fun _ _ ↦ by ring_nf
+      ext q; rw [inner_sub_right, gradceq]
+      simp [toLpLin_apply, mulVec, dotProduct, hi]
+      rw [← inner_sub_right]
+      simpa [dotProduct, mul_comm] using
+        (EuclideanSpace.inner_eq_star_dotProduct (x := gradient (p.inequality_constraints ↑i) x)
+          (y := q.1 - q.2)).symm
     rw [eq]
     specialize conti i hi'
     exact StrictFderivAt_of_FderivAt_of_ContinuousAt conti
@@ -660,12 +670,12 @@ lemma LICQ_implicit_f {x : EuclideanSpace ℝ (Fin n)} {m : ℕ} (v : EuclideanS
     {Rz : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (p.active_set x) × (Fin (n - m) → ℝ)}
     {Rt : ℝ → EuclideanSpace ℝ (p.active_set x) × (Fin (n - m) → ℝ)}
     (Rteq : Rt = fun t ↦ t • Mx v) (Rxeq0 : Rz x = 0)
-    (Rzgrad : HasStrictFDerivAt Rz Mx x) (Mxsurj : LinearMap.range Mx = ⊤) :
+    (Rzgrad : HasStrictFDerivAt Rz Mx x) (Mxsurj : Mx.range = ⊤) :
     ∃ (N : ℕ) (d : ℕ → EuclideanSpace ℝ (Fin n)), (∀ m ≥ N, Rz (d m) = Rt (1 / m)) ∧
       (Filter.Tendsto d atTop (𝓝 x)) := by
   let g := HasStrictFDerivAt.implicitFunction Rz Mx Rzgrad Mxsurj
-  have hfg : ∀ᶠ (p : (EuclideanSpace ℝ (p.active_set x) × (Fin (n - m) → ℝ)) × (LinearMap.ker Mx)) in
-      𝓝 (Rz x, (0 : LinearMap.ker Mx)), Rz (g p.1 p.2) = p.1 := by
+  have hfg : ∀ᶠ (p : (EuclideanSpace ℝ (p.active_set x) × (Fin (n - m) → ℝ)) × Mx.ker) in
+      𝓝 (Rz x, (0 : Mx.ker)), Rz (g p.1 p.2) = p.1 := by
     simp only [g]; apply HasStrictFDerivAt.map_implicitFunction_eq Rzgrad Mxsurj
   rw [Rxeq0] at hfg
   rw [eventually_iff, Metric.mem_nhds_iff] at hfg
@@ -688,7 +698,7 @@ lemma LICQ_implicit_f {x : EuclideanSpace ℝ (Fin n)} {m : ℕ} (v : EuclideanS
     simp at Rtmin; simp [Rtmin]
   · simp only [g]
     apply HasStrictFDerivAt.tendsto_implicitFunction Rzgrad Mxsurj
-    · rw [Rxeq0]; rw [NormedAddCommGroup.tendsto_nhds_zero]; simp; apply Rtleε
+    · rw [Rxeq0]; rw [NormedAddGroup.tendsto_nhds_zero]; simp; apply Rtleε
     · simp
 
 lemma eq_lemma {y z : EuclideanSpace ℝ (Fin n)} {n : ℕ} (h : ‖(n : ℝ) • y‖ ≠ 0) :
@@ -697,7 +707,10 @@ lemma eq_lemma {y z : EuclideanSpace ℝ (Fin n)} {n : ℕ} (h : ‖(n : ℝ) �
   have eq : z = (n : ℝ) • (1 / n : ℝ) • z := by
     rw [smul_smul]; field_simp; rw [div_self, one_smul]; simp [h]
   nth_rw 2 [eq]
-  rw [← smul_sub, smul_smul, norm_smul]; field_simp; rw [← div_div, div_self]; simp [h]
+  rw [← smul_sub, smul_smul, norm_smul]; field_simp
+  have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast h.1
+  have hcoef : (n : ℝ) / (‖y‖ * n) = ‖y‖⁻¹ := by field_simp [hn0]
+  simp [hcoef]
 
 lemma comap1 {x : EuclideanSpace ℝ (Fin n)} {m : ℕ}
     {Mx : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (p.active_set x) × (Fin (n - m) → ℝ)}

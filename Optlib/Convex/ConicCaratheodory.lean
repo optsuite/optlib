@@ -80,7 +80,8 @@ private lemma mem_conic_erase (s : Finset ℕ) (V : ℕ → (EuclideanSpace ℝ 
         by_cases hi : i ∈ s
         · linarith [αpos ⟨i, hi⟩]
         · simp [α, hi, β]; linarith [tin i]
-      · have hαj₀ : α j₀ = 0 := by field_simp [α, β]
+      · have hαj₀ : α j₀ = 0 := by
+          simp [α, β, j₀.prop, ne_of_gt kj₀pos]
         rw [hαj₀, ← xdecompose]; simp [α]
         have aux : (Finset.sum s fun x ↦ (t x - β x / k j₀) • V x) =
             (Finset.sum s fun x ↦ t x • V x) - (1 / k j₀) • (Finset.sum s fun x ↦ β x • V x) := by
@@ -126,8 +127,10 @@ theorem conic_Caratheodory (s : Finset ℕ) (V : ℕ → (EuclideanSpace ℝ (Fi
       simp [τ']; apply subset_trans _ τin.1
       apply Finset.erase_subset
     specialize τcardmin τ'subs xinerase
-    simp [to_card] at τcardmin
-    absurd τcardmin; simp
+    simp [to_card, Finset.card_erase_of_mem y.prop] at τcardmin
+    have hpos : 0 < τ.card := Finset.card_pos.2 ⟨y, y.prop⟩
+    rw [← Nat.succ_pred_eq_of_pos hpos] at τcardmin
+    exact Nat.not_succ_le_self _ τcardmin
   · intro σ σsubs; specialize τcardmin σ
     simp [idx, to_card] at τcardmin
     apply τcardmin σsubs

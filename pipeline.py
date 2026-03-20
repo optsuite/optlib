@@ -5,12 +5,14 @@ from collections import deque
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import datetime
 from pathlib import Path
+import re
 
 DEPENDCY_FILE = "Dependcy.md"
 PROMPT_FILE = "PROMPT.md"
 PLACEHOLDER = "__________________"
 MAX_RETRIES = 3
 WORKERS = 8
+FORBIDDEN_PATTERN = re.compile(r"\b(?:axiom|admit)\b")
 
 GREEN = "\033[32m"
 RED = "\033[31m"
@@ -128,14 +130,45 @@ def run_codex(prompt, log_path):
 def run_lean(path):
     result = subprocess.run(
         ["lake", "env", "lean", path],
-        capture_output=True,
-        text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
-    if result.stdout:
-        print(result.stdout)
-    if result.stderr:
-        print(result.stderr, file=sys.stderr)
     return result.returncode == 0
+
+
+def has_forbidden_terms(path):
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+    return bool(FORBIDDEN_PATTERN.search(content))
+
+
+def git_restore(path):
+    with git_lock:
+        result = subprocess.run(
+            ["git", "restore", "--", path],
+            capture_output=True,
+            text=True,
+        )
+    if result.returncode != 0:
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+        print(f"{TAG} git restore {path} {FAIL}.", file=sys.stderr)
+        return False
+    print(f"{TAG} {path} contains forbidden terms, restored with git restore.")
+    return True
+
+
+def validate_no_forbidden_terms(path):
+    if not has_forbidden_terms(path):
+        return True
+    print(
+        f"{TAG} {path} compile {SUCCESS} but found forbidden term(s): axiom/admit.",
+        file=sys.stderr,
+    )
+    git_restore(path)
+    return False
 
 
 def git_commit(path):
@@ -200,8 +233,14 @@ def commit_and_push(path):
 def process_path(path, prompt_template):
     print(f"\n{TAG} {path} — pre-check compilation")
     if run_lean(path):
-        print(f"{TAG} {path} pre-check {SUCCESS}, committing and pushing...")
-        return commit_and_push(path)
+        if not validate_no_forbidden_terms(path):
+            print(
+                f"{TAG} {path} forbidden terms check {FAIL}, retrying with codex.",
+                file=sys.stderr,
+            )
+        else:
+            print(f"{TAG} {path} pre-check {SUCCESS}, committing and pushing...")
+            return commit_and_push(path)
 
     for attempt in range(1, MAX_RETRIES + 1):
         print(f"\n{TAG} {path} — attempt {attempt}/{MAX_RETRIES}")
@@ -213,6 +252,12 @@ def process_path(path, prompt_template):
             continue
 
         if run_lean(path):
+            if not validate_no_forbidden_terms(path):
+                print(
+                    f"{TAG} {path} forbidden terms check {FAIL}.",
+                    file=sys.stderr,
+                )
+                continue
             print(f"{TAG} {path} compile {SUCCESS}, committing and pushing...")
             return commit_and_push(path)
         else:

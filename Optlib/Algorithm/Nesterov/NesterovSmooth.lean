@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Ziyu Wang, Zaiwen Wen
 -/
 import Optlib.Function.Lsmooth
+import Mathlib.Tactic
 
 /-!
 # NesterovSmooth
@@ -21,7 +22,7 @@ section
 
 open Set
 
-class Nesterov (f : E → ℝ) (f' : E → E) (γ : ℕ+ → ℝ) (initial_point : E) :=
+class Nesterov (f : E → ℝ) (f' : E → E) (γ : ℕ+ → ℝ) (initial_point : E) where
   (x : ℕ → E) (y : ℕ+ → E) (v : ℕ → E) (l : NNReal)
   (diff : ∀ x₁, HasGradientAt f (f' x₁) x₁)
   (update1 : ∀ (k : ℕ+), y k = (1 - γ k) • x (k - 1) + γ k • v (k - 1))
@@ -36,36 +37,35 @@ lemma one_iter (hfun : ConvexOn ℝ Set.univ f) (hg : ∀ (k : ℕ+), γ k = 2 /
     ∀ (k : ℕ+), f (alg.x k) - f xm - (1 - γ k) * (f (alg.x (k - 1)) - f xm) ≤
     alg.l * (γ k) ^ 2 / 2 * (‖alg.v (k - 1) - xm‖ ^ 2 - ‖alg.v k - xm‖ ^ 2)  := by
   have h2 : ∀ (k : ℕ+), ∀ x' : E , f (alg.x k) - f x' ≤ alg.l *
-      inner (alg.x k - alg.y k) (x' - alg.x k) + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
+      inner ℝ (alg.x k - alg.y k) (x' - alg.x k) + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
     intro k x'
     rw [sub_le_iff_le_add', ← add_assoc]
     have : (f' (alg.y k)) = alg.l.1 • (alg.y k - alg.x k) := by
       have update2 : ∀ (k : ℕ+), alg.x k = alg.y k - (1 / alg.l.1) • (f' (alg.y k)) := alg.update2
       specialize update2 k
-      have : alg.l > 0 := alg.hl
       rw [eq_sub_iff_add_eq', ← eq_sub_iff_add_eq] at update2
       rw [← update2, smul_smul]
-      field_simp
-    have t1 : f (alg.y k) + inner (f' (alg.y k)) (x' - alg.y k) ≤ f x' := by
+      simp [ne_of_gt alg.hl]
+    have t1 : f (alg.y k) + inner ℝ (f' (alg.y k)) (x' - alg.y k) ≤ f x' := by
       exact Convex_first_order_condition' (alg.diff (alg.y k)) hfun (by trivial) x' (by trivial)
     calc
-      _ ≤ f (alg.y k) + inner (f' (alg.y k)) (alg.x k - alg.y k) +
+      _ ≤ f (alg.y k) + inner ℝ (f' (alg.y k)) (alg.x k - alg.y k) +
             alg.l.1 / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
           exact lipschitz_continuos_upper_bound' alg.diff alg.smooth (alg.y k) (alg.x k)
-        _ = f (alg.y k) + inner (f' (alg.y k)) (x' - alg.y k + (alg.x k - x')) +
+        _ = f (alg.y k) + inner ℝ (f' (alg.y k)) (x' - alg.y k + (alg.x k - x')) +
             alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
           rw [add_comm (x' - alg.y k), add_sub (alg.x k - x'), sub_add, sub_self, sub_zero]; simp
-        _ = f (alg.y k) + inner (f' (alg.y k)) (x' - alg.y k) + inner  (f' (alg.y k)) (alg.x k - x')
+        _ = f (alg.y k) + inner ℝ (f' (alg.y k)) (x' - alg.y k) + inner ℝ (f' (alg.y k)) (alg.x k - x')
             + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by rw [inner_add_right, ← add_assoc]
-        _ ≤ f x' + inner  (f' (alg.y k)) (alg.x k - x') + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
+        _ ≤ f x' + inner ℝ (f' (alg.y k)) (alg.x k - x') + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
           rw [add_le_add_iff_right, add_le_add_iff_right]; exact t1
-        _ = f x' + inner (alg.l.1 • (alg.y k - alg.x k)) (alg.x k - x') +
+        _ = f x' + inner ℝ (alg.l.1 • (alg.y k - alg.x k)) (alg.x k - x') +
           alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by rw [this]
-        _ = f x' + alg.l * inner (alg.x k - alg.y k) (x' - alg.x k) +
+        _ = f x' + alg.l * inner ℝ (alg.x k - alg.y k) (x' - alg.x k) +
             alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
           rw [real_inner_smul_left, ← inner_neg_neg, neg_sub, neg_sub]; simp
   have h3 : ∀ (k : ℕ+), f (alg.x k) - f xm - (1 - γ k) * (f (alg.x (k - 1)) - f xm) ≤
-      alg.l * (inner (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1)) + ((γ k) • xm) -
+      alg.l * (inner ℝ (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1)) + ((γ k) • xm) -
       alg.x k)) + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
     intro k
     have : f (alg.x k) - f xm - (1 - γ k) * (f (alg.x (k - 1)) - f xm) = γ k *
@@ -84,23 +84,23 @@ lemma one_iter (hfun : ConvexOn ℝ Set.univ f) (hg : ∀ (k : ℕ+), γ k = 2 /
       rw [smul_sub, smul_sub, add_sub, ← add_sub_right_comm, sub_sub, ← add_smul]
       ring_nf; rw [one_smul, add_comm]
     calc
-      _ ≤ γ k * (alg.l * (inner (alg.x k - alg.y k) (xm - alg.x k)) + alg.l / 2 *
-            ‖alg.x k - alg.y k‖ ^ 2) + (1 - γ k) * (alg.l * (inner (alg.x k - alg.y k)
+      _ ≤ γ k * (alg.l * (inner ℝ (alg.x k - alg.y k) (xm - alg.x k)) + alg.l / 2 *
+            ‖alg.x k - alg.y k‖ ^ 2) + (1 - γ k) * (alg.l * (inner ℝ (alg.x k - alg.y k)
             (alg.x (k - 1) - alg.x k)) + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2) := by
           apply add_le_add
           · exact mul_le_mul_of_nonneg_left (h2 k xm) hz
           · exact mul_le_mul_of_nonneg_left (h2 k (alg.x (k - 1))) (by linarith)
-      _ = alg.l * (γ k * (inner (alg.x k - alg.y k) (xm - alg.x k))) + alg.l * ((1 - γ k) *
-            (inner (alg.x k - alg.y k) (alg.x (k - 1) - alg.x k))) +
+      _ = alg.l * (γ k * (inner ℝ (alg.x k - alg.y k) (xm - alg.x k))) + alg.l * ((1 - γ k) *
+            (inner ℝ (alg.x k - alg.y k) (alg.x (k - 1) - alg.x k))) +
             alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by ring_nf
-      _ = alg.l * inner (alg.x k - alg.y k) (γ k • (xm - alg.x k)) + alg.l *
-            (inner (alg.x k - alg.y k) ((1 - γ k) •
+      _ = alg.l * inner ℝ (alg.x k - alg.y k) (γ k • (xm - alg.x k)) + alg.l *
+            (inner ℝ (alg.x k - alg.y k) ((1 - γ k) •
             (alg.x (k - 1) - alg.x k))) +  alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
             rw [← inner_smul_right _ _ (γ k), ← inner_smul_right _ _ (1 - γ k)]
-      _ = alg.l * inner (alg.x k - alg.y k) (γ k • (xm - alg.x k) + (1 - γ k) •
+      _ = alg.l * inner ℝ (alg.x k - alg.y k) (γ k • (xm - alg.x k) + (1 - γ k) •
             (alg.x (k - 1) - alg.x k)) + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
           rw [← mul_add, ← inner_add_right (alg.x k - alg.y k)]
-      _ = alg.l * inner (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1)) +
+      _ = alg.l * inner ℝ (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1)) +
             ((γ k) • xm)- alg.x k) + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by rw [this]
   intro k
   have hz : γ k ≥ (0 : ℝ) := by
@@ -134,30 +134,30 @@ lemma one_iter (hfun : ConvexOn ℝ Set.univ f) (hg : ∀ (k : ℕ+), γ k = 2 /
             left; rw [mul_inv_cancel₀ (by linarith), one_smul, sub_smul, one_smul, add_comm, sub_add]
   have this2 : alg.l / 2 * (‖alg.y k - (1 - γ k) • (alg.x (k - 1)) - γ k • xm‖ ^ 2 -
       ‖alg.x k - (1 - γ k) • alg.x (k - 1) - γ k • xm‖ ^ 2) = alg.l *
-      (inner (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1)) + ((γ k) • xm)- alg.x k))
+      (inner ℝ (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1)) + ((γ k) • xm)- alg.x k))
       + alg.l / 2 * ‖alg.x k - alg.y k‖ ^ 2 := by
     rw [sub_sub, sub_sub, norm_sub_sq_real, norm_sub_sq_real, norm_sub_sq_real]
     calc
-      _ = alg.l / 2 * (‖alg.y k‖ ^ 2 - ‖alg.x k‖ ^ 2) + alg.l / 2 * 2 * (inner (alg.x k)
-            ((1 - γ k) • alg.x (↑k - 1) + γ k • xm) - inner (alg.y k)
+      _ = alg.l / 2 * (‖alg.y k‖ ^ 2 - ‖alg.x k‖ ^ 2) + alg.l / 2 * 2 * (inner ℝ (alg.x k)
+            ((1 - γ k) • alg.x (↑k - 1) + γ k • xm) - inner ℝ (alg.y k)
             ((1 - γ k) • alg.x (↑k - 1) + γ k • xm)) := by ring_nf
-      _ = alg.l / 2 * (‖alg.y k‖ ^ 2 - ‖alg.x k‖ ^ 2) + alg.l * inner (alg.x k - alg.y k)
+      _ = alg.l / 2 * (‖alg.y k‖ ^ 2 - ‖alg.x k‖ ^ 2) + alg.l * inner ℝ (alg.x k - alg.y k)
             ((1 - γ k) • alg.x (↑k - 1) + γ k • xm)  := by rw [← inner_sub_left]; ring_nf
-      _ = alg.l / 2 * (‖alg.y k‖ ^ 2 - ‖alg.x k‖ ^ 2) + alg.l * inner (alg.x k - alg.y k)
+      _ = alg.l / 2 * (‖alg.y k‖ ^ 2 - ‖alg.x k‖ ^ 2) + alg.l * inner ℝ (alg.x k - alg.y k)
             ((1 - γ k) • (alg.x (k - 1)) + ((γ k) • xm) - alg.x k + alg.x k) := by
           rw [sub_add, sub_self, sub_zero]
-      _ = alg.l / 2 * (‖alg.y k‖ ^ 2 - ‖alg.x k‖ ^ 2) + alg.l * inner (alg.x k - alg.y k)
-            (alg.x k) + alg.l * (inner (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1))
+      _ = alg.l / 2 * (‖alg.y k‖ ^ 2 - ‖alg.x k‖ ^ 2) + alg.l * inner ℝ (alg.x k - alg.y k)
+            (alg.x k) + alg.l * (inner ℝ (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1))
             + ((γ k) • xm) - alg.x k)) := by
           rw [inner_add_right, mul_add]; ring_nf
       _ = alg.l / 2 * (‖alg.y k‖ ^ 2 - ‖alg.x k‖ ^ 2) + alg.l * ‖alg.x k‖ ^ 2 -
-            alg.l * inner (alg.x k) (alg.y k) + alg.l * (inner (alg.x k - alg.y k) ((1 - γ k)
+            alg.l * inner ℝ (alg.x k) (alg.y k) + alg.l * (inner ℝ (alg.x k - alg.y k) ((1 - γ k)
             • (alg.x (k - 1)) + ((γ k) • xm) - alg.x k)) := by
           rw [inner_sub_left, mul_sub, mul_sub, real_inner_self_eq_norm_sq]
           rw [real_inner_comm, add_sub];
-      _ = alg.l * (inner (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1)) + ((γ k) • xm)
+      _ = alg.l * (inner ℝ (alg.x k - alg.y k) ((1 - γ k) • (alg.x (k - 1)) + ((γ k) • xm)
             - alg.x k)) + alg.l / 2 * (‖alg.x k‖ ^ 2 - 2 *
-            inner (alg.x k) (alg.y k) + ‖alg.y k‖ ^ 2) := by ring_nf
+            inner ℝ (alg.x k) (alg.y k) + ‖alg.y k‖ ^ 2) := by ring_nf
   rw [this1, this2]
   exact h3 k
 
@@ -176,18 +176,15 @@ theorem nesterov_algorithm_smooth (hfun: ConvexOn ℝ Set.univ f)
     specialize con k
     have : (γ k) ^ 2 > 0 := by
       rw [hg k]
-      simp only [Real.rpow_two, div_pow, gt_iff_lt]
-      apply div_pos (by linarith)
-      apply sq_pos_of_ne_zero
-      exact Nat.cast_add_one_ne_zero ↑k
-    rw [← div_le_div_right this, sub_div, mul_div_right_comm (1 - γ k)] at h4
+      positivity
+    rw [← div_le_div_iff_of_pos_right this, sub_div, mul_div_right_comm (1 - γ k)] at h4
     rw [← one_mul (f (alg.x k) - f xm), mul_div_right_comm 1] at h4
     rw [mul_div_right_comm (alg.l).1, mul_assoc, mul_comm (γ k ^ 2)] at h4
     rw [← mul_assoc, mul_div_assoc] at h4
     rw [div_self (by linarith), mul_one, mul_sub (alg.l.1 / 2)] at h4
     rw [tsub_le_iff_left, add_sub, le_sub_iff_add_le] at h4
     apply le_trans h4
-    simp only [Real.rpow_two, ge_iff_le, add_le_add_iff_right, gt_iff_lt, sub_pos, sub_neg]
+    simp only [add_le_add_iff_right]
     have : f xm ≤ f (alg.x (k - 1)):= min (by trivial)
     apply mul_le_mul_of_nonneg_right _ (by linarith)
     exact con
@@ -210,7 +207,7 @@ theorem nesterov_algorithm_smooth (hfun: ConvexOn ℝ Set.univ f)
     rw [alg.initial1, sub_self, zero_mul, sub_zero] at h4
     rw [alg.initial1, sub_self, zero_div, zero_mul, zero_add]
     simp
-    simp only [PNat.one_coe, Real.rpow_two, one_pow, mul_one, le_refl, tsub_eq_zero_of_le] at h4
+    simp only [PNat.one_coe, one_pow, mul_one, le_refl, tsub_eq_zero_of_le] at h4
     rw [← le_sub_iff_add_le, ← mul_sub]
     exact h4
   have h8 : ∀ (k : ℕ+), 1 / (γ k) ^ 2 * (f (alg.x k) - f xm) + alg.l / 2
@@ -226,16 +223,16 @@ theorem nesterov_algorithm_smooth (hfun: ConvexOn ℝ Set.univ f)
     have : alg.l > 0 := alg.hl
     apply mul_nonneg _ _
     · positivity
-    · simp only [Real.rpow_two, sq_nonneg]
+    · simp only [sq_nonneg]
   have h10 : alg.l / (2 : ℝ) * ‖x₀ - xm‖ ^ 2 / ((1 :ℝ) / (2 / (k + 1)) ^ 2)
       = 2 * alg.l / ((k + 1) ^ 2) * ‖x₀ - xm‖ ^ 2 := by
-    simp [Nat.cast_add_one_ne_zero ↑k]; field_simp; ring_nf
+    field_simp [Nat.cast_add_one_ne_zero ↑k]
   rw [hg k] at h9
   rw [← le_div_iff₀'] at h9
   · rw [h10] at h9
     exact h9
-  · simp only [Real.rpow_two, div_pow, one_div, inv_div]
+  · simp only [div_pow, one_div, inv_div]
     apply div_pos
     · apply sq_pos_of_ne_zero
       exact Nat.cast_add_one_ne_zero ↑k
-    · simp only [gt_iff_lt, zero_lt_two, pow_pos]
+    · simp only [zero_lt_two, pow_pos]

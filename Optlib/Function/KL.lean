@@ -31,8 +31,8 @@ lemma subdifferential_Graph' (f : E → ℝ) :
         use fun n => (u n, f (u n), v n)
         constructor
         · intro n; simp; exact (hv n).1
-        · apply Tendsto.prod_mk_nhds u_conv
-            (Tendsto.prod_mk_nhds fun_conv ((forall_and_right _ _).1 hv).2)
+        · exact Filter.Tendsto.prodMk_nhds u_conv
+            (Filter.Tendsto.prodMk_nhds fun_conv ((forall_and_right _ _).1 hv).2)
       · intro h
         simp [subdifferential_Graph, subdifferential]
         simp at h
@@ -68,7 +68,7 @@ theorem GraphOfSubgradientIsClosed {f : E → ℝ}
     exact this
   rw [nhds_prod_eq,Filter.tendsto_prod_iff'] at hconv;
   simp at hconv
-  exact Tendsto.prod_mk_nhds hconv.1 (Tendsto.prod_mk_nhds hf hconv.2)
+  exact Filter.Tendsto.prodMk_nhds hconv.1 (Filter.Tendsto.prodMk_nhds hf hconv.2)
 
 /- Definition of Φ_η, the family of desingularizing function -/
 def desingularizing_function (η : ℝ) := {φ : ℝ → ℝ | (ConcaveOn ℝ (Ico 0 η) φ) -- ∧ (∀ x ∈ Ioo 0 η, φ x > 0)
@@ -108,24 +108,26 @@ lemma desingularizing_function_is_nonneg (φ : ℝ → ℝ) (η : ℝ) (h : φ �
     obtain h_lag := exists_deriv_eq_slope φ hx₁ Cont_φ Diff_φ
     rcases h_lag with ⟨c, ⟨hc, hval⟩⟩
     use c, hc
-    field_simp [hval]
+    have hx0 : x - 0 ≠ 0 := by linarith
+    have hval' : deriv φ c * (x - 0) = φ x - φ 0 := (eq_div_iff hx0).1 hval
+    linarith
   choose y hy₁ hy₂ using hhh
-  simp [hy₂, h₂]; field_simp;
   rcases hy₁ with ⟨hy₁,hy₁'⟩
   have yleq: y < η := by linarith
-  exact h₅ y hy₁ yleq
+  have hyderiv : 0 < deriv φ y := h₅ y hy₁ yleq
+  nlinarith [hy₂, h₂, hyderiv, hx₁]
 
 -- Definition of KL property with specific desingularizing function
 def KL_point_with_reparameter (σ : E → ℝ) (u : E) (φ : ℝ → ℝ) : Prop :=
   ∃ η ∈ Ioi 0, ∃ s ∈ 𝓝 u, (φ ∈ desingularizing_function η) ∧  (∀ x ∈ s ∩
   {y ∈ active_domain σ | σ u < σ y ∧ σ y < σ u + η},
-  deriv φ (σ x - σ u) * (EMetric.infEdist 0 (subdifferential σ x)).toReal ≥ 1)
+  deriv φ (σ x - σ u) * (Metric.infEDist 0 (subdifferential σ x)).toReal ≥ 1)
 
 -- Definition of the KL property at one point
 def KL_point (f : E → ℝ) (u : E) : Prop :=
   ∃ η ∈ Ioi 0, ∃ s ∈ 𝓝 u, ∃ φ ∈ desingularizing_function η, ∀ x ∈ s ∩
   {y | f u < f y ∧ f y < f u + η},
-  (ENNReal.ofReal (deriv φ (f x - f u))) * (EMetric.infEdist 0 (subdifferential f x)) ≥ ENNReal.ofReal 1
+  (ENNReal.ofReal (deriv φ (f x - f u))) * (Metric.infEDist 0 (subdifferential f x)) ≥ ENNReal.ofReal 1
 
 -- Definition of the KL function
 def KL_function (f : E → ℝ) : Prop :=
@@ -139,7 +141,7 @@ def KL_function (f : E → ℝ) : Prop :=
 def KL_property_with_regularization (f : E → ℝ) (u' : E) (φ : ℝ → ℝ) : Prop :=
   ∃ η ∈ Ioi 0, ∃ s ∈ 𝓝 u', (φ ∈ desingularizing_function η) ∧
   (∀ x ∈ s ∩ {y ∈ active_domain f | f u' < f y ∧ f y < f u' + η},
-  (EMetric.infEdist 0 (subdifferential (λ u => φ (f u - f u')) x)).toReal ≥ 1)
+  (Metric.infEDist 0 (subdifferential (λ u => φ (f u - f u')) x)).toReal ≥ 1)
 
 -- deriv of function (fun t => c⁻¹ * t) is c⁻¹
 lemma deriv_of_const_mul_func (c : ℝ) (x : ℝ) : deriv (fun (t : ℝ) => c⁻¹ * t) x = c⁻¹ := by
@@ -165,10 +167,11 @@ lemma const_mul_special_concave : ∀ c > 0, (fun t => c⁻¹ * t) ∈ desingula
   have h₃: ContDiffOn ℝ 1 (fun t ↦ c⁻¹ * t) (Ioo 0 (c / 2)) := by
     rw [fun_smul_eq_mul]; apply ContDiff.contDiffOn; apply contDiff_const_smul
   have h₄: ContinuousAt (fun t ↦ c⁻¹ * t) 0 := by
-    rw [fun_smul_eq_mul]; apply (continuousAt_const_smul_iff₀ _).2
-    apply continuousAt_id; field_simp
+    simpa using (continuous_const.mul continuous_id).continuousAt
   have h₅: ∀ (x : ℝ), 0 < x → x < c / 2 → 0 < deriv (fun t ↦ c⁻¹ * t) x := by
-    intro x _ _; rw [deriv_of_const_mul_func]; field_simp; exact cpos
+    intro x _ _
+    rw [deriv_of_const_mul_func]
+    exact inv_pos.mpr cpos
   exact ⟨h₁, h₃, h₄, h₅⟩
 
 
@@ -195,23 +198,24 @@ lemma const_mul_edist_ge_one {c : ℝ} {ed : ENNReal} (hpos : c > 0)
     rw [hed']; refine ENNReal.mul_top ?h; simpa
   rw [this]; simp; push_neg at hed'
   calc
-    _ ≥ ENNReal.ofReal c⁻¹ * ENNReal.ofReal c := mul_le_mul_left' hed (ENNReal.ofReal c⁻¹)
+    _ ≥ ENNReal.ofReal c⁻¹ * ENNReal.ofReal c := by
+      exact mul_le_mul_of_nonneg_left hed (by exact bot_le)
     _ = ENNReal.ofReal 1 := by
       rw [← ENNReal.ofReal_mul]; field_simp; simp; exact le_of_lt hpos
 
 lemma edist_geq_const (h_noncrit : 0 ∉ subdifferential f x) :
   ∃ c > 0, ∀ u, ‖u - x‖ + ‖f u - f x‖ < c →
-  EMetric.infEdist 0 (subdifferential f u) ≥ ENNReal.ofReal c := by
+  Metric.infEDist 0 (subdifferential f u) ≥ ENNReal.ofReal c := by
     by_contra! hc
     have sqh: ∀ n : ℕ, ∃ u, ‖u - x‖ + ‖f u - f x‖ < 1 / (n + 1) ∧
-        (EMetric.infEdist 0 (subdifferential f u)) < ENNReal.ofReal (1 / (n + 1)) :=
+        (Metric.infEDist 0 (subdifferential f u)) < ENNReal.ofReal (1 / (n + 1)) :=
       fun n ↦ hc (1 / (n + 1)) (by simp; linarith)
     choose u hu using sqh
-    have inequ_fun : ∀ n, (EMetric.infEdist 0 (subdifferential f (u n))).toReal ≤ 1 / (n + 1) := by
+    have inequ_fun : ∀ n, (Metric.infEDist 0 (subdifferential f (u n))).toReal ≤ 1 / (n + 1) := by
       intro n
       apply (ENNReal.toReal_le_of_le_ofReal _ (le_of_lt (hu n).right))
       simp; linarith
-    have : Tendsto (fun n ↦ (EMetric.infEdist 0 (subdifferential f (u n))).toReal) atTop (𝓝 0) :=
+    have : Tendsto (fun n ↦ (Metric.infEDist 0 (subdifferential f (u n))).toReal) atTop (𝓝 0) :=
       squeeze_zero (by simp) inequ_fun tendsto_one_div_add_atTop_nhds_zero_nat
     have h_contra : 0 ∈ subdifferential f x := by
       have u_to_x : Tendsto u atTop (𝓝 x) := by
@@ -236,7 +240,7 @@ lemma edist_geq_const (h_noncrit : 0 ∉ subdifferential f x) :
         intro n
         rcases hu n with ⟨_,hu₂⟩
         have : ∃ vn ∈ subdifferential f (u n), edist 0 vn < 1 / (n + 1) := by
-          apply EMetric.infEdist_lt_iff.1
+          apply Metric.infEDist_lt_iff.1
           rw [← one_div_type_trans n]
           exact hu₂
         choose vn hvn using this
@@ -248,15 +252,15 @@ lemma edist_geq_const (h_noncrit : 0 ∉ subdifferential f x) :
         intro n
         exact (hv n).1
       have v_to_zero: Tendsto v atTop (𝓝 0) := by
-        rw [dist_zero_left] at hv
         have : Tendsto (fun n => ‖v n‖) atTop (𝓝 0) := by
           apply squeeze_zero (by simp) _ tendsto_one_div_add_atTop_nhds_zero_nat
           intro n
-          apply le_of_lt (hv n).right
+          have hdist : dist 0 (v n) < 1 / (n + 1) := (hv n).right
+          exact (le_of_lt (by simpa [dist_eq_norm] using hdist))
         apply tendsto_zero_iff_norm_tendsto_zero.2 this
       show (x, 0) ∈ subdifferential_Graph f
       apply GraphOfSubgradientIsClosed v_in_subdiff
-        (Filter.Tendsto.prod_mk_nhds u_to_x v_to_zero) fu_to_fx
+        (Filter.Tendsto.prodMk_nhds u_to_x v_to_zero) fu_to_fx
     contradiction
 
 /-- Non-critical KL property is naturally true -/
@@ -281,24 +285,9 @@ end
 
 section aux_lemma_uniform_KL
 
-lemma real_geq_ennreal_ofreal_geq {a b : ℝ} {c : ENNReal} (hgeq : a ≥ b) (apos: a > 0):
+lemma real_geq_ennreal_ofreal_geq {a b : ℝ} {c : ENNReal} (hgeq : a ≥ b) (_apos : a > 0):
   (ENNReal.ofReal a) * c ≥ (ENNReal.ofReal b) * c := by
-  by_cases hc : c = 0
-  rw [hc]
-  simp
-  push_neg at hc
-  by_cases hctop : c = ⊤
-  rw [hctop]
-  have ha : (ENNReal.ofReal a) * ⊤ = ⊤ := by
-    refine ENNReal.mul_top ?h
-    simpa
-  rw [ha]
-  simp
-  push_neg at hctop
-  refine (ENNReal.mul_le_mul_right ?_ ?_).mpr ?_
-  · exact hc
-  · exact hctop
-  · exact ENNReal.ofReal_le_ofReal hgeq
+  exact mul_le_mul_left (ENNReal.ofReal_le_ofReal hgeq) c
 
 end aux_lemma_uniform_KL
 
@@ -323,24 +312,24 @@ variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsCompact Ω)
     (h_Ω1 : ∀ x ∈ Ω, KL_point f x) (h_Ω2: is_constant_on f Ω) :
     ∃ ε ∈ Ioi 0, ∃ η ∈ Ioi 0, ∃ φ ∈ desingularizing_function η, ∀ u ∈ Ω , ∀ x ∈
-    {y : E | (EMetric.infEdist y Ω).toReal < ε} ∩ {y  | f u < f y ∧ f y < f u + η},
-    (ENNReal.ofReal (deriv φ (f x - f u))) * EMetric.infEdist 0 (subdifferential f x) ≥ 1 := by
+    {y : E | (Metric.infEDist y Ω).toReal < ε} ∩ {y  | f u < f y ∧ f y < f u + η},
+    (ENNReal.ofReal (deriv φ (f x - f u))) * Metric.infEDist 0 (subdifferential f x) ≥ 1 := by
     -- case : Ω = ∅
-    by_cases h_nonempty : Ω = ∅
-    · push_neg at h_nonempty
+    by_cases h_empty : Ω = ∅
+    ·
       use 1, (by simp), 1, (by simp), (fun t => 2⁻¹ * t)
       constructor
       rw [← div_self]
       exact (const_mul_special_concave 2 (by simp))
       simp
-      rw [h_nonempty]
+      rw [h_empty]
       tauto
     -- case : Ω ≠ ∅
-    push_neg at h_nonempty
+    have h_nonempty : Ω.Nonempty := Set.nonempty_iff_ne_empty.2 h_empty
     obtain ⟨μ, constant_value⟩ := exist_constant_value f h_Ω2 h_nonempty
     have : ∀ x ∈ Ω, ∃ η ∈ Ioi 0, ∃ (O : Set E) (_: IsOpen O) (_: x ∈ O),  ∃ φ ∈ desingularizing_function η,
       ∀ u ∈ O ∩ {y | f x < f y ∧ f y < f x + η},
-      (ENNReal.ofReal (deriv φ (f u - f x))) * EMetric.infEdist 0 (subdifferential f u) ≥ 1 := by
+      (ENNReal.ofReal (deriv φ (f u - f x))) * Metric.infEDist 0 (subdifferential f u) ≥ 1 := by
         intro x hx; simp [KL_point] at h_Ω1
         rcases h_Ω1 x hx with ⟨η, ⟨hη, ⟨s, ⟨hs, ⟨φ, hφ, h_Ω1⟩⟩⟩⟩⟩
         rcases mem_nhds_iff.1 hs with ⟨O, hO1, hO2, hO3⟩
@@ -397,6 +386,9 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
         exact min_le (η x) η_in_image
     rcases this with ⟨η_min, ηpos, hmin⟩
     simp [desingularizing_function] at hφ
+    have hsum_attach : ∀ z : ℝ, ∑ c ∈ ht2.toFinset.attach, φ (↑c) z = ∑ c ∈ ht2.toFinset, φ c z := by
+      intro z
+      simpa using (Finset.sum_attach (s := ht2.toFinset) (f := fun c => φ c z))
     -- φ_sum is desingularizing_function
     have h_special_concave: φ_sum ∈ desingularizing_function η_min := by
       simp [desingularizing_function]
@@ -406,6 +398,7 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
         apply convex_Ico
         intro x xpos y ypos a b apos bpos absum
         simp [φ_sum]
+        rw [hsum_attach x, hsum_attach y, hsum_attach (a * x + b * y)]
         have : ∀ d : ℝ, ∀ x : ℝ, d * ∑ c ∈ ht2.toFinset,
             φ c x = ∑ c ∈ ht2.toFinset, d * (φ c x) := by
           intro d x
@@ -439,13 +432,15 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
       --   exact (hφ c (mem_t_in_Ω c hc)).2.1 x hx1 xleq
       --   exact t_nonempty
       have h₃ : φ_sum 0 = 0 := by
-        simp [φ_sum]
+        simp [φ_sum, hsum_attach]
         have : ∀ x ∈ ht2.toFinset, φ x 0 = 0 := by
           intro x xt
           exact (hφ x (mem_t_in_Ω x xt)).2.1
         apply Finset.sum_eq_zero this
       have h₄ : ContDiffOn ℝ 1 φ_sum (Ioo 0 η_min) := by
-        have : φ_sum = (fun c => ∑ x ∈ ht2.toFinset, φ x c) := by ext c; simp [φ_sum]
+        have : φ_sum = (fun c => ∑ x ∈ ht2.toFinset, φ x c) := by
+          ext c
+          simpa [φ_sum] using hsum_attach c
         rw [this]
         apply ContDiffOn.sum
         intro c hc
@@ -455,9 +450,10 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
         exact hmin c ((Set.Finite.mem_toFinset ht2).1 hc)
       have h₅ : ContinuousAt φ_sum 0 := by
         rw [ContinuousAt]
-        have : φ_sum = (fun c => ∑ x ∈ ht2.toFinset, φ x c) := by ext c; simp [φ_sum]
+        have : φ_sum = (fun c => ∑ x ∈ ht2.toFinset, φ x c) := by
+          ext c
+          simpa [φ_sum] using hsum_attach c
         rw [this]
-        simp [φ_sum]
         apply tendsto_finset_sum
         intro c hc
         obtain cont := (hφ c (mem_t_in_Ω c hc)).2.2.2.1
@@ -465,17 +461,23 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
         exact cont
       have h₆ : ∀ (x : ℝ), 0 < x → x < η_min → 0 < deriv φ_sum x := by
         intro y ypos yleq
-        have : φ_sum = (fun c => ∑ x ∈ ht2.toFinset, φ x c) := by ext c; simp [φ_sum]
+        have : φ_sum = (fun c => ∑ x ∈ ht2.toFinset, φ x c) := by
+          ext c
+          simpa [φ_sum] using hsum_attach c
         rw [this]
         have : deriv (fun c ↦ ∑ x ∈ ht2.toFinset, φ x c) y = ∑ x ∈ ht2.toFinset, deriv (φ x) y := by
-          apply deriv_sum
-          intro c hc
-          have η_inequ: y < η c := by
-            obtain := hmin c ((Set.Finite.mem_toFinset ht2).1 hc)
-            linarith
-          specialize hφ c (mem_t_in_Ω c hc)
-          obtain contdiff:= ContDiffOn.contDiffAt hφ.2.2.1 (Ioo_mem_nhds ypos η_inequ)
-          apply ContDiffAt.differentiableAt contdiff (by simp)
+          have hfun : (fun c => ∑ x ∈ ht2.toFinset, φ x c) = (∑ x ∈ ht2.toFinset, φ x) := by
+            ext c; exact Eq.symm (Finset.sum_apply c ht2.toFinset φ)
+          have hderiv : deriv (∑ x ∈ ht2.toFinset, φ x) y = ∑ x ∈ ht2.toFinset, deriv (φ x) y := by
+            apply deriv_sum
+            intro c hc
+            have η_inequ : y < η c := by
+              obtain := hmin c ((Set.Finite.mem_toFinset ht2).1 hc)
+              linarith
+            specialize hφ c (mem_t_in_Ω c hc)
+            obtain contdiff := ContDiffOn.contDiffAt hφ.2.2.1 (Ioo_mem_nhds ypos η_inequ)
+            exact ContDiffAt.differentiableAt contdiff (by simp)
+          simpa [hfun] using hderiv
         rw [this]
         apply Finset.sum_pos
         · intro c hc
@@ -486,7 +488,7 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
           exact hφ.2.2.2.2 y ypos this
         · exact t_nonempty
       exact ⟨h₁,h₃,h₄,h₅,h₆⟩
-    have uniform_ball: ∃ ε ∈ Ioi 0, {y| EMetric.infEdist y Ω < ENNReal.ofReal ε} ⊆ ⋃ x ∈ t, O x := by
+    have uniform_ball: ∃ ε ∈ Ioi 0, {y| Metric.infEDist y Ω < ENNReal.ofReal ε} ⊆ ⋃ x ∈ t, O x := by
         have union_open : IsOpen (⋃ x ∈ t, O x) := by
           have : ∀ x ∈ t, IsOpen (O x) := by
             intro x hx
@@ -497,15 +499,15 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
         obtain res_thickening := IsCompact.exists_thickening_subset_open h_compact union_open ht3
         rcases res_thickening with ⟨ε, ⟨hε, h2⟩⟩
         use ε, hε
-        have : {y| EMetric.infEdist y Ω < ENNReal.ofReal ε} = Metric.thickening ε Ω := by
-          ext x; exact Metric.mem_thickening_iff_infEdist_lt
+        have : {y| Metric.infEDist y Ω < ENNReal.ofReal ε} = Metric.thickening ε Ω := by
+          ext x; exact Metric.mem_thickening_iff_infEDist_lt
         rwa [this]
     choose ε uniform_ball using uniform_ball
-    have : {y| EMetric.infEdist y Ω < ENNReal.ofReal ε} = {y| (EMetric.infEdist y Ω).toReal < ε} := by
-      ext x; apply ENNReal.lt_ofReal_iff_toReal_lt (Metric.infEdist_ne_top h_nonempty)
+    have : {y| Metric.infEDist y Ω < ENNReal.ofReal ε} = {y| (Metric.infEDist y Ω).toReal < ε} := by
+      ext x; apply ENNReal.lt_ofReal_iff_toReal_lt (Metric.infEDist_ne_top h_nonempty)
     rw [this] at uniform_ball
     -- There exists one open set in the finite cover
-    have exist_one_ball: ∀ u ∈ {y| (EMetric.infEdist y Ω).toReal < ε}
+    have exist_one_ball: ∀ u ∈ {y| (Metric.infEDist y Ω).toReal < ε}
         ∩ {y |  μ < f y ∧ f y < μ + η_min},
       ∃ x ∈ t, u ∈ O x := by
       intro u hu
@@ -521,7 +523,7 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
     rcases hu with ⟨_,hu2,hu3⟩
     -- rcases hu with ⟨_, ⟨hu21 , ⟨hu221, hu222⟩⟩⟩
     calc
-      _ ≥ (ENNReal.ofReal (deriv (φ ui) (f u - μ))) * EMetric.infEdist 0 (subdifferential f u) := by
+      _ ≥ (ENNReal.ofReal (deriv (φ ui) (f u - μ))) * Metric.infEDist 0 (subdifferential f u) := by
         have deriv_φ_pos: deriv φ_sum (f u - μ) > 0 := by
           simp [desingularizing_function] at h_special_concave
           obtain h_tmp := h_special_concave.2.2.2.2
@@ -530,23 +532,28 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
           · linarith [hu3]
         apply real_geq_ennreal_ofreal_geq
         simp [φ_sum]
+        have hfun_attach :
+            (∑ b ∈ ht2.toFinset.attach, φ (↑b)) = (fun c => ∑ x ∈ ht2.toFinset, φ x c) := by
+          ext c
+          simpa [Finset.sum_apply] using hsum_attach c
+        rw [hfun_attach]
         have equ₁: deriv (fun c ↦ ∑ x ∈ ht2.toFinset, φ x c) (f u - μ) =
             ∑ x ∈ ht2.toFinset, deriv (φ x) (f u - μ) := by
-          apply deriv_sum
-          intro c hc
-          have σu_pos : f u - μ > 0 := by linarith [hu2]
-          have η_inequ: (f u - μ) < η c := by
-            obtain inequ_ηmin:= hmin c ((Set.Finite.mem_toFinset ht2).1 hc)
-            linarith
-          specialize hφ c (mem_t_in_Ω c hc)
-          obtain contdiff:= ContDiffOn.contDiffAt hφ.2.2.1 (Ioo_mem_nhds σu_pos η_inequ)
-          apply ContDiffAt.differentiableAt contdiff (by simp)
-        have equ₂ : deriv (fun c ↦ ∑ x ∈ ht2.toFinset, φ x c) (f u - μ) =
-            deriv (∑ x ∈ ht2.toFinset, φ x) (f u - μ) := by
-          have : (fun c ↦ ∑ x ∈ ht2.toFinset, φ x c) = (∑ x ∈ ht2.toFinset, φ x) := by
+          have hfun : (fun c => ∑ x ∈ ht2.toFinset, φ x c) = (∑ x ∈ ht2.toFinset, φ x) := by
             ext c; exact Eq.symm (Finset.sum_apply c ht2.toFinset φ)
-          rw [this]
-        rw [← equ₂, equ₁]
+          have hderiv :
+              deriv (∑ x ∈ ht2.toFinset, φ x) (f u - μ) = ∑ x ∈ ht2.toFinset, deriv (φ x) (f u - μ) := by
+            apply deriv_sum
+            intro c hc
+            have σu_pos : f u - μ > 0 := by linarith [hu2]
+            have η_inequ : (f u - μ) < η c := by
+              obtain inequ_ηmin := hmin c ((Set.Finite.mem_toFinset ht2).1 hc)
+              linarith
+            specialize hφ c (mem_t_in_Ω c hc)
+            obtain contdiff := ContDiffOn.contDiffAt hφ.2.2.1 (Ioo_mem_nhds σu_pos η_inequ)
+            exact ContDiffAt.differentiableAt contdiff (by simp)
+          simpa [hfun] using hderiv
+        rw [equ₁]
 
         -- have : (∑ x ∈ ht2.toFinset, deriv (φ x) (f u - μ)) ≥ deriv (φ ui) (f u - μ) := by
         let g x := deriv (φ x) (f u - μ)
@@ -579,15 +586,15 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
 -- theorem uniformly_KL_property' {f : E → ℝ} {Ω : Set E} (h_compact : IsCompact Ω)
 --     (h_Ω1 : ∀ x ∈ Ω, KL_point f x) (h_Ω2: is_constant_on f Ω) :
 --     ∃ ε ∈ Ioi 0, ∃ η ∈ Ioi 0, ∃ φ ∈ desingularizing_function η, ∀ u ∈ Ω , ∀ x ∈
---     {y : E | (EMetric.infEdist y Ω).toReal < ε} ∩ {y | f u < f y ∧ f y < f u + η},
---     (Real.toEReal (deriv φ (f x - f u))) * (EMetric.infEdist 0 (subdifferential f x))
+--     {y : E | (Metric.infEDist y Ω).toReal < ε} ∩ {y | f u < f y ∧ f y < f u + η},
+--     (Real.toEReal (deriv φ (f x - f u))) * (Metric.infEDist 0 (subdifferential f x))
 --       ≥ Real.toEReal 1 := by
 
 --     obtain h := uniformly_KL_property h_compact h_Ω1 h_Ω2
 --     rcases h with ⟨ε, hε, η, hη, φ, hφ, h⟩
 --     use ε, hε, η, hη, φ, hφ
 --     intro u hu x hx
---     by_cases h_empty : EMetric.infEdist 0 (subdifferential f x) = ⊤
+--     by_cases h_empty : Metric.infEDist 0 (subdifferential f x) = ⊤
 --     · rw [h_empty]
 --       have hderiv: Real.toEReal (deriv φ (f x - f u)) > 0 := by sorry
 --       have hh: (Real.toEReal (deriv φ (f x - f u))) * (ENNReal.toEReal ⊤) = ⊤ := by
@@ -595,7 +602,7 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
 --       rw [hh]
 --       simp
 --     · push_neg at h_empty
---       have h_not_bot: EMetric.infEdist 0 (subdifferential f x) ≠ ⊥ := by sorry
+--       have h_not_bot: Metric.infEDist 0 (subdifferential f x) ≠ ⊥ := by sorry
 --       sorry
---     -- by_cases h_empty : EMetric.infEdist 0 (subdifferential f x) = ∅
+--     -- by_cases h_empty : Metric.infEDist 0 (subdifferential f x) = ∅
 end uniformized_KL

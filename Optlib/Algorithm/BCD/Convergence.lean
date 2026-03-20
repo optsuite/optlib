@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Chenyi Li, Bowen Yang, Yifan Bai
 -/
 import Optlib.Algorithm.BCD.Scheme
-import Mathlib.Tactic
 
 /-!
 # Block Coordinate Descent
@@ -37,16 +36,16 @@ section block_subdifferential
 
 variable {E : Type*} [NormedAddCommGroup E]
 
-lemma infEdist_bound {s : Set E} : ∀ x ∈ s, ENNReal.ofReal ‖x‖ ≥ Metric.infEDist 0 s := by
+lemma infEdist_bound {s : Set E} : ∀ x ∈ s, ENNReal.ofReal ‖x‖ ≥ EMetric.infEdist 0 s := by
   by_cases hs : s = ∅
   simp [hs]
   push_neg at hs
   intro x xs
-  have : Metric.infEDist 0 s ≤ edist 0 x := Metric.infEDist_le_edist_of_mem xs
+  have : EMetric.infEdist 0 s ≤ edist 0 x := EMetric.infEdist_le_edist_of_mem xs
   rw [← dist_zero_left]
   apply (ENNReal.le_ofReal_iff_toReal_le _ _).2
   · exact ENNReal.toReal_le_of_le_ofReal dist_nonneg (edist_dist 0 x ▸ this)
-  · exact Metric.infEDist_ne_top hs
+  · exact Metric.infEdist_ne_top hs
   · simp
 
 variable {F: Type*} [InnerProductSpace ℝ E]
@@ -54,26 +53,17 @@ variable [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 variable {f : E → ℝ} {g : F → ℝ} {x u : E} {y v : F}
 
 lemma f_subdiff_block (hf : u ∈ f_subdifferential f x) (hg : v ∈ f_subdifferential g y) :
-    (WithLp.toLp 2 (u, v)) ∈
-      f_subdifferential (fun z ↦ f z.fst + g z.snd : WithLp 2 (E × F) → ℝ)
-      (WithLp.toLp 2 (x, y)) := by
+    ⟨u, v⟩ ∈ f_subdifferential (fun z ↦ f z.1 + g z.2 : WithLp 2 (E × F) → ℝ) ⟨x, y⟩ := by
   rw [has_f_subdiff_iff] at *
   intro ε εpos
   have ε2pos : 0 < ε / 2 := by positivity
-  have hfz : ∀ᶠ z : WithLp 2 (E × F) in 𝓝 (WithLp.toLp 2 (x, y)),
-      ⟪u, z.fst - x⟫ ≤ f z.fst - f x + ε / 2 * ‖z.fst - x‖ := by
-    exact ((WithLp.continuous_fst (p := 2) (α := E) (β := F)).tendsto
-      (WithLp.toLp 2 (x, y))).eventually (by simpa using hf _ ε2pos)
-  have hyz : ∀ᶠ z : WithLp 2 (E × F) in 𝓝 (WithLp.toLp 2 (x, y)),
-      ⟪v, z.snd - y⟫ ≤ g z.snd - g y + ε / 2 * ‖z.snd - y‖ := by
-    exact ((WithLp.continuous_snd (p := 2) (α := E) (β := F)).tendsto
-      (WithLp.toLp 2 (x, y))).eventually (by simpa using hg _ ε2pos)
-  filter_upwards [hfz, hyz] with z hfz hyz
+  filter_upwards [Eventually.prod_nhds (hf _ ε2pos) (hg _ ε2pos)] with z ⟨hfz, hyz⟩
   rw [WithLp.prod_inner_apply]
+  simp only [WithLp.sub_fst, WithLp.sub_snd]
   let z' : WithLp 2 (E × F) := (x, y)
-  show f z.fst + g z.snd - (f x + g y) - (⟪u, z.fst - x⟫ + ⟪v, z.snd - y⟫) ≥ -ε * ‖z - z'‖
-  have h1 : ‖z.fst - x‖ ≤ ‖z - z'‖ := fst_norm_le_prod_L2 (z - z')
-  have h2 : ‖z.snd - y‖ ≤ ‖z - z'‖ := snd_norm_le_prod_L2 (z - z')
+  show f z.1 + g z.2 - (f x + g y) - (⟪u, z.1 - x⟫ + ⟪v, z.2 - y⟫) ≥ -ε * ‖z - z'‖
+  have h1 : ‖z.1 - x‖ ≤ ‖z - z'‖ := fst_norm_le_prod_L2 (z - z')
+  have h2 : ‖z.2 - y‖ ≤ ‖z - z'‖ := snd_norm_le_prod_L2 (z - z')
   linarith [(mul_le_mul_iff_of_pos_left ε2pos).mpr h1, (mul_le_mul_iff_of_pos_left ε2pos).mpr h2]
 
 end block_subdifferential
@@ -85,70 +75,6 @@ variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 variable [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
 variable {f : E → ℝ} {g : F → ℝ} {H : (WithLp 2 (E × F)) → ℝ} {x0 : E} {y0 : F} {l : NNReal}
 variable {alg : BCD f g H l x0 y0}
-
-set_option maxHeartbeats 2000000 in
-private lemma hasGradientAt_fst_partial (hH : Differentiable ℝ H) (x : E) (y : F) :
-    HasGradientAt (fun x' : E ↦ H (WithLp.toLp 2 (x', y))) (grad_fst H y x) x := by
-  let Lp : (E × F) →L[ℝ] WithLp 2 (E × F) :=
-    IsBoundedLinearMap.toContinuousLinearMap (WithLp.toLp 2 : E × F → WithLp 2 (E × F))
-      instIsBoundedLinearMapL2equiv
-  let Lin : E →L[ℝ] E × F := (ContinuousLinearMap.id ℝ E).prod (0 : E →L[ℝ] F)
-  have hlin : HasFDerivAt (fun x' : E ↦ WithLp.toLp 2 (x', y)) (Lp.comp Lin) x := by
-    have hpair : HasFDerivAt (fun x' : E ↦ (x', y)) Lin x := by
-      simpa [Lin] using (hasFDerivAt_id x).prodMk (hasFDerivAt_const y x)
-    simpa [Function.comp, Lp] using (instIsBoundedLinearMapL2equiv.hasFDerivAt.comp x hpair)
-  have hgradH : HasGradientAt H (gradient H (WithLp.toLp 2 (x, y))) (WithLp.toLp 2 (x, y)) :=
-    DifferentiableAt.hasGradientAt (hH (WithLp.toLp 2 (x, y)))
-  have hcompF : HasFDerivAt (fun x' : E ↦ H (WithLp.toLp 2 (x', y)))
-      (((InnerProductSpace.toDual ℝ (WithLp 2 (E × F))) (gradient H (WithLp.toLp 2 (x, y)))).comp
-      (Lp.comp Lin)) x := by
-    have hHf : HasFDerivAt H ((InnerProductSpace.toDual ℝ (WithLp 2 (E × F)))
-      (gradient H (WithLp.toLp 2 (x, y)))) (WithLp.toLp 2 (x, y)) :=
-      (hasGradientAt_iff_hasFDerivAt).1 hgradH
-    simpa [Function.comp] using (hHf.comp x hlin)
-  have hEq : ((InnerProductSpace.toDual ℝ (WithLp 2 (E × F))) (gradient H (WithLp.toLp 2 (x, y)))).comp
-      (Lp.comp Lin) = (InnerProductSpace.toDual ℝ E) (grad_fst H y x) := by
-    ext v
-    change inner ℝ (gradient H (WithLp.toLp 2 (x, y))) (WithLp.toLp 2 (v, (0 : F))) =
-      inner ℝ (grad_fst H y x) v
-    rw [WithLp.prod_inner_apply]
-    simp [grad_fst]
-  have hcompF' : HasFDerivAt (fun x' : E ↦ H (WithLp.toLp 2 (x', y)))
-      ((InnerProductSpace.toDual ℝ E) (grad_fst H y x)) x := by
-    simpa [hEq] using hcompF
-  exact (hasGradientAt_iff_hasFDerivAt).2 hcompF'
-
-set_option maxHeartbeats 2000000 in
-private lemma hasGradientAt_snd_partial (hH : Differentiable ℝ H) (x : E) (y : F) :
-    HasGradientAt (fun y' : F ↦ H (WithLp.toLp 2 (x, y'))) (grad_snd H x y) y := by
-  let Lp : (E × F) →L[ℝ] WithLp 2 (E × F) :=
-    IsBoundedLinearMap.toContinuousLinearMap (WithLp.toLp 2 : E × F → WithLp 2 (E × F))
-      instIsBoundedLinearMapL2equiv
-  let Lin : F →L[ℝ] E × F := (0 : F →L[ℝ] E).prod (ContinuousLinearMap.id ℝ F)
-  have hlin : HasFDerivAt (fun y' : F ↦ WithLp.toLp 2 (x, y')) (Lp.comp Lin) y := by
-    have hpair : HasFDerivAt (fun y' : F ↦ (x, y')) Lin y := by
-      simpa [Lin] using (hasFDerivAt_const x y).prodMk (hasFDerivAt_id y)
-    simpa [Function.comp, Lp] using (instIsBoundedLinearMapL2equiv.hasFDerivAt.comp y hpair)
-  have hgradH : HasGradientAt H (gradient H (WithLp.toLp 2 (x, y))) (WithLp.toLp 2 (x, y)) :=
-    DifferentiableAt.hasGradientAt (hH (WithLp.toLp 2 (x, y)))
-  have hcompF : HasFDerivAt (fun y' : F ↦ H (WithLp.toLp 2 (x, y')))
-      (((InnerProductSpace.toDual ℝ (WithLp 2 (E × F))) (gradient H (WithLp.toLp 2 (x, y)))).comp
-      (Lp.comp Lin)) y := by
-    have hHf : HasFDerivAt H ((InnerProductSpace.toDual ℝ (WithLp 2 (E × F)))
-      (gradient H (WithLp.toLp 2 (x, y)))) (WithLp.toLp 2 (x, y)) :=
-      (hasGradientAt_iff_hasFDerivAt).1 hgradH
-    simpa [Function.comp] using (hHf.comp y hlin)
-  have hEq : ((InnerProductSpace.toDual ℝ (WithLp 2 (E × F))) (gradient H (WithLp.toLp 2 (x, y)))).comp
-      (Lp.comp Lin) = (InnerProductSpace.toDual ℝ F) (grad_snd H x y) := by
-    ext v
-    change inner ℝ (gradient H (WithLp.toLp 2 (x, y))) (WithLp.toLp 2 ((0 : E), v)) =
-      inner ℝ (grad_snd H x y) v
-    rw [WithLp.prod_inner_apply]
-    simp [grad_snd]
-  have hcompF' : HasFDerivAt (fun y' : F ↦ H (WithLp.toLp 2 (x, y')))
-      ((InnerProductSpace.toDual ℝ F) (grad_snd H x y)) y := by
-    simpa [hEq] using hcompF
-  exact (hasGradientAt_iff_hasFDerivAt).2 hcompF'
 
 section descent
 
@@ -165,18 +91,16 @@ theorem PALM_Descent (h : E → ℝ) {h' : E → E} (Lₕ : NNReal)
   rw [this] at u₁prox
   have : u₁ - (u - t • h' u) = (u₁ - u) + t • h' u := by abel
   rw [this] at u₁prox
-  simp [norm_add_sq_real] at u₁prox
+  simp [norm_add_sq_real, this] at u₁prox
   have ha : t * σ u₁ + ‖u₁ - u‖ ^ 2 / 2 +  ⟪u₁ - u, t • h' u⟫ ≤ t * σ u := by linarith [u₁prox]
   rw [inner_smul_right] at ha
-  have : t * (‖u₁ - u‖ ^ 2 / (2 * t)) = ‖u₁ - u‖ ^ 2 / 2 := by field_simp
+  have : t * (‖u₁ - u‖ ^ 2 / (2 * t)) = ‖u₁ - u‖ ^ 2 / 2 := by field_simp; ring
   rw [← this] at ha
   have : t * σ u₁ + t * (‖u₁ - u‖ ^ 2 / (2 * t)) + t * ⟪u₁ - u, h' u⟫
         = t * (σ u₁ + ‖u₁ - u‖ ^ 2 / (2 * t) + ⟪u₁ - u, h' u⟫) := by ring
   rw [this] at ha
-  have hσ : σ u₁ + ‖u₁ - u‖ ^ 2 / (2 * t) + ⟪u₁ - u, h' u⟫ ≤ σ u := by
-    exact le_of_mul_le_mul_left ha h₅
   have hne : ⟪u₁ - u, h' u⟫ ≤ σ u - σ u₁ - ‖u₁ - u‖ ^ 2 / (2 * t) := by
-    linarith
+    linarith [(mul_le_mul_left h₅).1 ha]
   rw [real_inner_comm] at hne
   calc
     _ ≤ h u + σ u - σ u₁ - ‖u₁ - u‖ ^ 2 / (2 * t) + ↑Lₕ / 2 * ‖u₁ - u‖ ^ 2 + σ u₁ := by
@@ -185,42 +109,39 @@ theorem PALM_Descent (h : E → ℝ) {h' : E → E} (Lₕ : NNReal)
       field_simp [ne_of_gt h₅]; ring
 
 /- sufficient descent -/
-  theorem Sufficient_Descent1 (γ : ℝ) (hγ : γ > 1)
+theorem Sufficient_Descent1 (γ : ℝ) (hγ : γ > 1)
     (ck : ∀ k, alg.c k = 1 / (γ * l)) (dk : ∀ k, alg.d k = 1 / (γ * l)) :
     ∃ ρ₁ > 0, ρ₁ = (γ - 1) * l ∧ ∀ k, ρ₁ / 2 * ‖alg.z (k+1) - alg.z k‖ ^ 2
       ≤ alg.ψ (alg.z k) -alg.ψ (alg.z (k + 1)) := by
   use (γ - 1) * l
+  let ρ₁ := (γ - 1) * l
   constructor; apply mul_pos; linarith; exact alg.lpos;
   constructor; rfl
   obtain ⟨l1, l2⟩ := alg.coordinate_lip
   intro k
   have hHf : H (alg.x (k + 1), alg.y k) + f (alg.x (k + 1)) ≤ H (alg.x k, alg.y k) + f (alg.x k)
       - 1 / 2 * (γ - 1) * l * ‖alg.x (k + 1) - alg.x k‖ ^ 2 := by
-    let h  := fun x ↦ H (WithLp.toLp 2 (x, alg.y k))
+    let h  := fun x ↦ H (x,alg.y k)
     let h' := fun x ↦ grad_fst H (alg.y k) x
     have h1 : ∀ x₁ : E, HasGradientAt h (h' x₁) x₁ := by
       intro x
-      simpa [h, h'] using hasGradientAt_fst_partial
-        (ContDiff.differentiable alg.conf (by simp)) x (alg.y k)
+      apply DifferentiableAt.hasGradientAt
+      apply diff_prod₁; apply ContDiff.differentiable alg.conf (by simp)
     obtain prop := PALM_Descent h l h1 (l1 _) f (alg.c k) (alg.cpos γ hγ ck k) (alg.x _) (alg.x _)
-    have hprop := prop (by rw [prox_set]; simp; exact (alg.s₁ k))
-    rw [ck k, one_div_one_div] at hprop
-    have hcoef : γ * (l : ℝ) - l = (γ - 1) * l := by ring
-    simpa [h, hcoef, mul_assoc] using hprop
+    apply le_of_eq_of_le' _ (prop (by rw [prox_set]; simp; exact (alg.s₁ k)))
+    rw [ck, one_div_one_div]; ring
 
   have hHg : H (alg.x (k + 1), alg.y (k + 1)) + g (alg.y (k + 1)) ≤ H (alg.x (k + 1), alg.y k)
       + g (alg.y k) - 1 / 2 * (γ - 1) * l * ‖alg.y (k + 1) - alg.y k‖ ^ 2 := by
-    let h := fun y ↦ H (WithLp.toLp 2 (alg.x (k + 1), y))
+    let h := fun y ↦ H (alg.x (k + 1), y)
     let h':= fun y ↦ grad_snd H (alg.x (k + 1)) y
     have h1 : ∀ y₁ : F, HasGradientAt h (h' y₁) y₁ := by
       intro y
-      simpa [h, h'] using hasGradientAt_snd_partial
-        (ContDiff.differentiable alg.conf (by simp)) (alg.x (k + 1)) y
+      apply DifferentiableAt.hasGradientAt
+      apply diff_prod₂; apply ContDiff.differentiable alg.conf (by simp)
     obtain prop := PALM_Descent h l h1 (l2 _) g (alg.d k) (alg.dpos γ hγ dk k) (alg.y k) (alg.y _)
-    have hprop := prop (by rw [prox_set]; simp; exact (alg.s₂ k))
-    rw [dk k, one_div_one_div] at hprop
-    have hcoef : γ * (l : ℝ) - l = (γ - 1) * l := by ring
-    simpa [h, hcoef, mul_assoc] using hprop
+    apply le_of_eq_of_le' _ (prop (by rw [prox_set]; simp; exact (alg.s₂ k)))
+    rw [dk, one_div_one_div]; ring
 
   have eq (k : ℕ) : alg.ψ (alg.z k) = H (alg.x k, alg.y k) + f (alg.x k) + g (alg.y k) := by
     rw [BCD.ψ]; nth_rw 2 [add_assoc]; nth_rw 1 [add_comm]
@@ -228,32 +149,13 @@ theorem PALM_Descent (h : E → ℝ) {h' : E → E} (Lₕ : NNReal)
   calc
     _ = H (alg.x k, alg.y k) + f (alg.x k) + g (alg.y k) - H (alg.x (k + 1), alg.y (k + 1))
         - f (alg.x (k + 1)) - g (alg.y (k + 1)) := by rw [eq k, eq (k + 1)]; ring
-    _ ≥ 1 / 2 * ((γ - 1) * l) * (‖alg.x (k + 1) - alg.x k‖ ^ 2 + ‖alg.y (k + 1) - alg.y k‖ ^ 2) := by
-      let Cx := 1 / 2 * (γ - 1) * l * ‖alg.x (k + 1) - alg.x k‖ ^ 2
-      let Cy := 1 / 2 * (γ - 1) * l * ‖alg.y (k + 1) - alg.y k‖ ^ 2
-      have hsum :
-          H (alg.x (k + 1), alg.y (k + 1)) + f (alg.x (k + 1)) + g (alg.y (k + 1))
-            ≤ H (alg.x k, alg.y k) + f (alg.x k) + g (alg.y k) - Cx - Cy := by
-        unfold Cx Cy
-        linarith [hHf, hHg]
-      have hcoef :
-          Cx + Cy = 1 / 2 * ((γ - 1) * l) * (‖alg.x (k + 1) - alg.x k‖ ^ 2 + ‖alg.y (k + 1) - alg.y k‖ ^ 2) := by
-        unfold Cx Cy
-        ring
-      have hsum' :
-          Cx + Cy ≤ H (alg.x k, alg.y k) + f (alg.x k) + g (alg.y k) - H (alg.x (k + 1), alg.y (k + 1))
-            - f (alg.x (k + 1)) - g (alg.y (k + 1)) := by
-        linarith [hsum]
-      calc
-        1 / 2 * ((γ - 1) * l) * (‖alg.x (k + 1) - alg.x k‖ ^ 2 + ‖alg.y (k + 1) - alg.y k‖ ^ 2)
-            = Cx + Cy := by
-          symm
-          exact hcoef
-        _ ≤ H (alg.x k, alg.y k) + f (alg.x k) + g (alg.y k) - H (alg.x (k + 1), alg.y (k + 1))
-              - f (alg.x (k + 1)) - g (alg.y (k + 1)) := hsum'
+    _ ≥ 1 / 2 * (γ - 1) * l * (‖alg.x (k + 1) - alg.x k‖ ^ 2
+        + ‖alg.y (k + 1) - alg.y k‖ ^ 2) := by linarith [hHf,hHg]
+    _ = 1 / 2 * ρ₁ * (‖alg.x (k + 1) - alg.x k‖ ^ 2 + ‖alg.y (k + 1) - alg.y k‖ ^ 2) := by
+      unfold ρ₁; nth_rw 2 [mul_assoc]
     _ = _ := by
       simp only [WithLp.prod_norm_sq_eq_of_L2]
-      rw [WithLp.sub_fst, WithLp.sub_snd, BCD.z, BCD.z]
+      rw [Prod.fst_sub, Prod.snd_sub, BCD.z, BCD.z]
       ring_nf; simp
 
 /- the value is monotone -/
@@ -275,8 +177,7 @@ theorem Sufficient_Descent3 (γ : ℝ) (hγ : γ > 1) (ck: ∀ k, alg.c k = 1 / 
       ≤ 2 / ρ₁ * (alg.ψ (alg.z k) - alg.ψ (alg.z (k + 1))):= by
     intro k; specialize h2 k
     obtain h1 := mul_le_mul_of_nonneg_left h2 (a := 2 / ρ₁) (by positivity)
-    rw [← mul_assoc] at h1; field_simp at h1; field_simp
-    simpa [mul_comm, mul_left_comm, mul_assoc] using h1
+    rw [← mul_assoc] at h1; field_simp at h1; field_simp; exact h1
   have hne : ∀ n, ∑ k ∈ Finset.range (n + 1), ‖alg.z (k + 1) - alg.z k‖ ^ 2
       ≤ 2 / ρ₁ * ((alg.ψ (alg.z 0)) - (alg.ψ (alg.z (n + 1)))) := by
     intro n
@@ -351,7 +252,6 @@ section Upperbound_subd
 
 variable {c : ℝ} {f' : E → ℝ} {x u u' : E} {y v : F}
 
-set_option maxHeartbeats 800000 in
 theorem Ψ_subdiff_bound (γ : ℝ) (hγ : γ > 1)
     (ck: ∀ k, alg.c k = 1 / (γ * l)) (dk: ∀ k, alg.d k = 1 / (γ * l)) :
     ∃ ρ > 0, ∀ k, ∃ dΨ ∈ f_subdifferential alg.ψ (alg.z (k + 1)),
@@ -373,30 +273,29 @@ theorem Ψ_subdiff_bound (γ : ℝ) (hγ : γ > 1)
   rw [lipschitzWith_iff_norm_sub_le] at lip
   have cpos' : (alg.c k)⁻¹ ≥ 0 := by simp; apply le_of_lt (alg.cpos γ hγ ck k)
   have dpos' : (alg.d k)⁻¹ ≥ 0 := by simp; apply le_of_lt (alg.dpos γ hγ dk k)
-  have h1 : ‖(alg.subdiff k).fst‖ ≤ l * (γ + 1) * ‖alg.z (k + 1) - alg.z k‖ := by
-    simp [BCD.subdiff]
+  have h1 : ‖(alg.subdiff k).1‖ ≤ l * (γ + 1) * ‖alg.z (k + 1) - alg.z k‖ := by
+    simp only [BCD.subdiff, BCD.A_kx, Prod.fst_add, grad_fun_comp, grad_comp, sub_add];
     rw [A_k, A_kx, A_ky]; simp
     let a := (alg.c k)⁻¹ • (alg.x k - alg.x (k + 1))
     calc
-      _ = ‖a + (gradient H (alg.x (k + 1), alg.y (k + 1))).fst
+      _ = ‖a + (gradient H (alg.x (k + 1), alg.y (k + 1))).1
           - grad_fst H (alg.y k) (alg.x k)‖ := by rw [sub_add_eq_add_sub]
-      _ = ‖a + (gradient H (alg.x (k + 1), alg.y (k + 1))).fst
-            - (gradient H (alg.x k, alg.y k)).fst‖ := by
+      _ = ‖a + (gradient H (alg.x (k + 1), alg.y (k + 1))).1
+            - (gradient H (alg.x k, alg.y k)).1‖ := by
         symm; rw [grad_eq_block_grad, grad_fun_comp, grad_comp, grad_fun_comp, grad_comp]
         simp; apply alg.Hdiff
-      _ ≤ ‖a‖ + ‖(gradient H (alg.x (k + 1), alg.y (k + 1)) - gradient H (alg.x k, alg.y k)).fst‖ := by
-        rw [add_sub_assoc, ← WithLp.sub_fst]; apply norm_add_le
+      _ ≤ ‖a‖ + ‖(gradient H (alg.x (k + 1), alg.y (k + 1)) - gradient H (alg.x k, alg.y k)).1‖ := by
+        rw [add_sub_assoc, ← Prod.fst_sub]; apply norm_add_le
       _ ≤ ‖a‖ + ‖(gradient H (alg.x (k + 1), alg.y (k + 1)) - gradient H (alg.x k, alg.y k))‖ := by
-        simpa [WithLp.sub_fst] using fst_norm_le_prod_L2 (gradient H (alg.x (k + 1), alg.y (k + 1))
-          - gradient H (alg.x k, alg.y k))
+        simp; rw [← Prod.fst_sub]; apply fst_norm_le_prod_L2
     have inequ₁ : ‖a‖ ≤ (γ * l) * ‖alg.z (k+1) - alg.z k‖ := by
       calc
         _ = (1 / alg.c k) * ‖alg.x k - alg.x (k + 1)‖ := by
           simp [a]; rw [norm_smul_of_nonneg]; apply cpos'
         _ = (1 / alg.c k) * ‖alg.x (k + 1) - alg.x k‖ := by simp; left; apply norm_sub_rev
-        _ = (1 / alg.c k) * ‖(alg.z (k + 1) - alg.z k).fst‖ := by rw [z]; simp; left; rw [z]; simp
+        _ = (1 / alg.c k) * ‖(alg.z (k + 1) - alg.z k).1‖ := by rw [z]; simp; left; rw [z]; simp
         _ ≤ (1 / alg.c k) * ‖alg.z (k + 1) - alg.z k‖ := by
-          have : ‖(alg.z (k + 1) - alg.z k).fst‖ ≤ ‖alg.z (k + 1) - alg.z k‖ := fst_norm_le_prod_L2 _
+          have : ‖(alg.z (k + 1) - alg.z k).1‖ ≤ ‖alg.z (k + 1) - alg.z k‖ := fst_norm_le_prod_L2 _
           simp; apply mul_le_mul_of_nonneg_left this cpos'
         _ = (γ * l) * ‖alg.z (k + 1) - alg.z k‖ := by rw [ck k]; simp
     have inequ₂ : ‖gradient H (alg.x (k + 1), alg.y (k + 1)) - gradient H (alg.x k, alg.y k)‖
@@ -407,33 +306,32 @@ theorem Ψ_subdiff_bound (γ : ℝ) (hγ : γ > 1)
           apply lip
         _ = l * ‖alg.z (k+1) - alg.z k‖ := by repeat rw [z]; simp; left; rfl
     linarith
-  have h2 : ‖(alg.subdiff k).snd‖ ≤ l * (γ + 1) * ‖alg.z (k + 1) - alg.z k‖ := by
-    simp [BCD.subdiff]
+  have h2 : ‖(alg.subdiff k).2‖ ≤ l * (γ + 1) * ‖alg.z (k + 1) - alg.z k‖ := by
+    simp only [BCD.subdiff, BCD.A_kx, Prod.fst_add, grad_fun_comp, grad_comp, sub_add];
     rw [A_k, A_kx, A_ky]; simp
     let a := (alg.d k)⁻¹ • (alg.y k - alg.y (k + 1))
     calc
-      _ = ‖a + (gradient H (alg.x (k + 1), alg.y (k + 1))).snd
+      _ = ‖a + (gradient H (alg.x (k + 1), alg.y (k + 1))).2
           - grad_snd H (alg.x (k + 1)) (alg.y k)‖ := by rw [sub_add_eq_add_sub]
-      _ = ‖a + (gradient H (alg.x (k + 1), alg.y (k + 1))).snd
-          - (gradient H (alg.x (k + 1), alg.y k)).snd‖ := by
+      _ = ‖a + (gradient H (alg.x (k + 1), alg.y (k + 1))).2
+          - (gradient H (alg.x (k + 1), alg.y k)).2‖ := by
         symm; rw [grad_eq_block_grad, grad_fun_comp, grad_comp, grad_fun_comp, grad_comp]
         simp; apply alg.Hdiff
       _ = ‖a + (gradient H (alg.x (k + 1), alg.y (k + 1))
-          - gradient H (alg.x (k + 1), alg.y k)).snd‖ := by rw [add_sub_assoc, ← WithLp.sub_snd]
+          - gradient H (alg.x (k + 1), alg.y k)).2‖ := by rw [add_sub_assoc, ← Prod.snd_sub]
       _ ≤ ‖a‖ + ‖(gradient H (alg.x (k + 1), alg.y (k + 1))
-          - gradient H (alg.x (k + 1), alg.y k)).snd‖ := by apply norm_add_le
+          - gradient H (alg.x (k + 1), alg.y k)).2‖ := by apply norm_add_le
       _ ≤ ‖a‖ + ‖(gradient H (alg.x (k + 1), alg.y (k + 1))
           - gradient H (alg.x (k + 1), alg.y k))‖ := by
-            simpa [WithLp.sub_snd] using snd_norm_le_prod_L2 (gradient H (alg.x (k + 1), alg.y (k + 1))
-              - gradient H (alg.x (k + 1), alg.y k))
+            simp; rw [← Prod.snd_sub]; apply snd_norm_le_prod_L2
     have inequ₁ : ‖a‖ ≤ (γ * l) * ‖alg.z (k + 1) - alg.z k‖ := by
       calc
         _ = (1 / alg.d k) * ‖alg.y k - alg.y (k + 1)‖ := by
           simp [a]; rw [norm_smul_of_nonneg]; apply dpos'
         _ = (1 / alg.d k) * ‖alg.y (k + 1) - alg.y k‖ := by simp; left; apply norm_sub_rev
-        _ = (1 / alg.d k) * ‖(alg.z (k + 1) - alg.z k).snd‖ := by rw [z]; simp; left; rw [z]; simp
+        _ = (1 / alg.d k) * ‖(alg.z (k + 1) - alg.z k).2‖ := by rw [z]; simp; left; rw [z]; simp
         _ ≤ (1 / alg.d k) * ‖alg.z (k + 1) - alg.z k‖ := by
-          have : ‖(alg.z (k + 1) - alg.z k).snd‖ ≤ ‖alg.z (k + 1) - alg.z k‖ := by
+          have : ‖(alg.z (k + 1) - alg.z k).2‖ ≤ ‖alg.z (k + 1) - alg.z k‖ := by
             apply snd_norm_le_prod_L2
           simp; apply mul_le_mul_of_nonneg_left this dpos'
         _ = (γ * l) * ‖alg.z (k + 1) - alg.z k‖ := by rw [dk k]; simp
@@ -443,9 +341,8 @@ theorem Ψ_subdiff_bound (γ : ℝ) (hγ : γ > 1)
         _ ≤ l * @norm (WithLp 2 (E × F)) (WithLp.instProdNorm 2 E F)
             ((alg.x (k + 1), alg.y (k + 1)) - (alg.x (k + 1), alg.y k)) := by
           apply lip
-        _ = l * ‖(alg.z (k+1) - alg.z k).snd‖ := by
-          rw [WithLp.prod_norm_eq_of_L2]
-          simp [z, WithLp.sub_snd]
+        _ = l * ‖(alg.z (k+1) - alg.z k).2‖ := by
+          simp; left; repeat rw [z]; simp; apply norm_prod_left_zero
         _ ≤ l * ‖alg.z (k+1) - alg.z k‖ := by
           apply mul_le_mul_of_nonneg_left _ (le_of_lt alg.lpos)
           · apply snd_norm_le_prod_L2
@@ -453,8 +350,6 @@ theorem Ψ_subdiff_bound (γ : ℝ) (hγ : γ > 1)
   linarith
 
 end Upperbound_subd
-
-end Convergence
 
 section limit_point
 

@@ -90,13 +90,13 @@ lemma cone_eq_finite_union (s : Finset ℕ) (V : ℕ → (EuclideanSpace ℝ (Fi
     · intro xin
       let mem_x := conic_Caratheodory s V x xin
       rcases mem_x with ⟨τ, τsubs, xinτ, idpτ, _⟩
-      simp [finite_F, F, idx_set, idx_to_cone]
+      simp [F, idx_set, idx_to_cone]
       use τ
-    · simp [finite_F, F, idx_set, idx_to_cone]
+    · simp [F, idx_set, idx_to_cone]
       intro τ τsubs _ xinτ
       apply cone_subset_of_idx_subset' s τ τsubs V xinτ
   · intro C Cin
-    simp [finite_F, F] at Cin; rcases Cin with ⟨τ, τin, Ceq⟩
+    simp [F] at Cin; rcases Cin with ⟨τ, τin, Ceq⟩
     use τ; constructor
     · rw [← Ceq]
     · simp [idx_set] at τin; exact τin.2
@@ -107,9 +107,9 @@ lemma closed_conic_idp (s : Finset ℕ) (V : s → (EuclideanSpace ℝ (Fin n)))
   simp [cone']
   let M : Matrix s (Fin n) ℝ := fun i ↦ V i
   let f := fun x : s → ℝ ↦ Finset.sum univ (fun i => x i • V i)
-  let F := Matrix.mulVecLin Mᵀ
+  let F := (EuclideanSpace.equiv (Fin n) ℝ).symm.toLinearMap.comp (Matrix.mulVecLin Mᵀ)
   have eq2 : f = F := by
-      simp [F]; ext x j; simp; apply Finset.sum_apply
+      ext x j; simp [f, F, M, Matrix.vecMul, dotProduct]
   show IsClosed (f '' (quadrant' s))
   rw [eq2]
   have iscF : Continuous f := by
@@ -130,15 +130,16 @@ lemma closed_conic_idp (s : Finset ℕ) (V : s → (EuclideanSpace ℝ (Fin n)))
   rw [eq2] at iscF
   have isclosed : IsClosedMap F := by
     have injF : Function.Injective F := by
-      simp only [F]
+      apply (EuclideanSpace.equiv (Fin n) ℝ).symm.injective.comp
       show Function.Injective Mᵀ.mulVec
-      rw [Matrix.mulVec_injective_iff]; simp
-      apply idp
-    have closeEmbF: IsClosedEmbedding F := by
+      rw [Matrix.mulVec_injective_iff]
+      simpa [M, Matrix.row] using idp.map' (EuclideanSpace.equiv (Fin n) ℝ).toLinearMap
+        (LinearMap.ker_eq_bot.2 (EuclideanSpace.equiv (Fin n) ℝ).injective)
+    have closeEmbF : Topology.IsClosedEmbedding F := by
       apply LinearMap.isClosedEmbedding_of_injective
       rw [LinearMap.ker_eq_bot]
       exact injF
-    apply IsClosedEmbedding.isClosedMap closeEmbF
+    exact Topology.IsClosedEmbedding.isClosedMap closeEmbF
   apply isclosed
   have domclosed : IsClosed (quadrant' s) := by
     let g := fun i : s ↦ {mu : s → ℝ | 0 ≤ mu i}

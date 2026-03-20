@@ -1177,14 +1177,14 @@ variable {n : ℕ} {x : EuclideanSpace ℝ (Fin n)}
 variable {τ σ : Finset ℕ} {p : Constrained_OptimizationProblem (EuclideanSpace ℝ (Fin n)) τ σ}
 
 theorem LinearCQ_linear_constraint_eq (x : EuclideanSpace ℝ (Fin n)) (Lx : p.LinearCQ x) :
-    ∀ i ∈ τ, ∃ a, ∃ b, (equality_constraints p i) = fun y ↦ (inner a y : ℝ) + b := by
+    ∀ i ∈ τ, ∃ a, ∃ b, (equality_constraints p i) = fun y ↦ (inner ℝ a y : ℝ) + b := by
   intro i hi
   simp [LinearCQ] at Lx
   obtain Lx := (Lx).1 i ((equality_constraint_active_set x) hi) hi
   exact (IsLinear_iff' _).mp Lx
 
 theorem LinearCQ_linear_constraint_gradient_eq (x : EuclideanSpace ℝ (Fin n)) (Lx : p.LinearCQ x) :
-    ∀ i ∈ τ, ∃ a, ∃ b, ((equality_constraints p i) = fun y ↦ (inner a y : ℝ) + b) ∧
+    ∀ i ∈ τ, ∃ a, ∃ b, ((equality_constraints p i) = fun y ↦ (inner ℝ a y : ℝ) + b) ∧
     gradient (equality_constraints p i) x = a := by
   intro i hi
   obtain ⟨a, b, hab⟩ := LinearCQ_linear_constraint_eq x Lx i hi
@@ -1193,14 +1193,14 @@ theorem LinearCQ_linear_constraint_gradient_eq (x : EuclideanSpace ℝ (Fin n)) 
   exact (gradient_of_inner_const x a).gradient
 
 theorem LinearCQ_linear_constraint_ineq (x : EuclideanSpace ℝ (Fin n)) (Lx : p.LinearCQ x) :
-    ∀ i ∈ p.active_set x ∩ σ, ∃ a, ∃ b, (inequality_constraints p i) = fun y ↦ (inner a y : ℝ) + b := by
+    ∀ i ∈ p.active_set x ∩ σ, ∃ a, ∃ b, (inequality_constraints p i) = fun y ↦ (inner ℝ a y : ℝ) + b := by
   intro i hi
-  simp only [LinearCQ, and_imp] at Lx
+  simp only [LinearCQ] at Lx
   obtain Lx := (Lx).2 i hi
   exact (IsLinear_iff' _).mp Lx
 
 theorem LinearCQ_linear_constraint_gradient_ineq (x : EuclideanSpace ℝ (Fin n)) (Lx : p.LinearCQ x) :
-    ∀ i ∈ p.active_set x ∩ σ, ∃ a, ∃ b, ((inequality_constraints p i) = fun y ↦ (inner a y : ℝ) + b) ∧
+    ∀ i ∈ p.active_set x ∩ σ, ∃ a, ∃ b, ((inequality_constraints p i) = fun y ↦ (inner ℝ a y : ℝ) + b) ∧
     gradient (inequality_constraints p i) x = a := by
   intro i hi
   obtain ⟨a, b, hab⟩ := LinearCQ_linear_constraint_ineq x Lx i hi
@@ -1224,57 +1224,64 @@ theorem Linear_linearized_feasible_directions_eq_posTangentCone
   obtain ⟨t_, ht_, ht⟩ := inactive_constraint x v xf conti
   obtain ⟨hv1, hv2⟩ := hv
   let z := fun (k : ℕ) ↦ (t_ / (k + 1)) • v
-  simp [posTangentConeAt]
-  let c := fun (k : ℕ) ↦ (k + (1 : ℝ)) / t_
+  rw [posTangentConeAt, mem_tangentConeAt_iff_exists_seq]
+  let c : ℕ → NNReal := fun k ↦ ⟨((k : ℝ) + 1) / t_, by positivity⟩
   use c; use z
   constructor
-  · use 0; intro n hn
-    simp [FeasSet, FeasPoint]; constructor;
-    · constructor; rw [hdomain]; trivial
-      intro i hi
-      obtain ⟨a, c, ⟨hab, hg⟩⟩ := LinearCQ_linear_constraint_gradient_eq x Lx i hi
-      simp [FeasSet, FeasPoint] at xf
-      obtain ⟨⟨_, h2⟩, ⟨_, _⟩⟩ := xf
-      obtain h2 := h2 i hi; rw [← h2]; rw [hab]; simp only [RCLike.inner_apply, conj_trivial]
-      have : ⟪a, z n⟫_ℝ = 0 := by
-        obtain hv1 := hv1 i hi
-        rw [hg] at hv1
-        simp only [z]; rw [inner_smul_right, hv1, mul_zero]
-      rw [inner_add_right, this, add_zero]
-    constructor; rw [hdomain]; trivial
-    intro j hj
-    by_cases hj1 : j ∈ p.active_set x
-    · obtain hj' := Finset.mem_inter_of_mem hj1 hj
-      obtain ⟨a, c, ⟨hab, hg⟩⟩ := LinearCQ_linear_constraint_gradient_ineq x Lx j hj'
-      simp [FeasSet, FeasPoint] at xf
-      have : ⟪a, z n⟫_ℝ ≥ 0 := by
-        obtain hv2 := hv2 j (Finset.mem_inter_of_mem hj hj1)
-        rw [hg] at hv2; simp only [z]; rw [inner_smul_right]
-        positivity
-      obtain ⟨⟨_, _⟩, ⟨_, h2⟩⟩ := xf
-      simp [active_set] at hj1;
-      have : j ∉ τ := by
-        by_contra hh;
-        have : j ∈ τ ∩ σ := by simp [hj, hh]
-        rw [p.eq_ine_not_intersect] at this; tauto
-      simp [this] at hj1
-      rw [← hj1.2, hab]; simp only [RCLike.inner_apply, conj_trivial]
-      rw [inner_add_right]
+  · have hz0' : Tendsto (fun n : ℕ ↦ t_ / ((n : ℝ))) atTop (𝓝 0) :=
+      tendsto_const_div_atTop_nhds_zero_nat t_
+    have hz0 : Tendsto (fun n : ℕ ↦ t_ / ((n : ℝ) + 1)) atTop (𝓝 0) := by
+      simpa [Nat.cast_add, Nat.cast_one, add_assoc, add_comm, add_left_comm] using
+        (Filter.tendsto_add_atTop_iff_nat 1).2 hz0'
+    simpa [z] using hz0.smul_const v
+  · constructor
+    · refine Filter.eventually_atTop.2 ?_
+      use 0
+      intro n hn
+      simp [FeasSet, FeasPoint]; constructor;
+      · constructor; rw [hdomain]; trivial
+        intro i hi
+        obtain ⟨a, c, ⟨hab, hg⟩⟩ := LinearCQ_linear_constraint_gradient_eq x Lx i hi
+        simp [FeasSet, FeasPoint] at xf
+        obtain ⟨⟨_, h2⟩, ⟨_, _⟩⟩ := xf
+        obtain h2 := h2 i hi; rw [← h2]; rw [hab]; simp
+        have : ⟪a, z n⟫_ℝ = 0 := by
+          obtain hv1 := hv1 i hi
+          rw [hg] at hv1
+          simp only [z]; rw [inner_smul_right, hv1, mul_zero]
+        rw [inner_add_right, this, add_zero]
+      constructor; rw [hdomain]; trivial
+      intro j hj
+      by_cases hj1 : j ∈ p.active_set x
+      · obtain hj' := Finset.mem_inter_of_mem hj1 hj
+        obtain ⟨a, c, ⟨hab, hg⟩⟩ := LinearCQ_linear_constraint_gradient_ineq x Lx j hj'
+        simp [FeasSet, FeasPoint] at xf
+        have : ⟪a, z n⟫_ℝ ≥ 0 := by
+          obtain hv2 := hv2 j (Finset.mem_inter_of_mem hj hj1)
+          rw [hg] at hv2; simp only [z]; rw [inner_smul_right]
+          positivity
+        obtain ⟨⟨_, _⟩, ⟨_, h2⟩⟩ := xf
+        simp [active_set] at hj1;
+        have : j ∉ τ := by
+          by_contra hh;
+          have : j ∈ τ ∩ σ := by simp [hj, hh]
+          rw [p.eq_ine_not_intersect] at this; tauto
+        simp [this] at hj1
+        rw [← hj1.2, hab]; simp
+        rw [inner_add_right]
+        linarith
+      simp [z]
+      have : (t_ / (↑n + 1)) ∈ Icc 0 t_ := by
+        simp; constructor; positivity
+        apply div_le_self (by linarith) (by linarith)
+      obtain ht := ht _ this j (Finset.mem_sdiff.mpr ⟨hj, hj1⟩)
       linarith
-    simp [z]
-    have : (t_ / (↑n + 1)) ∈ Icc 0 t_ := by
-      simp; constructor; positivity
-      apply div_le_self (by linarith) (by linarith)
-    obtain ht := ht _ this j (Finset.mem_sdiff.mpr ⟨hj, hj1⟩)
-    linarith
-  constructor
-  · apply Filter.Tendsto.atTop_div_const ht_
-    apply tendsto_atTop_add_nonneg_right'
-    · exact tendsto_natCast_atTop_atTop
-    apply Filter.Eventually.of_forall; exact fun x ↦ zero_le_one' ℝ
-  apply tendsto_atTop_of_eventually_const (i₀ := 1)
-  intro i hi; simp [c, z]
-  rw [smul_smul]; field_simp
+    · apply tendsto_atTop_of_eventually_const (i₀ := 1)
+      intro i hi
+      simp [c, z, NNReal.smul_def]
+      rw [smul_smul]
+      field_simp
+      simp
 
 theorem first_order_neccessary_LinearCQ
     (p1 : Constrained_OptimizationProblem (EuclideanSpace ℝ (Fin n)) τ σ)

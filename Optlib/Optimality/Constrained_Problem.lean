@@ -389,7 +389,7 @@ lemma StrictFderivAt_of_FderivAt_of_ContinuousAt
     with ⟨ε, ε0, hε⟩
   refine ⟨ε, ε0, ?_⟩
   rintro ⟨a, b⟩ h
-  rw [← ball_prod_same, prod_mk_mem_set_prod_eq] at h
+  rw [← ball_prod_same, prodMk_mem_set_prod_eq] at h
   have hf' : ∀ x' ∈ Metric.ball x ε, ‖c' x' - c' x‖ ≤ μ := fun x' H' => by
     rw [← dist_eq_norm]
     exact le_of_lt (hε H').2
@@ -430,7 +430,7 @@ lemma exist_forall_forall_exist (P : ℕ → ℝ → Prop) (s : Finset ℕ) (hs 
   have po : ∀ y ∈ s1, y > 0 := by
     intro y hy
     simp [s1] at hy; rcases hy with ⟨a, ha1, ha2⟩
-    simp only [gt_iff_lt, and_imp, ha1, ↓reduceDIte, f] at ha2; rw [← ha2]
+    simp only [gt_iff_lt, ha1, ↓reduceDIte, f] at ha2; rw [← ha2]
     exact (h a ha1).choose_spec.1
   have up : ∀ y ∈ s1, tm ≤ y := fun y a ↦ Finset.min'_le s1 y a
   use tm; constructor
@@ -472,20 +472,23 @@ lemma LICQ_mlen (x : EuclideanSpace ℝ (Fin n)) (LIx : p.LICQ x)
 
 lemma LICQ_Axfullrank (x : EuclideanSpace ℝ (Fin n)) (LIx : p.LICQ x)
     {M : Matrix (p.active_set x) (Fin n) ℝ}
-    (eq : M = fun i : (p.active_set x) ↦ if i.1 ∈ τ then gradient (p.equality_constraints i) x
-        else gradient (p.inequality_constraints i) x):
+    (eq : M = fun i : (p.active_set x) ↦ (if i.1 ∈ τ then gradient (p.equality_constraints i) x
+        else gradient (p.inequality_constraints i) x).ofLp):
     Matrix.rank M = (Fintype.card (p.active_set x)) := by
+  rw [LICQ] at LIx
   apply LE.le.antisymm
   · apply Matrix.rank_le_card_height
   · simp
     rw [Matrix.rank_eq_finrank_span_row, finrank_span_eq_card]
-    simp; rw [eq]; apply LIx
+    simp; rw [eq]
+    simpa [Function.comp] using LIx.map' (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).toLinearMap
+      (LinearMap.ker_eq_bot.2 (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).injective)
 
 lemma LICQ_existZ (x : EuclideanSpace ℝ (Fin n)) (LIx : p.LICQ x)
     {m : ℕ} (meq : m = (p.active_set x).card)
     {M : Matrix (p.active_set x) (Fin n) ℝ}
-    (eq : M = fun i : (p.active_set x) ↦ if i.1 ∈ τ then gradient (p.equality_constraints i) x
-        else gradient (p.inequality_constraints i) x):
+    (eq : M = fun i : (p.active_set x) ↦ (if i.1 ∈ τ then gradient (p.equality_constraints i) x
+        else gradient (p.inequality_constraints i) x).ofLp):
     ∃ (Z : Matrix (Fin n) (Fin (n - m)) ℝ), M * Z = 0 ∧ Matrix.rank Z = (n - m) := by
   rw [LICQ] at LIx;
   have mlen : m ≤ n := LICQ_mlen x LIx meq
@@ -518,7 +521,7 @@ lemma LICQ_existZ (x : EuclideanSpace ℝ (Fin n)) (LIx : p.LICQ x)
     · simp
       rw [Matrix.rank_eq_finrank_span_row, finrank_span_eq_card]
       simp; rw [Nat.sub_add_cancel]; apply mlen
-      let base_indep := Basis.linearIndependent base
+      let base_indep := base.linearIndependent
       simp only [Z]
       rw [linearIndependent_iff'']
       intro s g cond sum
@@ -530,11 +533,11 @@ lemma LICQ_existZ (x : EuclideanSpace ℝ (Fin n)) (LIx : p.LICQ x)
         · intro cond; rw [cond]; simp [coe]
         · intro cond; simp [coe] at cond; exact cond
       rw [coe_zero]; simp only [coe]
-      rw [← sum]; simp
+      simpa [Matrix.row] using sum
 
 lemma mulVec_eq_toEuclidean {s : Type*} (M : Matrix s (Fin n) ℝ) (y : EuclideanSpace ℝ (Fin n)) :
     M *ᵥ y = (toEuclideanLin M) y := by
-  rw [Matrix.toEuclideanLin_apply]; ext j; simp [Matrix.mulVec, Matrix.dotProduct]
+  rfl
 
 lemma inj_iff_full_finrank {s t : Type*} {M : Matrix s t ℝ} [Fintype s] [Fintype t]
     (hn : Fintype.card s = Fintype.card t) :
@@ -568,34 +571,38 @@ lemma LICQ_injM (z : EuclideanSpace ℝ (Fin n)) (m : ℕ)
   rw [eq1, eq2] at Bzeq0; simp at Bzeq0
   have aux : (p.active_set x).card + (n - m) = n := by
     rw [← meq]; rw [add_comm, Nat.sub_add_cancel]; exact mlen
-  refine (inj_transpose_iff_inj_of_sq ?_).1 ?_ z Bzeq0
-  · simp; rw [aux]
-  · intro v Btveq0
-    let y := v ∘ Sum.inl
-    let z := v ∘ Sum.inr
-    have yeq : Bt *ᵥ (Sum.elim y (fun _ ↦ 0)) = Aᵀ *ᵥ y := by ext i; simp [Bt, mulVec, dotProduct]
-    have zeq : Bt *ᵥ (Sum.elim (fun _ ↦ 0) z) = Z *ᵥ z := by ext i; simp [Bt, mulVec, dotProduct]
-    have veq : v = (Sum.elim y (fun _ ↦ 0)) + (Sum.elim (fun _ ↦ 0) z) := by
-      simp [y, z]; ext i; cases i <;> simp
-    have eq : Bᵀ *ᵥ v = Aᵀ *ᵥ y + Z *ᵥ z := by rw [veq, ← Bteq, mulVec_add, yeq, zeq]
-    rw [eq] at Btveq0
-    have yzero : y = 0 := by
-      have h : A *ᵥ (Aᵀ *ᵥ y + Z *ᵥ z) = 0 := by rw [Btveq0]; simp
-      rw [mulVec_add, mulVec_mulVec, mulVec_mulVec, AZorth] at h; simp at h
-      refine (inj_iff_full_finrank ?_).1 ?_ y h
-      · simp
-      · simp; rw [← meq, Afull]
-    have yzero' : (Sum.elim y (fun _ : (Fin (n - m)) ↦ 0)) = 0 := by
-      ext i; cases i <;> simp [yzero]
-    have zzero : z = 0 := by
-      have h : Zᵀ *ᵥ (Aᵀ *ᵥ y + Z *ᵥ z) = 0 := by rw [Btveq0]; simp
-      rw [mulVec_add, mulVec_mulVec, mulVec_mulVec, ← transpose_mul, AZorth] at h; simp at h
-      refine (inj_iff_full_finrank ?_).1 ?_ z h
-      · simp
-      · simp; rw [rank_transpose_mul_self, Zfull]
-    have zzero' : (Sum.elim (fun _ : (p.active_set x) ↦ 0) z) = 0 := by
-      ext i; cases i <;> simp [zzero]
-    rw [veq, yzero', zzero']; simp
+  have z0 : z.ofLp = 0 := by
+    refine (inj_transpose_iff_inj_of_sq ?_).1 ?_ z Bzeq0
+    · simp; rw [aux]
+    · intro v Btveq0
+      let y := v ∘ Sum.inl
+      let z := v ∘ Sum.inr
+      have yeq : Bt *ᵥ (Sum.elim y (fun _ ↦ 0)) = Aᵀ *ᵥ y := by
+        ext i; simp [Bt, mulVec, dotProduct]
+      have zeq : Bt *ᵥ (Sum.elim (fun _ ↦ 0) z) = Z *ᵥ z := by
+        ext i; simp [Bt, mulVec, dotProduct]
+      have veq : v = (Sum.elim y (fun _ ↦ 0)) + (Sum.elim (fun _ ↦ 0) z) := by
+        simp [y, z]; ext i; cases i <;> simp
+      have eq : Bᵀ *ᵥ v = Aᵀ *ᵥ y + Z *ᵥ z := by rw [veq, ← Bteq, mulVec_add, yeq, zeq]
+      rw [eq] at Btveq0
+      have yzero : y = 0 := by
+        have h : A *ᵥ (Aᵀ *ᵥ y + Z *ᵥ z) = 0 := by rw [Btveq0]; simp
+        rw [mulVec_add, mulVec_mulVec, mulVec_mulVec, AZorth] at h; simp at h
+        refine (inj_iff_full_finrank ?_).1 ?_ y h
+        · simp
+        · simp; rw [← meq, Afull]
+      have yzero' : (Sum.elim y (fun _ : (Fin (n - m)) ↦ 0)) = 0 := by
+        ext i; cases i <;> simp [yzero]
+      have zzero : z = 0 := by
+        have h : Zᵀ *ᵥ (Aᵀ *ᵥ y + Z *ᵥ z) = 0 := by rw [Btveq0]; simp
+        rw [mulVec_add, mulVec_mulVec, mulVec_mulVec, ← transpose_mul, AZorth] at h; simp at h
+        refine (inj_iff_full_finrank ?_).1 ?_ z h
+        · simp
+        · simp; rw [rank_transpose_mul_self, Zfull]
+      have zzero' : (Sum.elim (fun _ : (p.active_set x) ↦ 0) z) = 0 := by
+        ext i; cases i <;> simp [zzero]
+      rw [veq, yzero', zzero']; simp
+  simpa using z0
 
 lemma LICQ_strictfderiv_Ax_elem {x : EuclideanSpace ℝ (Fin n)}
     (c : EuclideanSpace ℝ (Fin n) → ((p.active_set x) → ℝ))

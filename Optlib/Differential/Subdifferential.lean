@@ -5,7 +5,7 @@ Author: Anqing Shen, Yifan Bai, Chenyi Li, Zaiwen Wen
 -/
 import Mathlib.Order.LiminfLimsup
 import Mathlib.Topology.Defs.Filter
-import Mathlib.Data.Real.EReal
+import Mathlib.Topology.Instances.EReal.Lemmas
 import Optlib.Differential.Calculation
 import Optlib.Function.Proximal
 
@@ -19,7 +19,7 @@ variable {f g : E → ℝ} {x y u v : E} {c : ℝ}
 
 /- the general differential function used in the definition -/
 def differential_fun (x : E) (f : E → ℝ) (u : E) :=
-  fun y ↦ Real.toEReal ((f y - f x - inner u (y - x)) / ‖y - x‖)
+  fun y ↦ Real.toEReal ((f y - f x - inner ℝ u (y - x)) / ‖y - x‖)
 
 /- the definition of the Frechet subdifferential-/
 def f_subdifferential (f : E → ℝ) (x : E) : Set E :=
@@ -40,9 +40,9 @@ def critial_point (f : E → ℝ) : Set E :=
 
 /-- equivalence of Frechet subdifferential -/
 theorem has_f_subdiff_iff : u ∈ f_subdifferential f x ↔
-    ∀ ε > 0, ∀ᶠ y in 𝓝 x, f y - f x - inner u (y - x) ≥ -ε * ‖y - x‖ := by
-  have h0 : (∀ ε > 0, ∀ᶠ y in 𝓝[≠] x, f y - f x - inner u (y - x) > -ε * ‖y - x‖)
-      ↔ ∀ ε > 0, ∀ᶠ y in 𝓝 x, f y - f x - inner u (y - x) ≥ -ε * ‖y - x‖ := by
+    ∀ ε > 0, ∀ᶠ y in 𝓝 x, f y - f x - inner ℝ u (y - x) ≥ -ε * ‖y - x‖ := by
+  have h0 : (∀ ε > 0, ∀ᶠ y in 𝓝[≠] x, f y - f x - inner ℝ u (y - x) > -ε * ‖y - x‖)
+      ↔ ∀ ε > 0, ∀ᶠ y in 𝓝 x, f y - f x - inner ℝ u (y - x) ≥ -ε * ‖y - x‖ := by
     constructor
     · intro h ε εpos
       specialize h ε εpos
@@ -149,7 +149,7 @@ theorem convex_f_f_subdiff_eq_subgradient (f : E → ℝ) (x : E)
     have yin': y' ∈ univ:= by
       simp
     specialize convfun xin yin'
-    have pos: 0 < (1 / 2) * ((f x) + inner g (y' - x) - f y') / ‖y' - x‖:=by
+    have pos: 0 < (1 / 2) * ((f x) + inner ℝ g (y' - x) - f y') / ‖y' - x‖:=by
       apply div_pos
       · apply mul_pos
         simp; simp
@@ -160,7 +160,7 @@ theorem convex_f_f_subdiff_eq_subgradient (f : E → ℝ) (x : E)
         rw [yeq'] at hy'
         simp at hy'
     rw[← gt_iff_lt] at pos
-    specialize hg ((1 / 2) * ((f x) + inner g (y' - x) - f y')/‖y' - x‖)
+    specialize hg ((1 / 2) * ((f x) + inner ℝ g (y' - x) - f y')/‖y' - x‖)
     specialize hg pos
     simp at hg
     rw[Filter.Eventually,mem_nhds_iff] at hg
@@ -190,7 +190,7 @@ theorem convex_f_f_subdiff_eq_subgradient (f : E → ℝ) (x : E)
             by_contra yeq'
             rw[sub_eq_zero] at yeq'
             rw[yeq'] at hy'
-            rw[sub_self, inner_zero_right,add_zero, lt_iff_not_le] at hy'
+            rw[sub_self, inner_zero_right,add_zero, lt_iff_not_ge] at hy'
             apply hy'
             simp
             simp
@@ -204,14 +204,14 @@ theorem convex_f_f_subdiff_eq_subgradient (f : E → ℝ) (x : E)
             by_contra yeq'
             rw[sub_eq_zero] at yeq'
             rw[yeq'] at hy'
-            rw[sub_self, inner_zero_right,add_zero, lt_iff_not_le] at hy'
+            rw[sub_self, inner_zero_right,add_zero, lt_iff_not_ge] at hy'
             apply hy'
             simp
           · apply norm_pos_iff.mpr
             by_contra yeq'
             rw[sub_eq_zero] at yeq'
             rw[yeq'] at hy'
-            rw[sub_self, inner_zero_right,add_zero, lt_iff_not_le] at hy'
+            rw[sub_self, inner_zero_right,add_zero, lt_iff_not_ge] at hy'
             apply hy'
             simp
         simp
@@ -231,7 +231,7 @@ theorem convex_f_f_subdiff_eq_subgradient (f : E → ℝ) (x : E)
           by_contra yeq'
           rw[norm_eq_zero,sub_eq_zero] at yeq'
           rw[yeq'] at hy'
-          rw[sub_self, inner_zero_right,add_zero, lt_iff_not_le] at hy'
+          rw[sub_self, inner_zero_right,add_zero, lt_iff_not_ge] at hy'
           apply hy'
           simp
         refine div_mul_cancel₀ δ' nonzero
@@ -241,7 +241,6 @@ theorem convex_f_f_subdiff_eq_subgradient (f : E → ℝ) (x : E)
       apply lt_of_le_of_lt
       apply min_le_left
       exact lt_two_mul_self posδ
-      simp
       apply div_nonneg
       apply le_min
       linarith
@@ -252,8 +251,8 @@ theorem convex_f_f_subdiff_eq_subgradient (f : E → ℝ) (x : E)
     rcases hx1 with ⟨x1s,x1t⟩
     rw[mem_setOf] at x1s
     rcases x1s with ⟨r,rpos,rltone,x1eq⟩
-    have x1in: x1 ∈ {x_1 | inner g (x_1 - x) ≤
-        f x_1 - f x + 2⁻¹ * (f x + inner g (y' - x) - f y') / ‖y' - x‖ * ‖x_1 - x‖}:=by
+    have x1in: x1 ∈ {x_1 | inner ℝ g (x_1 - x) ≤
+        f x_1 - f x + 2⁻¹ * (f x + inner ℝ g (y' - x) - f y') / ‖y' - x‖ * ‖x_1 - x‖}:=by
       apply mem_of_subset_of_mem tin
       assumption
     rw[mem_setOf,x1eq] at x1in
@@ -271,7 +270,7 @@ theorem convex_f_f_subdiff_eq_subgradient (f : E → ℝ) (x : E)
     have r2pos: 0 < (1 -r)/2:=by linarith
     have req: r + (1-r) = 1:=by simp
     specialize convfun rnonneg rleone req
-    have nonneg: 0 ≤ f y' - f x - inner g (y' - x):=by
+    have nonneg: 0 ≤ f y' - f x - inner ℝ g (y' - x):=by
       apply nonneg_of_mul_nonneg_right _ r2pos
       rw[mul_sub, ← sub_self_div_two (1 - r), sub_mul, sub_mul (1 - r)]
       simp
@@ -288,17 +287,17 @@ theorem convex_f_f_subdiff_eq_subgradient (f : E → ℝ) (x : E)
       rw[neg_mul,← sub_eq_add_neg ((1 - r) * f y'),← mul_sub, mul_assoc, mul_comm (1 - r) ‖y' - x‖]
       rw[← mul_assoc, div_mul, div_self]
       simp
-      rw[mul_comm (2⁻¹ * inner g (y' - x) + 2⁻¹ * (f x - f y')),
-        mul_add, add_comm ((1 - r) * (2⁻¹ * inner g (y' - x)))]
+      rw[mul_comm (2⁻¹ * inner ℝ g (y' - x) + 2⁻¹ * (f x - f y')),
+        mul_add, add_comm ((1 - r) * (2⁻¹ * inner ℝ g (y' - x)))]
       rw[← add_assoc, ← mul_assoc, ← mul_assoc,inv_eq_one_div]
       linarith
       by_contra yeq'
       rw[norm_eq_zero,sub_eq_zero] at yeq'
       rw[yeq'] at hy'
-      rw[sub_self, inner_zero_right,add_zero, lt_iff_not_le] at hy'
+      rw[sub_self, inner_zero_right,add_zero, lt_iff_not_ge] at hy'
       apply hy'
       simp
-    have nonneg': ¬ 0 > f y' - f x - inner g (y' - x):=by linarith
+    have nonneg': ¬ 0 > f y' - f x - inner ℝ g (y' - x):=by linarith
     apply nonneg'
     simp
     linarith
@@ -326,7 +325,7 @@ theorem convex_f_f_subdiff_eq_subgradient (f : E → ℝ) (x : E)
 theorem f_subdiff_neg_f_subdiff_unique (hu : u ∈ f_subdifferential f x)
     (hv : v ∈ f_subdifferential (- f) x) : u = - v := by
   rw [has_f_subdiff_iff] at *
-  have h : ∀ ε > 0, ∀ᶠ y in 𝓝 x, inner (u + v) (y - x) ≤ ε * ‖y - x‖ := by
+  have h : ∀ ε > 0, ∀ᶠ y in 𝓝 x, inner ℝ (u + v) (y - x) ≤ ε * ‖y - x‖ := by
     intro ε εpos
     have ε2pos : 0 < ε / 2 := by positivity
     filter_upwards [hu _ ε2pos, hv _ ε2pos] with y huy hvy
@@ -371,9 +370,11 @@ theorem f_subdiff_smul (h : u ∈ f_subdifferential (c • f) x) (cpos : 0 < c) 
   filter_upwards [h _ (mul_pos cpos εpos)] with y hy
   rw [real_inner_smul_left]
   simp only [Pi.smul_apply, smul_eq_mul, neg_mul, neg_le_sub_iff_le_add] at hy
-  apply (mul_le_mul_left cpos).mp
-  field_simp
-  linarith
+  have hy' : c⁻¹ * inner ℝ u (y - x) ≤ f y - f x + ε * ‖y - x‖ := by
+    simpa [div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm] using
+      (show inner ℝ u (y - x) / c ≤ f y - f x + ε * ‖y - x‖ from
+        (div_le_iff₀ cpos).2 (by nlinarith [hy]))
+  linarith [hy']
 
 /-- first order optimality condition for unconstrained optimization problem -/
 theorem first_order_optimality_condition (f : E → ℝ) (x₀ : E) (hx : IsLocalMin f x₀) :
@@ -508,8 +509,8 @@ theorem f_subdiff_add' (f : E → ℝ ) (g : E → ℝ ) (g' : E → E) (x : E)
       specialize hg ε2pos
       filter_upwards [zin _ ε2pos, hg ] with a za ga
       simp at ga
-      have h: - (g a - g x - inner (g' x) (a - x)) ≥ -(ε / 2) * ‖a - x‖:=by
-        change -(ε / 2) * ‖a - x‖ ≤ - (g a - g x - inner (g' x) (a - x))
+      have h: - (g a - g x - inner ℝ (g' x) (a - x)) ≥ -(ε / 2) * ‖a - x‖:=by
+        change -(ε / 2) * ‖a - x‖ ≤ - (g a - g x - inner ℝ (g' x) (a - x))
         rw[neg_mul, neg_le_neg_iff]
         apply le_trans; apply le_abs_self; assumption
       rw[inner_sub_left];

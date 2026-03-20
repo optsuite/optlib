@@ -61,6 +61,7 @@ local notation "y'" => admm_kkt.y
 local notation "A₁†" => ContinuousLinearMap.adjoint A₁
 local notation "A₂†" => ContinuousLinearMap.adjoint A₂
 local notation "⟪" a₁ ", " a₂ "⟫" => @inner ℝ _ _ a₁ a₂
+local notation "inner" => (inner ℝ)
 
 lemma Satisfaction_ofthekkt : Convex_KKT x₁' x₂' y' admm.toOptProblem := admm_kkt.h
 
@@ -189,7 +190,7 @@ lemma norm_covex1 [Setting E₁ E₂ F admm admm_kkt]:∀ n : ℕ+ ,
    let g := A₁
    have h2 : u ∘ g = f := by
       ext x
-      simp only [Function.comp_apply]
+      rfl
    rw[← h2]
    have h3 : ⇑g ⁻¹' univ = univ := by
       simp only [preimage_univ]
@@ -223,7 +224,7 @@ lemma norm_covex2 [Setting E₁ E₂ F admm admm_kkt]:∀ n : ℕ+ ,
    let g := A₂
    have h2 : u ∘ g = f := by
       ext x
-      simp only [Function.comp_apply]
+      rfl
    rw[← h2]
    have h3 : ⇑g ⁻¹' univ = univ := by
       simp only [preimage_univ]
@@ -280,10 +281,7 @@ lemma ADMM_iter_process₁'_eq3_2' [Setting E₁ E₂ F admm admm_kkt]: ∀ n : 
             ((OptProblem.A₂ E₁) (ADMM.x₂ E₁ F n.natPred) - OptProblem.b E₁ E₂)
    rw[this]
    show HasGradientAt ((fun x => ⟪c , (A₁ x)⟫ + c₁)) (A₁† c) x
-   rw[hasGradientAt_iff_hasFDerivAt]
-   apply HasFDerivAt.add_const _ c₁
-   show HasGradientAt ((fun x => ⟪c , (A₁ x)⟫)) (A₁† c) x
-   apply ADMM_iter_process₁'_eq3_2'_1
+   exact (ADMM_iter_process₁'_eq3_2'_1 (c := c) x).add_const c₁
 
 lemma inner_continuous1 [Setting E₁ E₂ F admm admm_kkt]:∀ n : ℕ+ ,
       ContinuousOn (fun x => ⟪y n.natPred , (A₁ x) + (A₂ (x₂ n.natPred)) - b⟫) univ:= by
@@ -325,8 +323,7 @@ lemma Gradient_of_quadratic_forms { α β : Type*}
       simp[h]
       have := norm_nonneg (s - x)
       rwa[mul_nonneg_iff_right_nonneg_of_pos εpos]
-   ·  use ε / ‖A‖ ^ 2
-      field_simp
+   ·  refine ⟨ε / ‖A‖ ^ 2, div_pos εpos (sq_pos_of_pos h), ?_⟩
       intro x hx
       have hzero : 0 < ‖A‖ ^ 2 := by apply sq_pos_of_pos h
       let t := x - s
@@ -343,7 +340,7 @@ lemma Gradient_of_quadratic_forms { α β : Type*}
          rw[real_inner_smul_left,ContinuousLinearMap.adjoint_inner_left]
          ring
       rw[this,real_inner_self_eq_norm_sq]
-      simp only [abs_pow, abs_norm, ge_iff_le]
+      rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
       calc
          _ = ‖A (s - x)‖ ^ 2 := by
             rw[norm_comm]
@@ -367,7 +364,6 @@ lemma Gradient_of_quadratic_forms { α β : Type*}
                apply mul_le_mul_of_nonneg_left hx this
             _ = _ := by
                field_simp[hzero]
-               ring_nf
 
 #check add_sub
 lemma ADMM_iter_process₁'_eq3_3' [Setting E₁ E₂ F admm admm_kkt]: ∀ n : ℕ+ ,
@@ -558,10 +554,7 @@ lemma ADMM_iter_process₂'_eq3_2' [Setting E₁ E₂ F admm admm_kkt]: ∀ n : 
       exact inner_add_right (y n.natPred) (A₂ x) (A₁ (x₁ n) - b)
    rw[this]
    show HasGradientAt (fun x => ⟪c , (A₂ x)⟫ + c₁) (A₂† c) x
-   rw[hasGradientAt_iff_hasFDerivAt]
-   apply HasFDerivAt.add_const _ c₁
-   show HasGradientAt ((fun x => ⟪c , (A₂ x)⟫)) (A₂† c) x
-   apply inner_gradient
+   exact (inner_gradient (A := A₂) (c := c) x).add_const c₁
 
 lemma inner_continuous2 [Setting E₁ E₂ F admm admm_kkt]:∀ n : ℕ+ ,
       ContinuousOn (fun x => ⟪y n.natPred , (A₁ (x₁ n)) + (A₂ x) - b⟫) univ:= by
@@ -854,7 +847,7 @@ lemma subgradientAt_mono_u [Setting E₁ E₂ F admm admm_kkt] : ∀ n : ℕ+,
       (0 : ℝ) ≤ (inner (u (n) + A₁† y') (x₁ (n) - x₁')) := by
    intro n
    calc
-      _= inner (u (n) - (- A₁† y')) (x₁ (n) - x₁') := by simp[v]
+      _= inner (u (n) - (- A₁† y')) (x₁ (n) - x₁') := by simp
       _≥ (0 : ℝ) := by
          apply subgradientAt_mono
          apply u_inthesubgradient
@@ -864,7 +857,7 @@ lemma subgradientAt_mono_v [Setting E₁ E₂ F admm admm_kkt]: ∀ n : ℕ+,
       (0 : ℝ) ≤ (inner (v (n) + A₂† y') (x₂ (n) - x₂')) := by
    intro n
    calc
-      _= inner (v (n) - (- A₂† y')) (x₂ (n) - x₂') := by simp[v]
+      _= inner (v (n) - (- A₂† y')) (x₂ (n) - x₂') := by simp
       _≥ (0 : ℝ) := by
          apply subgradientAt_mono
          apply v_inthesubgradient
@@ -883,7 +876,7 @@ lemma expended_u_gt_zero [Setting E₁ E₂ F admm admm_kkt]: ∀ n, (0 : ℝ) �
    let x_diff := x₁ (n + 1) - x₁'
    let succ_n := Nat.toPNat' (n + 1)
    calc
-      _= inner (𝕜 := ℝ) block Ae1 := by rfl
+      _= inner block Ae1 := by rfl
       _= inner (A₁† block) (e') := by rw [ContinuousLinearMap.adjoint_inner_left]
       _= inner (u' + A₁† y') (x_diff) := by
          let block₁ := y (n + 1) + ((1-τ) * ρ) • (A₁ (e₁ (n + 1)) + A₂ (e₂ (n + 1))) + (ρ • (A₂ (x₂ (n) - x₂ (n+1))))
@@ -954,7 +947,7 @@ lemma expended_u_v_gt_zero [Setting E₁ E₂ F admm admm_kkt]: ∀ n , (inner (
    let Ae2 := A₂ (e₂ (n + 1))
    calc
    _ = inner ey' (-(A_e_sum)) - (1 - τ) * ρ * (inner A_e_sum A_e_sum)
-      + ρ * (inner (A_x_sum) (Ae1)) := by rw [norm_sq_eq_inner (𝕜:=ℝ) (A_e_sum)];rfl
+      + ρ * (inner (A_x_sum) (Ae1)) := by rw [← real_inner_self_eq_norm_sq A_e_sum]
    _ = inner ey' (-(A_e_sum)) + inner (- ((1 - τ) * ρ) • A_e_sum) A_e_sum
       + ρ * (inner A_x_sum Ae1) := by rw [smul_left,starRingEnd_eq_R];ring
    _ = inner (-ey') A_e_sum + inner (- ((1 - τ) * ρ) • A_e_sum) A_e_sum
@@ -1244,7 +1237,7 @@ lemma Φ_isdescending_inequ5' [Setting E₁ E₂ F admm admm_kkt]: ∀ n : ℕ+,
       - 2 * (1-τ) * ρ * ‖A₁ (x₁ (n+1)) + A₂ (x₂ (n+1)) - b‖^2
       + 2 * M (n+1)
       - 1 * ρ * ((‖A₂ (x₂ (n+1) - x₂ n)‖^2 + ‖A₂ (e₂ (n+1))‖^2 - ‖A₂ (e₂ n)‖^2))
-      := by nth_rw 2 [div_eq_mul_inv]; rw [one_mul]; nth_rw 3 [pow_two]; simp [inv_mul_cancel]
+      := by nth_rw 2 [div_eq_mul_inv]; rw [one_mul]; nth_rw 3 [pow_two]; simp
             left; rw [mul_assoc]
             nth_rw 2 [← mul_assoc]
             nth_rw 2 [← mul_assoc]
@@ -1399,7 +1392,11 @@ lemma basic_inequ₂ (n : ℕ+) : - 2 * inner (A₂ (x₂ (n+1) - x₂ n)) (A₁
       apply Real.sqrt_ne_zero'.mpr
       rcases admm.htau with ⟨h₁, _⟩
       assumption
-   have h3 : inner (𝕜 := ℝ) S1 S2 = inner (𝕜 := ℝ) (s1 • S1) (s1⁻¹ • S2) := by rw [inner_smul_left, inner_smul_right]; rw [← mul_assoc]; simp; rw [mul_inv_cancel₀, one_mul]; exact this
+   have h3 : inner S1 S2 = inner (s1 • S1) (s1⁻¹ • S2) := by
+      rw [inner_smul_left, inner_smul_right, ← mul_assoc]
+      simp
+      rw [mul_inv_cancel₀, one_mul]
+      exact this
    rw [h1, h2, h3]
    have : ‖s1 • S1‖ ^ 2 + ‖s1⁻¹ • S2‖ ^ 2 - -2 * ⟪s1 • S1, s1⁻¹ • S2⟫_ℝ = ‖s1 • S1‖ ^ 2 + 2 * ⟪s1 • S1, s1⁻¹ • S2⟫_ℝ + ‖s1⁻¹ • S2‖ ^ 2 := by ring_nf
    rw [this, ←norm_add_sq_real]
@@ -1478,13 +1475,20 @@ lemma τ_min1_1 [Setting E₁ E₂ F admm admm_kkt] (h: 0 < τ ∧ τ ≤ 1) : m
    rcases h with ⟨h1, h2⟩
    apply min_eq_left
    have h3: τ ^ 2 ≤ 1 := by
-      apply pow_le_one;linarith;linarith
+      have hτ : |τ| ≤ 1 := by simpa [abs_of_nonneg (le_of_lt h1)] using h2
+      have hτ' : |τ| ≤ |(1 : ℝ)| := by simpa using hτ
+      have hsq : τ ^ 2 ≤ (1 : ℝ) ^ 2 := (sq_le_sq).2 hτ'
+      simpa using hsq
    linarith
 
 lemma τ_min1_2 [Setting E₁ E₂ F admm admm_kkt] (h: τ > 1 ) : min τ (1 + τ - τ ^ 2) = 1 + τ - τ ^ 2 := by
    apply min_eq_right
    have : 1 < τ ^ 2 := by
-      apply one_lt_pow;exact h;linarith
+      have hτ : 0 < τ := lt_trans zero_lt_one h
+      have hτabs : (1 : ℝ) < |τ| := by simpa [abs_of_pos hτ] using h
+      have hτabs' : |(1 : ℝ)| < |τ| := by simpa using hτabs
+      have hsq : (1 : ℝ) ^ 2 < τ ^ 2 := (sq_lt_sq).2 hτabs'
+      simpa using hsq
    linarith
 
 lemma τ_min2_1 [Setting E₁ E₂ F admm admm_kkt] (h: 0 < τ ∧ τ ≤ 1) : min 1 (1 + 1 / τ - τ ) = 1 := by
@@ -1503,7 +1507,9 @@ lemma τ_min2_2 [Setting E₁ E₂ F admm admm_kkt] (h: τ > 1 ) : min 1 (1 + 1 
    calc
       _ > 1 := h
       _ > 1 / τ := by
-         rw [one_div, ← inv_one];apply inv_lt_inv_of_lt;linarith;exact h
+         have hτ : 0 < τ := lt_trans zero_lt_one h
+         have hdiv1 : 1 / τ < 1 := (div_lt_iff₀ hτ).2 (by simpa [one_mul] using h)
+         linarith [hdiv1]
    linarith
 
 lemma τ_min3_1 [Setting E₁ E₂ F admm admm_kkt] (h: 0 < τ ∧ τ ≤ 1) : max (1 - τ) (1 - 1 / τ) = 1 - τ := by
@@ -1522,7 +1528,9 @@ lemma τ_min3_2 [Setting E₁ E₂ F admm admm_kkt] (h: τ > 1) : max (1 - τ) (
    calc
       _ > 1 := h
       _ > 1 / τ := by
-         rw [one_div, ← inv_one];apply inv_lt_inv_of_lt;linarith;exact h
+         have hτ : 0 < τ := lt_trans zero_lt_one h
+         have hdiv1 : 1 / τ < 1 := (div_lt_iff₀ hτ).2 (by simpa [one_mul] using h)
+         linarith [hdiv1]
    linarith
 
 lemma Φ_isdescending [Setting E₁ E₂ F admm admm_kkt]: ∀ n : ℕ+, (Φ n ) - (Φ (n + 1) ) ≥ (min τ (1 + τ - τ ^ 2) )* ρ

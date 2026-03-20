@@ -1054,9 +1054,9 @@ lemma subtype_sum (σ τ : Finset ℕ) (f : σ → EuclideanSpace ℝ (Fin n))
   have : ∑ i, g i = ∑ i : {x // x ∈ σ ∩ τ},
       f {val := i.1, property := by obtain hi := i.2; rw [Finset.mem_inter] at hi; exact hi.1} := by
     congr; ext i; rw [h2]
-  rw [this]; simp [h3]
+  rw [this]; simp
   let f₁ : ℕ → EuclideanSpace ℝ (Fin n):= fun i => if h : i ∈ σ then f ⟨i, h⟩ else 0
-  have eq1 : ∑ i ∈ σ.attach, f i = ∑ i in σ, f₁ i := by
+  have eq1 : ∑ i ∈ σ.attach, f i = ∑ i ∈ σ, f₁ i := by
     simp [f₁]; nth_rw 2 [← Finset.sum_attach]; congr; simp
   have eq2 : ∑ i ∈ (σ ∩ τ).attach,
       f {val := i.1, property := by obtain hi := i.2; rw [Finset.mem_inter] at hi; exact hi.1} =
@@ -1068,8 +1068,8 @@ lemma subtype_sum (σ τ : Finset ℕ) (f : σ → EuclideanSpace ℝ (Fin n))
   obtain eq := Finset.sdiff_union_inter σ τ
   nth_rw 1 [← eq]; rw [Finset.sum_union]; simp
   have feq0 : ∀ x ∈ (σ \ τ), f₁ x = 0 := by
-    simp [f₁]; intro x _ xninτ
-    intro h; specialize h3 ⟨x, h⟩; apply h3; simp [xninτ]
+    simp [f₁]; intro x _ xninτ h
+    specialize h3 ⟨x, h⟩; apply h3; simp [xninτ]
   apply Finset.sum_eq_zero feq0
   apply Finset.disjoint_sdiff_inter σ τ
 
@@ -1119,13 +1119,19 @@ theorem first_order_neccessary_general (p1 : Constrained_OptimizationProblem (Eu
       intro i _; apply DifferentiableAt.const_mul; exact (hc1 i i.2)
       intro i _; apply DifferentiableAt.const_mul; exact (he1 i i.2)
       exact hf.differentiableAt
-      apply DifferentiableAt.sum; intro i _; apply DifferentiableAt.const_mul
-      exact (he1 i i.2)
+      convert (DifferentiableAt.sum (u := (Finset.univ : Finset τ))
+          (A := fun i m => lam i * p1.equality_constraints (↑i) m)
+          (by intro i _; exact DifferentiableAt.const_mul (he1 i i.2) (lam i))) using 1
+      ext m; simp [Finset.sum_apply]
       apply DifferentiableAt.sub hf.differentiableAt
-      apply DifferentiableAt.sum; intro i _; apply DifferentiableAt.const_mul
-      exact (he1 i i.2)
-      apply DifferentiableAt.sum; intro i _; apply DifferentiableAt.const_mul
-      exact (hc1 i i.2)
+      convert (DifferentiableAt.sum (u := (Finset.univ : Finset τ))
+          (A := fun i m => lam i * p1.equality_constraints (↑i) m)
+          (by intro i _; exact DifferentiableAt.const_mul (he1 i i.2) (lam i))) using 1
+      ext m; simp [Finset.sum_apply]
+      convert (DifferentiableAt.sum (u := (Finset.univ : Finset σ))
+          (A := fun i m => mu1 i * p1.inequality_constraints (↑i) m)
+          (by intro i _; exact DifferentiableAt.const_mul (hc1 i i.2) (mu1 i))) using 1
+      ext m; simp [Finset.sum_apply]
     constructor
     · intro j; simp [mu1]
       by_cases ht : j.1 ∈ p1.active_set loc
@@ -1138,10 +1144,9 @@ theorem first_order_neccessary_general (p1 : Constrained_OptimizationProblem (Eu
       unfold active_set at heq
       simp at heq
       rcases heq with hl | hl
-      · obtain neq := p1.eq_ine_not_intersect
-        exfalso;
-        apply absurd neq; push_neg;
-        apply Finset.ne_empty_of_mem (a := j.1) (by simp [hl])
+      · exfalso
+        have : j.1 ∈ τ ∩ σ := by simp [hl, j.2]
+        simp [p1.eq_ine_not_intersect] at this
       exact hl
     simp [ht]
 
@@ -1163,7 +1168,7 @@ theorem first_order_neccessary_LICQ (p1 : Constrained_OptimizationProblem (Eucli
   apply hl.1; use conte; use conti; exact hLICQ; exact hdomain
 
 end Constrained_OptimizationProblem_property_finite_dimensional
-/-
+
 section Constrained_OptimizationProblem_property_linear
 
 open Constrained_OptimizationProblem Topology InnerProductSpace Set Filter Tendsto Matrix
@@ -1286,4 +1291,3 @@ theorem first_order_neccessary_LinearCQ
   apply hl.1; use conte; use conti; exact hLinearCQ; exact hdomain
 
 end Constrained_OptimizationProblem_property_linear
--/

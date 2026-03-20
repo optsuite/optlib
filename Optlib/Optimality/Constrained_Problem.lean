@@ -5,12 +5,13 @@ Authors: Chenyi Li, Shengyang Xu, Yuxuan Wu
 -/
 import Mathlib.Analysis.Convex.Cone.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import Mathlib.Analysis.NormedSpace.HahnBanach.Separation
-import Mathlib.Data.Matrix.Rank
-import Mathlib.LinearAlgebra.FiniteDimensional
+import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.LinearAlgebra.Matrix.Rank
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Analysis.Calculus.Implicit
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Calculus.TangentCone.Seq
 import Optlib.Differential.Calculation
 import Optlib.Convex.Farkas
 import Optlib.Differential.Lemmas
@@ -46,7 +47,7 @@ variable {τ σ : Finset ℕ}
   The equality constraints are a set of functions from a Hilbert space to ℝ.
   The inequality constraints are a set of functions from a Hilbert space to ℝ.
 -/
-structure Constrained_OptimizationProblem (E : Type _) (τ σ : Finset ℕ) :=
+structure Constrained_OptimizationProblem (E : Type _) (τ σ : Finset ℕ) where
   (domain : Set E)
   (equality_constraints : (i : ℕ) → E → ℝ)
   (inequality_constraints : (j : ℕ) → E → ℝ)
@@ -145,11 +146,11 @@ section linear
 
 variable {E : Type _} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-def IsLinear (f : E → ℝ) : Prop := ∃ a, ∃ b, f = fun x ↦ (inner x a : ℝ) + b
+def IsLinear (f : E → ℝ) : Prop := ∃ a, ∃ b, f = fun x ↦ (inner ℝ x a : ℝ) + b
 
-lemma IsLinear_iff (f : E → ℝ) : IsLinear f ↔ ∃ a b, f = fun x ↦ (inner x a : ℝ) + b := by rfl
+lemma IsLinear_iff (f : E → ℝ) : IsLinear f ↔ ∃ a b, f = fun x ↦ (inner ℝ x a : ℝ) + b := by rfl
 
-lemma IsLinear_iff' (f : E → ℝ) : IsLinear f ↔ ∃ a b, f = fun x ↦ (inner a x : ℝ) + b := by
+lemma IsLinear_iff' (f : E → ℝ) : IsLinear f ↔ ∃ a b, f = fun x ↦ (inner ℝ a x : ℝ) + b := by
   constructor
   repeat rintro ⟨a, b, rfl⟩; exact ⟨a, b, by ext x; simp; exact real_inner_comm _ _⟩
 
@@ -199,190 +200,11 @@ theorem linearized_feasible_directions_convex (point : E) :
 lemma posTangentCone_localmin_inner_pos {f : E → ℝ} {loc : E} (hl : IsLocalMinOn f p.FeasSet loc)
     (hf : DifferentiableAt ℝ f loc) :
     ∀ v ∈ posTangentConeAt p.FeasSet loc, ⟪gradient f loc, v⟫_ℝ ≥ (0 : ℝ) := by
-  intro v vt; rw [posTangentConeAt] at vt; simp at vt
-  rcases vt with ⟨c, d, ⟨a, ha⟩, ⟨vt1, vt2⟩⟩
-  by_contra proneg; push_neg at proneg
-  rw [IsLocalMinOn, IsMinFilter, eventually_iff_exists_mem] at hl
-  rcases hl with ⟨s, ⟨hs, hs2⟩⟩
-  rw [nhdsWithin] at hs
-  rcases Metric.mem_nhdsWithin_iff.mp hs with ⟨ε, ⟨εpos, εball⟩⟩
-  let s1 := Metric.ball loc ε ∩ p.FeasSet
-  have hmin : ∀ y ∈ s1, f loc ≤ f y := fun y yin => hs2 y (εball yin)
-  let z := fun n ↦ loc + d n
-  have hzd : ∀ n, d n = z n - loc := fun _ => eq_sub_of_add_eq' rfl
-  rw [real_inner_comm] at proneg
-  have hcp : ∀ᶠ (n : ℕ) in atTop, c n > 0 := by
-    rw [Filter.tendsto_atTop] at vt1
-    specialize vt1 (1 : ℝ)
-    apply Filter.Eventually.mp vt1
-    apply Filter.Eventually.of_forall
-    intro n hn; linarith
-  have hz3 : ∀ᶠ (n : ℕ) in atTop, (1 / c n) > 0 := by
-    apply Filter.Eventually.mp hcp
-    apply Filter.Eventually.of_forall
-    intro n hn; exact one_div_pos.mpr hn
-  have hzt : Tendsto z atTop (𝓝 loc) := by
-    have : Tendsto d atTop (𝓝 0) := by
-      rw [Filter.tendsto_atTop] at vt1
-      rw [Filter.tendsto_atTop'] at vt2
-      rw [Metric.tendsto_atTop']; intro ε hε
-      have : Metric.ball v ε ∈ 𝓝 v := by exact Metric.ball_mem_nhds _ hε
-      specialize vt2 (Metric.ball v ε) this
-      rcases vt2 with ⟨a, ha⟩
-      specialize vt1 (2 * (‖v‖ + ε) / ε); simp at vt1
-      rcases vt1 with ⟨a1, ha1⟩
-      let n1 := max a a1
-      use n1; intro n hn
-      specialize ha n (ge_trans (Nat.le_of_lt hn) (a.le_max_left a1))
-      specialize ha1 n (ge_trans (Nat.le_of_lt hn) (a.le_max_right a1))
-      have : ‖d n‖ < ε := by
-        have : ‖c n • d n‖ ≤ ‖v‖ + ε := by
-          rw [Metric.mem_ball, dist_eq_norm] at ha;
-          have t1 : ‖c n • d n - v‖ ≥ ‖c n • d n‖ - ‖v‖ := norm_sub_norm_le _ v
-          linarith
-        have cpos : c n > 0 := by
-          apply lt_of_le_of_lt'
-          · show c n ≥ 2 * (‖v‖ + ε) / ε
-            exact ha1
-          · positivity
-        rw [norm_smul, Real.norm_eq_abs, abs_of_pos cpos] at this;
-        calc _ ≤ (‖v‖ + ε) / c n := (le_div_iff₀' cpos).mpr this
-             _ ≤ (‖v‖ + ε) / (2 * (‖v‖ + ε) / ε) :=
-                div_le_div_of_nonneg_left (by positivity) (by positivity) ha1
-             _ = ε / 2 := by field_simp [εpos]; ring_nf
-             _ < ε := by linarith
-      simp; exact this
-    have h1 : z = (fun n ↦ d n + loc) := by
-      funext n; rw [hzd n, sub_add, sub_self, sub_zero]
-    rw [h1]
-    convert Filter.Tendsto.add_const loc this
-    rw [zero_add]
-  have hz : (fun n ↦ f (z n) - f loc - inner (z n - loc) (gradient f loc))
-      =o[atTop] (fun n ↦ z n - loc) := by
-    have : HasGradientAt f (gradient f loc) loc := hf.hasGradientAt
-    rw [hasGradientAt_iff_isLittleO] at this
-    have heq : (fun n ↦ f (z n) - f loc - inner (z n - loc) (gradient f loc)) =
-        (fun n ↦ f (z n) - f loc - inner (gradient f loc) (z n - loc)) := by
-      ext n; rw [real_inner_comm]
-    rw [heq]
-    apply Asymptotics.IsLittleO.comp_tendsto this hzt
-  have hz1 : (fun n ↦ f (z n) - f loc - (1 / c n) * inner v (gradient f loc))
-      =o[atTop] (fun n ↦ 1 / c n) := by
-    have t1: (fun n ↦ z n - loc) =O[atTop] (fun n ↦ 1 / c n) := by
-      rw [Asymptotics.isBigO_iff]
-      rw [Filter.tendsto_atTop] at vt1
-      rw [Filter.tendsto_atTop'] at vt2
-      have : Metric.ball v 1 ∈ 𝓝 v := by exact Metric.ball_mem_nhds _ (by norm_num)
-      specialize vt2 (Metric.ball v 1) this
-      rcases vt2 with ⟨a, ha⟩
-      specialize vt1 (2 * (‖v‖ + ε) / ε); simp at vt1
-      rcases vt1 with ⟨a1, ha1⟩
-      let n1 := max a a1
-      use (‖v‖ + 1 : ℝ); simp; use n1; intro n hn
-      specialize ha n (ge_trans hn (a.le_max_left a1))
-      specialize ha1 n (ge_trans hn (a.le_max_right a1))
-      have cpos : c n > 0 := by
-          apply lt_of_le_of_lt'
-          · show c n ≥ 2 * (‖v‖ + ε) / ε
-            exact ha1
-          · positivity
-      rw [abs_of_pos]
-      have : ‖d n‖ ≤ (‖v‖ + 1) * (c n)⁻¹ := by
-        have : ‖c n • d n‖ ≤ ‖v‖ + 1 := by
-          rw [Metric.mem_ball, dist_eq_norm] at ha;
-          have t1 : ‖c n • d n - v‖ ≥ ‖c n • d n‖ - ‖v‖ := norm_sub_norm_le _ v
-          linarith
-        rw [norm_smul, Real.norm_eq_abs, abs_of_pos cpos] at this;
-        field_simp; exact (le_div_iff₀' cpos).mpr this
-      rw [← hzd n]; exact this; apply cpos
-    have t2 : (fun n ↦ f (z n) - f loc - inner (z n - loc) (gradient f loc))
-        =o[atTop] (fun n ↦ 1 / c n) := Asymptotics.IsLittleO.trans_isBigO hz t1
-    have t3 : (fun n ↦ (inner (z n - loc - (1 / c n) • v) (gradient f loc) : ℝ))
-        =o[atTop] (fun n ↦ 1 / c n) := by
-      have t5: (fun n ↦ z n - loc - (1 / c n) • v) =o[atTop] (fun n ↦ 1 / c n) := by
-        rw [← Asymptotics.isLittleO_norm_norm]
-        apply (Asymptotics.isLittleO_iff_tendsto' _).mpr
-        · have : (fun x ↦ ‖z x - loc - (1 / c x) • v‖ / ‖1 / c x‖)
-              =ᶠ[atTop] (fun x ↦ ‖c x • (z x - loc) - v‖) := by
-            simp; rw [Filter.EventuallyEq]
-            apply Filter.Eventually.mp hcp
-            apply Filter.Eventually.of_forall
-            intro n hcn1; rw [mul_comm, ← Real.norm_eq_abs, ← norm_smul]
-            congr; field_simp; rw [smul_sub, smul_smul]; field_simp
-          rw [Filter.tendsto_congr' this];
-          have : Tendsto (fun (n : ℕ) => c n • d n - v) atTop (𝓝 (v - v)) := by
-            apply Filter.Tendsto.sub vt2 tendsto_const_nhds
-          apply Filter.Tendsto.norm at this
-          simp at this; convert this; simp [hzd]
-        · apply Filter.Eventually.mp hcp
-          apply Filter.Eventually.of_forall
-          intro n hcn1 hcn2
-          exfalso; simp at hcn2; linarith
-      rw [Asymptotics.isLittleO_iff]; intro c1 hc1
-      rw [Asymptotics.isLittleO_iff] at t5;
-      have pos1 : ‖gradient f loc‖ ≠ (0 : ℝ) := by
-        by_contra hhh; simp at hhh
-        have : inner v (gradient f loc) = (0 : ℝ) := by rw [hhh, inner_zero_right]
-        linarith
-      have pos2 : ‖gradient f loc‖ > (0 : ℝ) := by positivity
-      have : c1 / ‖gradient f loc‖ > (0 : ℝ) := by positivity
-      specialize t5 this
-      apply Filter.Eventually.mp t5
-      apply Filter.Eventually.of_forall
-      intro n hn;
-      calc _ ≤ ‖z n - loc - (1 / c n) • v‖ * ‖gradient f loc‖ := norm_inner_le_norm _ _
-           _ ≤ c1 / ‖gradient f loc‖ * ‖1 / c n‖ * ‖gradient f loc‖ :=
-              (mul_le_mul_right pos2).mpr hn
-           _ ≤ c1 * ‖1 / c n‖ := by ring_nf; field_simp [pos1]
-    have t4 :  (fun n => f (z n) - f loc - 1 / c n * Inner.inner v (gradient f loc)) =
-        (fun n ↦ f (z n) - f loc - inner (z n - loc) (gradient f loc)) +
-        (fun n ↦ (inner (z n - loc - (1 / c n) • v) (gradient f loc) : ℝ)) := by
-      ext n; dsimp; simp [inner_sub_left, inner_add_left, inner_smul_left]
-    rw [t4]; apply Asymptotics.IsLittleO.add t2 t3
-  have hz2 : ∀ᶠ (n : ℕ) in atTop, f (z n) ≤ f loc + (1 / 2) *
-      (1 / c n) * inner v (gradient f loc) := by
-    rw [Asymptotics.isLittleO_iff] at hz1
-    have : (- (1 / 2 : ℝ) * inner v (gradient f loc)) > 0 := by
-      simp [proneg];rw [mul_comm]; apply mul_neg_of_neg_of_pos proneg (by norm_num)
-    specialize hz1 this
-    apply Filter.Eventually.mp hz1
-    apply Filter.Eventually.mp hz3
-    apply Filter.Eventually.of_forall
-    intro n hn hn1
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_le, abs_of_pos hn] at hn1
-    rcases hn1 with ⟨_, hn1⟩
-    rw [sub_le_iff_le_add, sub_le_iff_le_add] at hn1
-    have : -(1 / 2) * inner v (gradient f loc) * (1 / c n) + 1 / c n * inner v
-        (gradient f loc) + f loc = f loc + 1 / 2 * (1 / c n) * inner v (gradient f loc) := by
-      ring_nf
-    rw [this] at hn1; exact hn1
-  have hz4 : ∀ᶠ (n : ℕ) in atTop, f (z n) < f loc := by
-    apply Filter.Eventually.mp hz2
-    apply Filter.Eventually.mp hz3
-    apply Filter.Eventually.of_forall
-    intro n hn1 hn2
-    have : 1 / 2 * (1 / c n) * (inner v (gradient f loc)) < 0 := by
-      apply mul_neg_of_pos_of_neg
-      · apply Right.mul_pos; simp; exact hn1
-      · exact proneg
-    linarith
-  have hz5 : ∀ᶠ (n : ℕ) in atTop, z n ∈ s1 := by
-    simp only [s1, mem_inter_iff, Metric.mem_ball, dist_self_add_left]
-    apply Filter.Eventually.and
-    · rw [Filter.tendsto_atTop'] at hzt
-      simp;
-      have : Metric.ball loc ε ∈ 𝓝 loc := by exact Metric.ball_mem_nhds loc εpos
-      rcases hzt (Metric.ball loc ε) this with ⟨a, ha⟩
-      use a; intro b hb; specialize ha b (by linarith [hb])
-      simp at ha; exact ha
-    · simp; use a
-  simp at hz5 hz4
-  rcases hz5 with ⟨n, hn1⟩; rcases hz4 with ⟨m, hm1⟩
-  let M := max n m
-  have hh2 : f (z M) < f loc := hm1 M (le_max_right n m)
-  have hh1 : z M ∈ s1 := by simp [s1]; apply hn1 M (le_max_left n m)
-  have hh3 : f loc ≤ f (z M) := hmin (z M) hh1
-  linarith
+  intro v vt
+  have hgrad : HasGradientAt f (gradient f loc) loc := hf.hasGradientAt
+  have hnonneg : 0 ≤ ((toDual ℝ E) (gradient f loc)) v :=
+    hl.hasFDerivWithinAt_nonneg hgrad.hasFDerivAt.hasFDerivWithinAt vt
+  simpa [InnerProductSpace.toDual_apply_apply, real_inner_comm] using hnonneg
 
 /-
   Linearized feasible directions contain tagent cone
@@ -418,7 +240,7 @@ theorem linearized_feasible_directions_contain_tagent_cone (xf : x ∈ p.FeasSet
   . intro i itau
     apply ge_antisymm
     . apply posTangentCone_localmin_inner_pos (imin i itau) (diffable i itau) v hv
-    . rw [← neg_neg (inner (gradient (equality_constraints p i) x) v)]
+    . rw [← neg_neg (inner ℝ (gradient (equality_constraints p i) x) v)]
       apply neg_nonpos_of_nonneg
       rw [← inner_neg_left]
       have a₁ : ∀ i ∈ τ, DifferentiableAt ℝ (-equality_constraints p i) x :=
@@ -467,7 +289,7 @@ theorem local_Minimum_TangentCone (loc : E) (hl : p.Local_Minimum loc)
 theorem local_Minimum_TangentCone' (loc : E) (hl : p.Local_Minimum loc)
     (hf : Differentiable ℝ p.objective) :
     posTangentConeAt p.FeasSet loc ∩ {d | ⟪gradient p.objective loc, d⟫_ℝ < (0 : ℝ)} = ∅ := by
-  rw [Set.eq_empty_iff_forall_not_mem]
+  rw [Set.eq_empty_iff_forall_notMem]
   intro d ⟨hd1, hd2⟩
   simp at hd2
   obtain hd1 := local_Minimum_TangentCone loc hl hf d hd1

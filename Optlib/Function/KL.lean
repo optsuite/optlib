@@ -582,27 +582,4 @@ theorem uniformized_KL_property {f : E → ℝ} {Ω : Set E} (h_compact : IsComp
         rw [equ_μ] at h_exist
         exact h_exist
 
-
--- theorem uniformly_KL_property' {f : E → ℝ} {Ω : Set E} (h_compact : IsCompact Ω)
---     (h_Ω1 : ∀ x ∈ Ω, KL_point f x) (h_Ω2: is_constant_on f Ω) :
---     ∃ ε ∈ Ioi 0, ∃ η ∈ Ioi 0, ∃ φ ∈ desingularizing_function η, ∀ u ∈ Ω , ∀ x ∈
---     {y : E | (Metric.infEDist y Ω).toReal < ε} ∩ {y | f u < f y ∧ f y < f u + η},
---     (Real.toEReal (deriv φ (f x - f u))) * (Metric.infEDist 0 (subdifferential f x))
---       ≥ Real.toEReal 1 := by
-
---     obtain h := uniformly_KL_property h_compact h_Ω1 h_Ω2
---     rcases h with ⟨ε, hε, η, hη, φ, hφ, h⟩
---     use ε, hε, η, hη, φ, hφ
---     intro u hu x hx
---     by_cases h_empty : Metric.infEDist 0 (subdifferential f x) = ⊤
---     · rw [h_empty]
---       have hderiv: Real.toEReal (deriv φ (f x - f u)) > 0 := by sorry
---       have hh: (Real.toEReal (deriv φ (f x - f u))) * (ENNReal.toEReal ⊤) = ⊤ := by
---         sorry
---       rw [hh]
---       simp
---     · push_neg at h_empty
---       have h_not_bot: Metric.infEDist 0 (subdifferential f x) ≠ ⊥ := by sorry
---       sorry
---     -- by_cases h_empty : Metric.infEDist 0 (subdifferential f x) = ∅
 end uniformized_KL

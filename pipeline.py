@@ -3,6 +3,7 @@ import sys
 import threading
 from collections import deque
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from datetime import datetime
 from pathlib import Path
 
 DEPENDCY_FILE = "Dependcy.md"
@@ -11,7 +12,15 @@ PLACEHOLDER = "__________________"
 MAX_RETRIES = 3
 WORKERS = 8
 
-TAG = "\033[32m[pipeline]\033[0m"
+GREEN = "\033[32m"
+RED = "\033[31m"
+RESET = "\033[0m"
+SUCCESS = f"{GREEN}success{RESET}"
+FAIL = f"{RED}fail{RESET}"
+
+TAG = f"{GREEN}[pipeline]{RESET}"
+LOG_ROOT = Path(".log")
+RUN_LOG_DIR = LOG_ROOT / datetime.now().strftime("%Y%m%d-%H%M%S")
 git_lock = threading.Lock()
 
 
@@ -37,6 +46,18 @@ def read_prompt(prompt_file):
 
 def make_prompt(prompt_template, path):
     return prompt_template.replace(PLACEHOLDER, path)
+
+
+def ensure_log_dir():
+    RUN_LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def log_stem_from_path(path):
+    return Path(path).with_suffix("").as_posix().replace("/", "__")
+
+
+def codex_log_path(path, attempt):
+    return RUN_LOG_DIR / f"{log_stem_from_path(path)}.attempt{attempt}.codex.log"
 
 
 def module_name_from_path(path):
@@ -84,17 +105,24 @@ def enqueue_ready_paths(remaining, deps_by_path, resolved, queued, ready_queue):
     return newly_added
 
 
-def run_codex(prompt):
-    result = subprocess.run(
-        ["codex", "--search", "exec", "-", "--color", "never"],
-        input=prompt,
-        text=True,
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-    )
+def run_codex(prompt, log_path):
+    with open(log_path, "w", encoding="utf-8") as log_file:
+        result = subprocess.run(
+            ["codex", "--search", "exec", "-", "--color", "never"],
+            input=prompt,
+            text=True,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+        )
+    if result.returncode == 0:
+        print(f"{TAG} codex {SUCCESS}: {log_path}")
+        return True
     if result.returncode != 0:
-        print(f"{TAG} codex failed with code {result.returncode}", file=sys.stderr)
-    return result.returncode == 0
+        print(
+            f"{TAG} codex {FAIL} (code {result.returncode}): {log_path}",
+            file=sys.stderr,
+        )
+    return False
 
 
 def run_lean(path):
@@ -103,7 +131,8 @@ def run_lean(path):
         capture_output=True,
         text=True,
     )
-    print(result.stdout)
+    if result.stdout:
+        print(result.stdout)
     if result.stderr:
         print(result.stderr, file=sys.stderr)
     return result.returncode == 0
@@ -159,39 +188,47 @@ def git_push():
 
 def commit_and_push(path):
     if not git_commit(path):
-        print(f"{TAG} {path} git commit step failed.", file=sys.stderr)
+        print(f"{TAG} {path} git commit step {FAIL}.", file=sys.stderr)
         return False
     if not git_push():
-        print(f"{TAG} {path} git push step failed.", file=sys.stderr)
+        print(f"{TAG} {path} git push step {FAIL}.", file=sys.stderr)
         return False
+    print(f"{TAG} {path} git push {SUCCESS}.")
     return True
 
 
 def process_path(path, prompt_template):
     print(f"\n{TAG} {path} — pre-check compilation")
     if run_lean(path):
-        print(f"{TAG} {path} already compiles, committing and pushing...")
+        print(f"{TAG} {path} pre-check {SUCCESS}, committing and pushing...")
         return commit_and_push(path)
 
     for attempt in range(1, MAX_RETRIES + 1):
         print(f"\n{TAG} {path} — attempt {attempt}/{MAX_RETRIES}")
 
         prompt = make_prompt(prompt_template, path)
-        if not run_codex(prompt):
-            print(f"{TAG} {path} codex step failed.")
+        log_path = codex_log_path(path, attempt)
+        if not run_codex(prompt, log_path):
+            print(f"{TAG} {path} codex step {FAIL}.", file=sys.stderr)
             continue
 
         if run_lean(path):
-            print(f"{TAG} {path} compiled successfully, committing and pushing...")
+            print(f"{TAG} {path} compile {SUCCESS}, committing and pushing...")
             return commit_and_push(path)
         else:
-            print(f"{TAG} {path} failed to compile.")
+            print(f"{TAG} {path} compile {FAIL}.", file=sys.stderr)
 
-    print(f"{TAG} {path} exceeded {MAX_RETRIES} retries — aborting.", file=sys.stderr)
+    print(
+        f"{TAG} {path} exceeded {MAX_RETRIES} retries — {FAIL}.",
+        file=sys.stderr,
+    )
     return False
 
 
 def main():
+    ensure_log_dir()
+    print(f"{TAG} codex logs will be written to: {RUN_LOG_DIR}")
+
     paths = read_paths(DEPENDCY_FILE)
     prompt_template = read_prompt(PROMPT_FILE)
 
@@ -238,12 +275,13 @@ def main():
                     ok = False
 
                 if not ok:
+                    print(f"{TAG} {path} {FAIL}.", file=sys.stderr)
                     failed.append(path)
                     continue
 
                 resolved.add(path)
                 remaining.remove(path)
-                print(f"{TAG} resolved {path} ({len(resolved)}/{total})")
+                print(f"{TAG} resolved {path} ({len(resolved)}/{total}) {SUCCESS}")
                 unlocked = enqueue_ready_paths(
                     remaining, deps_by_path, resolved, queued, ready_queue
                 )
@@ -259,10 +297,10 @@ def main():
                 break
 
     if failed:
-        print(f"\n{TAG} Failed paths: {failed}", file=sys.stderr)
+        print(f"\n{TAG} {FAIL} paths: {failed}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"\n{TAG} All paths processed successfully.")
+    print(f"\n{TAG} all paths processed {SUCCESS}.")
 
 
 if __name__ == "__main__":

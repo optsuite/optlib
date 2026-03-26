@@ -50,7 +50,7 @@ theorem HasGradientAtFilter.comp
   have eq : (starRingEnd 𝕜) g' • (toDual 𝕜 F) f' =
     (toDual 𝕜 F) (g' • f') := by rw [map_smulₛₗ]
   rw [HasGradientAtFilter, ← eq]
-  exact hg.hasDerivAtFilter.comp_hasFDerivAtFilter x hf hL
+  exact hg.hasDerivAtFilter.comp_hasFDerivAtFilter hf <| hL.prodMap <| by simp
 
 theorem HasGradientWithinAt.comp
     (hg : HasGradientWithinAt g g' t (f x)) (hf : HasGradientWithinAt f f' s x)
@@ -184,27 +184,28 @@ section Sum
 /-! ### Derivative of a finite sum of functions -/
 
 
-open BigOperators Asymptotics
+open scoped BigOperators
+open Asymptotics
 
 variable {ι : Type*} {u : Finset ι} {A : ι → F → 𝕜} {A' : ι → F}
 
 theorem HasGradientAtFilter.sum (h : ∀ i ∈ u, HasGradientAtFilter (A i) (A' i) x L) :
-    HasGradientAtFilter (fun y => ∑ i in u, A i y) (∑ i in u, A' i) x L := by
-  have : ∑ i in u, (toDual 𝕜 F) (A' i) = (toDual 𝕜 F) (∑ i in u, A' i) := by
+    HasGradientAtFilter (fun y => Finset.sum u fun i => A i y) (Finset.sum u A') x L := by
+  have : Finset.sum u (fun i => (toDual 𝕜 F) (A' i)) = (toDual 𝕜 F) (Finset.sum u A') := by
     rw [map_sum]
   rw [HasGradientAtFilter, ← this]; unfold HasGradientAtFilter at h
-  exact HasFDerivAtFilter.sum h
+  exact HasFDerivAtFilter.fun_sum h
 
 theorem HasGradientWithinAt.sum (h : ∀ i ∈ u, HasGradientWithinAt (A i) (A' i) s x) :
-    HasGradientWithinAt (fun y => ∑ i in u, A i y) (∑ i in u, A' i) s x := by
+    HasGradientWithinAt (fun y => Finset.sum u fun i => A i y) (Finset.sum u A') s x := by
   exact HasGradientAtFilter.sum h
 
 theorem HasGradientAt.sum (h : ∀ i ∈ u, HasGradientAt (A i) (A' i) x) :
-    HasGradientAt (fun y => ∑ i in u, A i y) (∑ i in u, A' i) x := by
+    HasGradientAt (fun y => Finset.sum u fun i => A i y) (Finset.sum u A') x := by
   exact HasGradientAtFilter.sum h
 
 theorem gradient_sum (h : ∀ i ∈ u, DifferentiableAt 𝕜 (A i) x) :
-    ∇ (fun y => ∑ i in u, A i y) x = ∑ i in u, ∇ (A i) x :=
+    ∇ (fun y => Finset.sum u fun i => A i y) x = Finset.sum u fun i => ∇ (A i) x :=
   (HasGradientAt.sum fun i hi => (h i hi).hasGradientAt).gradient
 
 end Sum
@@ -228,8 +229,11 @@ theorem HasGradientAt.neg (h : HasGradientAt f f' x) :
   exact HasGradientAtFilter.neg h
 
 theorem gradient_neg : ∇ (fun y => - f y) x = - ∇ f x := by
-  unfold gradient
-  simp only [fderiv_neg, map_neg]
+  by_cases h : DifferentiableAt 𝕜 f x
+  · exact (h.hasGradientAt.neg).gradient
+  · rw [gradient_eq_zero_of_not_differentiableAt h,
+      gradient_eq_zero_of_not_differentiableAt (by simpa [differentiableAt_neg_iff] using h)]
+    simp
 
 end Neg
 
@@ -300,8 +304,7 @@ open ContinuousLinearMap
 
 lemma equiv_lemma_mul : c x • (toDual 𝕜 F) d' + d x • (toDual 𝕜 F) c'
     = (toDual 𝕜 F) ((starRingEnd 𝕜) (c x) • d' + (starRingEnd 𝕜) (d x) • c'):= by
-  simp
-  congr <;> exact SemilinearMapClass.map_smul_inv _ _ _
+  rw [map_add, map_smulₛₗ, map_smulₛₗ, starRingEnd_self_apply, starRingEnd_self_apply]
 
 theorem HasGradientAt.mul (hc : HasGradientAt c c' x) (hd : HasGradientAt d d' x) :
     HasGradientAt (fun y => c y * d y)

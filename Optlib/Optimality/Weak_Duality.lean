@@ -51,13 +51,15 @@ variable {p : Constrained_OptimizationProblem E τ σ} {x : E}
 
 lemma empty_domain_inf_value_top {p : Constrained_OptimizationProblem E τ σ} (hp : (p.domain) = ∅) :
     p.inf_value = ⊤ := by
-  unfold inf_value
-  unfold FeasSet FeasPoint
+  unfold inf_value FeasSet FeasPoint
   simp [hp]
+  rfl
 
 lemma empty_FeasSet_inf_value_top {p : Constrained_OptimizationProblem E τ σ} (hp : (p.FeasSet) = ∅) :
     p.inf_value = ⊤ := by
-  unfold inf_value; simp [hp]
+  unfold inf_value
+  simp [hp]
+  rfl
 
 lemma objective_le_sup {p : Constrained_OptimizationProblem E τ σ} (x : E) (hx : x ∈ p.FeasSet) :
     (p.objective x).toEReal ≤ p.sup_value := by
@@ -70,16 +72,18 @@ lemma dual_objective_le_top_nonempty {p : Constrained_OptimizationProblem E τ �
   intro lambda1 lambda2
   unfold dual_objective
   let x := Classical.choose hp
-  apply iInf_lt_top.mpr
-  use x; simp; apply Classical.choose_spec hp
+  refine iInf_lt_top.mpr ?_
+  refine ⟨x, ?_⟩
+  refine iInf_lt_top.mpr ?_
+  exact ⟨Classical.choose_spec hp, by
+    exact EReal.coe_lt_top (p.Lagrange_function x lambda1 lambda2)⟩
 
 lemma dual_objective_eq_top_empty {p : Constrained_OptimizationProblem E τ σ} (hp : (p.domain) = ∅) :
     ∀ lambda1 lambda2, p.dual_objective lambda1 lambda2 = ⊤ := by
-  intro lambda1 lambda2; unfold dual_objective
-  simp; intro x
-  by_contra h
-  have : x ∉ p.domain := by exact of_eq_false (congrFun hp x)
-  exact this h
+  intro lambda1 lambda2
+  unfold dual_objective
+  simp [hp]
+  rfl
 
 lemma objective_infimum_global_minimum {p : Constrained_OptimizationProblem E τ σ}
     (hp : (p.objective x).toEReal = p.inf_value) (hx : x ∈ p.FeasSet) :
@@ -153,8 +157,8 @@ theorem weak_duality {p : Constrained_OptimizationProblem E τ σ}
 theorem weak_duality_aux {p : Constrained_OptimizationProblem E τ σ} (hp : (p.domain).Nonempty) :
     (p.dual_problem).sup_value ≤ p.inf_value := by
   unfold sup_value dual_problem; simp
-  intro b x lambda1 lambda2 hl hl2 hl3
-  rw [← hl3, ← hl2]
+  intro b lambda1 lambda2 hl hl2
+  rw [← hl2]
   have : ((p.dual_objective lambda1 lambda2).toReal).toEReal
       = p.dual_objective lambda1 lambda2 := by
     apply EReal.coe_toReal
@@ -175,7 +179,7 @@ theorem weak_duality' {p : Constrained_OptimizationProblem E τ σ} :
   · exact weak_duality_aux hp
   push_neg at hp
   rw [empty_domain_inf_value_top hp]
-  simp only [le_top]
+  exact le_top
 
 end WeakDuality
 
@@ -185,10 +189,10 @@ variable {E : Type _} {τ σ : Finset ℕ}
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 variable {p : Constrained_OptimizationProblem E τ σ}
 
-lemma ConcaveOn.sum {α 𝕜 : Type*} [OrderedSemiring 𝕜] [AddCommMonoid α][SMul 𝕜 α]
-    {ι : Type*} [DecidableEq ι] {s : Finset ι} {t : s → α → 𝕜} {d : Set α}
-    (h : ∀ i : s, ConcaveOn 𝕜 d (t i)) (hd : Convex 𝕜 d):
-    ConcaveOn 𝕜 d (fun x => ∑ i : s, t i x) := by
+lemma concaveOn_sum {α : Type*} [AddCommMonoid α] [SMul ℝ α]
+    {ι : Type*} [DecidableEq ι] {s : Finset ι} {t : s → α → ℝ} {d : Set α}
+    (h : ∀ i : s, ConcaveOn ℝ d (t i)) (hd : Convex ℝ d) :
+    ConcaveOn ℝ d (fun x => ∑ i : s, t i x) := by
   constructor
   · exact hd
   intro x hx y hy a b ha hb hab
@@ -205,12 +209,12 @@ theorem convex_problem_convex_Lagrange {p : Constrained_OptimizationProblem E τ
     (lambda1 : τ → ℝ) (lambda2 : σ → ℝ)
     (hKKT : KKT_point p x lambda1 lambda2) :
     ConvexOn ℝ univ (fun m ↦ p.Lagrange_function m lambda1 lambda2) := by
+  subst hτ
   unfold Lagrange_function
   apply ConvexOn.sub
   · apply ConvexOn.sub h
-    simp [hτ]; apply concaveOn_const 0
-    exact convex_univ
-  apply ConcaveOn.sum _ convex_univ
+    simpa using (concaveOn_const (𝕜 := ℝ) (s := (univ : Set E)) (0 : ℝ) convex_univ)
+  apply concaveOn_sum _ convex_univ
   intro i
   apply ConcaveOn.smul
   · unfold KKT_point at hKKT
@@ -228,10 +232,10 @@ theorem diff_problem_diff_Lagrange {p : Constrained_OptimizationProblem E τ σ}
   · apply DifferentiableAt.sub
     · exact hf
     simp [hτ]
-  apply DifferentiableAt.sum
-  intro i _
-  apply DifferentiableAt.const_mul _ (lambda2 i)
-  apply conti i i.2
+  convert (DifferentiableAt.sum (u := (Finset.univ : Finset σ))
+      (A := fun j m => lambda2 j * p.inequality_constraints (↑j) m)
+      (by intro i _; exact DifferentiableAt.const_mul (conti i i.2) (lambda2 i))) using 1
+  ext m; simp [Finset.sum_apply]
 
 theorem KKT_multipliers_objective_eq_Lagrangian {p : Constrained_OptimizationProblem E τ σ}
     (x : E) (lambda1 : τ → ℝ) (lambda2 : σ → ℝ)

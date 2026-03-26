@@ -48,14 +48,14 @@ lemma Simplifying₁ (h₁ : a ≠ 0) (h₂ : b ≠ 0) (h₃ : ‖b‖ / 2 ≤ �
   simp only [one_div, div_inv_eq_mul, one_mul]
   have l₃ : |b * b * b| / 2 = |b * b| * (|b| / 2) := by rw [mul_div, abs_mul]
   have l₄ : |b * b * a| = |b * b| * |a| := by rw [abs_mul]
-  rw [l₃, l₄, mul_le_mul_left]
-  apply h₃
-  rw [abs_pos]
-  simp only [ne_eq, mul_eq_zero, or_self]
-  apply h₂
-  have : 0 < |b * b * b| := by rw [abs_pos]; simp [h₂]
-  have : 0 < |b * b * b| / 2 := half_pos this
-  apply this
+  rw [l₃, l₄]
+  exact mul_le_mul_of_nonneg_left h₃ (abs_nonneg (b * b))
+  have : 0 < |b * b * b| / 2 := by
+    have hb : 0 < |b * b * b| := by
+      rw [abs_pos]
+      simp [h₂]
+    exact div_pos hb (by norm_num)
+  exact this
   have : 0 < |b * b * a| := by rw [abs_pos]; simp [h₁, h₂]
   exact Iff.mpr one_div_pos this
 
@@ -81,9 +81,7 @@ lemma div_div_mul (h₁ : a / b ≤ c) (h₂ : 0 < a) (h₃ : 0 < b) (h₄ : 0 <
     1 / c ≤ b / a := by
   have : a ≤ c * b := Iff.mp (div_le_iff₀ h₃) h₁
   have : a ≤ b * c := by linarith
-  apply Iff.mpr (div_le_div_iff h₄ h₂)
-  rw [one_mul]
-  apply this
+  exact (div_le_div_iff₀ h₄ h₂).2 <| by simpa [mul_comm, mul_left_comm, mul_assoc] using this
 
 theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : ℝ)):
     HasGradientAt (fun y => (1 : ℝ) / (f y)) (- ((1 : ℝ) / (f x) ^ (2 : ℕ)) • grad) x := by
@@ -251,10 +249,10 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
       have h₂ : min δ₀ δ₂ ≤ δ₂ := by exact min_le_right δ₀ δ₂
       apply le_trans h' h₂
 
-    have zp1 :‖f x * (f x - f x' + inner grad (x' - x)) / (f x * f x * f x')‖ =
-        ‖(f x - f x' + inner grad (x' - x)) / (f x * f x')‖ := by
+    have zp1 :‖f x * (f x - f x' + ⟪grad, (x' - x)⟫) / (f x * f x * f x')‖ =
+        ‖(f x - f x' + ⟪grad, (x' - x)⟫) / (f x * f x')‖ := by
       rw [mul_comm, mul_assoc (f x) (f x) (f x'),
-      div_mul_eq_div_div ((f x - f x' + inner grad (x' - x)) * (f x)) (f x) (f x * f x'), mul_div_cancel_right₀]
+      div_mul_eq_div_div ((f x - f x' + ⟪grad, (x' - x)⟫) * (f x)) (f x) (f x * f x'), mul_div_cancel_right₀]
       apply h₁
 
     have zp2 : ‖f x‖ * ‖f x‖/2 ≤ ‖f x * f x'‖ := by
@@ -305,16 +303,16 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
         _ = (ε / 2) * ‖x' - x‖ := by
           rw [div_self (mul_ne_zero l l), mul_one, norm_sub_rev]
     calc
-      ‖f x * (f x - f x' + inner grad (x' - x)) / (f x * f x * f x')‖ =
-          ‖(f x - f x' + inner grad (x' - x)) / (f x * f x')‖ := by
+      ‖f x * (f x - f x' + ⟪grad, (x' - x)⟫) / (f x * f x * f x')‖ =
+          ‖(f x - f x' + ⟪grad, (x' - x)⟫) / (f x * f x')‖ := by
         apply zp1
-      _ = ‖(f x - f x' + inner grad (x' - x))‖ * ‖1/(f x * f x')‖ := by
+      _ = ‖(f x - f x' + ⟪grad, (x' - x)⟫)‖ * ‖1/(f x * f x')‖ := by
         apply Vert_div
-      _ ≤ ‖(f x - f x' + inner grad (x' - x))‖ * (2 / (‖f x‖ * ‖f x‖)) := by
+      _ ≤ ‖(f x - f x' + ⟪grad, (x' - x)⟫)‖ * (2 / (‖f x‖ * ‖f x‖)) := by
         apply mul_le_mul_of_nonneg_left zp3
         apply norm_nonneg
       _ ≤ ((ε * ‖f x‖ * ‖f x‖/4) * ‖x - x'‖) * (2 / (‖f x‖ * ‖f x‖)) := by
-        have : ‖(f x - f x' + inner grad (x' - x))‖ ≤ (ε * ‖f x‖ * ‖f x‖/4) * ‖x - x'‖ := by
+        have : ‖(f x - f x' + ⟪grad, (x' - x)⟫)‖ ≤ (ε * ‖f x‖ * ‖f x‖/4) * ‖x - x'‖ := by
           apply hδ₂
           apply hp₂
         apply mul_le_mul_of_nonneg_right this
@@ -385,22 +383,22 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
     apply Eq.symm (mul_div_mul_left (⟪grad, (x' - x)⟫) ((f x) * (f x)) l')
   have k₆ : (f x - f x') * f x /(f x' * f x * f x) + f x' * (⟪grad, (x' - x)⟫)/(f x' * f x * f x)
       = ((f x - f x') * f x  + f x' * (⟪grad, (x' - x)⟫))/(f x' * f x * f x) := by
-    apply div_add_div_same ((f x - f x') * f x) (f x' * (⟪grad, (x' - x)⟫)) (f x' * f x * f x)
-  have k₇ : ((f x - f x') * f x + f x' * inner grad (x' - x)) / (f x' * f x * f x) =
-      (f x * (f x - f x' + inner grad (x' - x)) +
-      (f x' * inner grad (x' - x) - f x * inner grad (x' - x))) / (f x' * f x * f x) := by
-    have h' : (f x - f x') * f x + f x' * inner grad (x' - x) =
-        f x * (f x - f x' + inner grad (x' - x)) +
-        (f x' * (inner grad (x' - x)) - f x * (inner grad (x' - x)))  := by
+    exact (add_div _ _ _).symm
+  have k₇ : ((f x - f x') * f x + f x' * ⟪grad, (x' - x)⟫) / (f x' * f x * f x) =
+      (f x * (f x - f x' + ⟪grad, (x' - x)⟫) +
+      (f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)) / (f x' * f x * f x) := by
+    have h' : (f x - f x') * f x + f x' * ⟪grad, (x' - x)⟫ =
+        f x * (f x - f x' + ⟪grad, (x' - x)⟫) +
+        (f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)  := by
       linarith
     rw [h']
-  have k₈ : (f x * (f x - f x' + inner grad (x' - x)) +
-      (f x' * inner grad (x' - x) - f x * inner grad (x' - x))) /
-      (f x * f x * f x') = f x * (f x - f x' + inner grad (x' - x))/
-      (f x * f x * f x') + (f x' * inner grad (x' - x) - f x * inner grad (x' - x))/
+  have k₈ : (f x * (f x - f x' + ⟪grad, (x' - x)⟫) +
+      (f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)) /
+      (f x * f x * f x') = f x * (f x - f x' + ⟪grad, (x' - x)⟫)/
+      (f x * f x * f x') + (f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)/
       (f x * f x * f x') := by
-        apply add_div ((f x) * (f x - f x' + inner grad (x' - x)))
-          (f x' * inner grad (x' - x) - f x * inner grad (x' - x)) (f x * f x * f x')
+        apply add_div ((f x) * (f x - f x' + ⟪grad, (x' - x)⟫))
+          (f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫) (f x * f x * f x')
   have k₉ : f x' * f x * f x =  f x * f x * f x' := by linarith
   have p₁ : ‖1 / f x' - 1 / f x - (- (⟪grad, (x' - x)⟫))/((f x) * (f x))‖ ≤ ε * ‖x' - x‖ := by
     rw [k₄, k₁, k₂, k₅]
@@ -409,22 +407,22 @@ theorem HasGradientAt.one_div (hf : HasGradientAt f grad x)(h₁: ¬ f x = (0 : 
     rw [this]
     rw [k₆, k₇, k₉]
     calc
-      ‖(f x * (f x - f x' + inner grad (x' - x)) +
-      (f x' * inner grad (x' - x) - f x * inner grad (x' - x))) /
-      (f x * f x * f x')‖ = ‖f x * (f x - f x' + inner grad (x' - x))/
-      (f x * f x * f x') + (f x' * inner grad (x' - x) - f x * inner grad (x' - x))/
+      ‖(f x * (f x - f x' + ⟪grad, (x' - x)⟫) +
+      (f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)) /
+      (f x * f x * f x')‖ = ‖f x * (f x - f x' + ⟪grad, (x' - x)⟫)/
+      (f x * f x * f x') + (f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)/
       (f x * f x * f x')‖ := by
         rw [k₈]
-      _ ≤ ‖f x * (f x - f x' + inner grad (x' - x))/
-      (f x * f x * f x')‖ + ‖(f x' * inner grad (x' - x) - f x * inner grad (x' - x))/
+      _ ≤ ‖f x * (f x - f x' + ⟪grad, (x' - x)⟫)/
+      (f x * f x * f x')‖ + ‖(f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)/
       (f x * f x * f x')‖ := by
-        apply norm_add_le ((f x) * (f x - f x' + inner grad (x' - x))/
-      (f x * f x * f x')) ((f x' * inner grad (x' - x) - f x * inner grad (x' - x))/
+        apply norm_add_le ((f x) * (f x - f x' + ⟪grad, (x' - x)⟫)/
+      (f x * f x * f x')) ((f x' * ⟪grad, (x' - x)⟫ - f x * ⟪grad, (x' - x)⟫)/
       (f x * f x * f x'))
       _ ≤ (ε/2) * ‖x' - x‖ + (ε/2) * ‖x' - x‖ := by exact add_le_add (hδ₅ x' hp₂) (hδ₄ x' hp₁)
       _ = ε * ‖x' - x‖ := by linarith
   have j₁ : ‖1 / f x' - 1 / f x - (- (⟪grad, (x' - x)⟫))/((f x) * (f x))‖ = ‖1 / f x' - 1 / f x -
-      inner ((-(1 / f x ^ ↑2) • grad)) (x' - x)‖ := by
+      ⟪(-(1 / f x ^ ↑2) • grad), (x' - x)⟫‖ := by
     congr; rw [k₃]
   rw [j₁] at p₁
   have l1 : ‖x - x'‖ = ‖x' - x‖ := by

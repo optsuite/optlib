@@ -76,7 +76,7 @@ theorem Strongly_Convex_Unique_Minima (hsc: StrongConvexOn s m f) {mp : m > 0}
     . linarith
     . apply pow_pos; linarith
   apply absurd (min xs)
-  simp [← xeq]
+  simp
   calc
     f x ≤ f xm - 2⁻¹ * 2⁻¹ * (m / 2 * ‖xm - xm'‖ ^ 2) := by apply sc
     _ < f xm := by apply lt_of_sub_pos; simp; apply nng
@@ -99,7 +99,7 @@ lemma strongconvex_of_convex_add_sq (f : E → ℝ) (x : E) (hfun : ConvexOn ℝ
     apply add_le_add
     · rw [← smul_eq_mul, ← smul_eq_mul]
       apply hfun yin zin anneg bnneg absum1
-    · field_simp; rw [div_le_div_right, add_sub]
+    · field_simp
       have eq1 : a • y + b • z - x = a • (y - x) + b • (z - x) := by
         rw [smul_sub, smul_sub, add_comm_sub, sub_sub, ← add_smul, add_comm b a]
         rw [absum1, one_smul, ← add_sub]
@@ -107,22 +107,21 @@ lemma strongconvex_of_convex_add_sq (f : E → ℝ) (x : E) (hfun : ConvexOn ℝ
         + a * ‖u‖ ^ 2 - a * b * ‖u - v‖ ^ 2 := by
         rw [norm_add_sq_real, norm_sub_sq_real]
         rw [inner_smul_left, inner_smul_right, norm_smul, norm_smul]; field_simp
-        rw [add_comm (b * ‖v‖ ^ 2), mul_pow, sq_abs, mul_pow, sq_abs]
-        rw [mul_add, ← sub_sub, mul_sub, ← sub_add]
-        rw [add_sub_right_comm, add_sub_right_comm, ← sub_mul, ← add_sub, ← sub_mul]
-        nth_rw 3 [← mul_one a]; rw [← absum1, mul_add]
-        nth_rw 5 [← mul_one b]; rw [← absum1, mul_add, mul_comm b a]
-        rw [pow_two, pow_two b]; simp; rw [add_right_comm, add_left_cancel_iff]
-        rw [mul_mul_mul_comm, mul_comm a 2, mul_assoc]
+        simp [Real.norm_eq_abs, sq_abs] at *
+        have hab : b = 1 - a := by linarith
+        rw [hab]
+        ring
       have eq3 : y - z = (y - x) - (z - x) := by simp
       have eq4 (u v : E) : ‖a • u + b • v‖ ^ 2 ≤ b * ‖v‖ ^ 2
         + a * ‖u‖ ^ 2 - a * b * ‖u - v‖ ^ 2 := by rw [eq2]
       let u := y - x
       let v := z - x
-      rw [eq1, eq3];
-      show ‖a • u + b • v‖ ^ 2 ≤ b * ‖v‖ ^ 2 + a * ‖u‖ ^ 2 - a * b * ‖u - v‖ ^ 2
-      apply eq4 u v
-      simp
+      rw [eq1]
+      calc
+        ‖a • (y - x) + b • (z - x)‖ ^ 2
+            ≤ b * ‖z - x‖ ^ 2 + a * ‖y - x‖ ^ 2 - a * b * ‖y - z‖ ^ 2 := by
+              simpa [u, v] using (eq4 u v)
+        _ = b * ‖z - x‖ ^ 2 + a * (‖y - x‖ ^ 2 - b * ‖y - z‖ ^ 2) := by ring
 
 end Strongly_Convex
 
@@ -131,7 +130,7 @@ section
 variable [CompleteSpace E]
 
 theorem Strong_Convex_lower (hsc : StrongConvexOn s m f) (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) :
-    ∀ x ∈ s, ∀ y ∈ s, inner (f' x - f' y) (x - y) ≥ m * ‖x - y‖ ^ 2 := by
+    ∀ x ∈ s, ∀ y ∈ s, inner ℝ (f' x - f' y) (x - y) ≥ m * ‖x - y‖ ^ 2 := by
   intro x xs y ys
   have cvx := strongConvexOn_iff_convex.mp hsc
   have grd := sub_normsquare_gradient hf m
@@ -142,7 +141,7 @@ theorem Strong_Convex_lower (hsc : StrongConvexOn s m f) (hf : ∀ x ∈ s, HasG
   apply grm
 
 theorem Lower_Strong_Convex (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) (hs : Convex ℝ s)
-    (h : ∀ x ∈ s, ∀ y ∈ s, inner (f' x - f' y) (x - y) ≥ m * ‖x - y‖ ^ 2) :
+    (h : ∀ x ∈ s, ∀ y ∈ s, inner ℝ (f' x - f' y) (x - y) ≥ m * ‖x - y‖ ^ 2) :
     StrongConvexOn s m f := by
   apply strongConvexOn_iff_convex.mpr
   have grd := sub_normsquare_gradient hf m
@@ -155,12 +154,12 @@ theorem Lower_Strong_Convex (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) (hs : C
   apply h
 
 theorem Strong_Convex_iff_lower (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) (hs : Convex ℝ s) :
-    StrongConvexOn s m f ↔ ∀ x ∈ s, ∀ y ∈ s, inner (f' x - f' y) (x - y) ≥ m * ‖x - y‖ ^ 2 :=
+    StrongConvexOn s m f ↔ ∀ x ∈ s, ∀ y ∈ s, inner ℝ (f' x - f' y) (x - y) ≥ m * ‖x - y‖ ^ 2 :=
   ⟨fun hsc x xs y ys ↦ Strong_Convex_lower hsc hf x xs y ys, fun h ↦ Lower_Strong_Convex hf hs h⟩
 
 theorem Strong_Convex_second_lower (hsc: StrongConvexOn s m f)
     (hf : ∀ x ∈ s, HasGradientAt f (f' x) x) : ∀ x ∈ s, ∀ y ∈ s,
-    f y ≥ f x + inner (f' x) (y - x) + m / 2 * ‖y - x‖ ^ 2 := by
+    f y ≥ f x + inner ℝ (f' x) (y - x) + m / 2 * ‖y - x‖ ^ 2 := by
   intro x xs y ys
   have cvx := strongConvexOn_iff_convex.mp hsc
   have grd := sub_normsquare_gradient hf m x xs
@@ -179,7 +178,7 @@ theorem Strong_Convex_second_lower (hsc: StrongConvexOn s m f)
   nth_rw 1 [← sub_self y] at foc
   rw [← sub_self x] at foc
   rw [sub_add, ← sub_add y x x, add_comm (y - x), inner_sub_right x, inner_add_right y] at foc
-  rw [real_inner_comm x y, sub_right_comm (inner x y), ← sub_sub, sub_self, sub_sub 0] at foc
+  rw [real_inner_comm x y, sub_right_comm (inner ℝ x y), ← sub_sub, sub_self, sub_sub 0] at foc
   rw [← inner_add_left, zero_sub, mul_neg, sub_neg_eq_add] at foc
   have : m = m / 2 * 2 := by simp
   nth_rw 1 [this] at foc

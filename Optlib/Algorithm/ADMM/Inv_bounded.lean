@@ -14,21 +14,21 @@ variable {X Y:Type*}
 [NormedAddCommGroup Y] [InnerProductSpace ℝ Y]
 (A : X →L[ℝ] Y)(fullrank: Injective A)
 
-lemma KerA_bot (fullrank: Injective A): ker A = ⊥ := ker_eq_bot.2 fullrank
+lemma KerA_bot (fullrank: Injective A): A.toLinearMap.ker = ⊥ := LinearMap.ker_eq_bot.2 fullrank
 
 variable [CompleteSpace X] [CompleteSpace Y]
 
-lemma KerA_eq_KerA'A : ker A = ker (A†.comp A) := by
+lemma KerA_eq_KerA'A : A.toLinearMap.ker = (A†.comp A).toLinearMap.ker := by
    ext x; constructor; simp
    ·  intro h; rw[h]; continuity
    ·  intro h; simp at h
-      have : ((inner (A x) (A x)):ℝ) = (0:ℝ) := by
+      have : ((inner ℝ (A x) (A x)):ℝ) = (0:ℝ) := by
          calc
-            _ = (inner x ((A†) (A x)):ℝ) := by rw [ContinuousLinearMap.adjoint_inner_right]
+            _ = (inner ℝ x ((A†) (A x)):ℝ) := by rw [ContinuousLinearMap.adjoint_inner_right]
             _ = (0:ℝ) := by rw [h, inner_zero_right]
       apply inner_self_eq_zero.1 this
 
-lemma KerA'A_bot (fullrank: Injective A) : ker (A†.comp A) = ⊥ := by
+lemma KerA'A_bot (fullrank: Injective A) : (A†.comp A).toLinearMap.ker = ⊥ := by
    rw[← KerA_eq_KerA'A]
    apply KerA_bot A fullrank
 

@@ -88,9 +88,9 @@ lemma nonneg₁ [Setting E₁ E₂ F admm admm_kkt]: min τ (1 + τ - τ ^ 2) > 
 lemma nonneg₂ [Setting E₁ E₂ F admm admm_kkt]: min 1 (1 + 1 / τ - τ) > 0 := by
    rcases admm.htau with ⟨h1, _⟩
    have h2: 1 + 1/τ - τ > 0 := by
-      field_simp;rw [← sq]
-      have h3 : 1 + τ - τ ^ 2 > 0 := nonneg_prime
-      linarith
+      have hτ : τ ≠ 0 := ne_of_gt h1
+      rw [show 1 + 1 / τ - τ = (1 + τ - τ ^ 2) / τ by field_simp [hτ]; ring]
+      exact div_pos nonneg_prime h1
    apply lt_min one_pos h2
 
 lemma Φ₁_nonneg [Setting E₁ E₂ F admm admm_kkt]:
@@ -165,21 +165,23 @@ lemma Φ_is_nonneg [Setting E₁ E₂ F admm admm_kkt]: ∀ n : ℕ , Φ n ≥ 0
 
 lemma Φ_bd_above [Setting E₁ E₂ F admm admm_kkt]: ∃ C : ℝ, ∀ n : ℕ, Φ n < C := by
    let C := Max.max ((Φ 0) + 1) ((Φ 1) + 1); use C; intro n
-   induction' n with k h
-   ·  have : Φ 0 < (Φ 0) + 1 := by linarith
+   induction n with
+   | zero =>
+      have : Φ 0 < (Φ 0) + 1 := by linarith
       apply lt_max_iff.2
       left; exact this
-   ·  by_cases hh : k = 0
-      ·  rw [hh,zero_add]
-         apply lt_max_iff.2
-         right; linarith
-      ·  push_neg at hh
-         have k_pos : k > 0 := by apply Nat.pos_of_ne_zero hh
-         have : (Φ) (k.toPNat k_pos) ≥ (Φ) ((k.toPNat k_pos ) + 1) := by
-            apply Φ_is_monotone
-         have h' : Φ (k.toPNat k_pos) < C := by apply h
-         show Φ ((k.toPNat k_pos) + 1) < C
-         linarith
+   | succ k h =>
+      by_cases hh : k = 0
+      · rw [hh,zero_add]
+        apply lt_max_iff.2
+        right; linarith
+      · push_neg at hh
+        have k_pos : k > 0 := by exact Nat.pos_of_ne_zero hh
+        have : (Φ) (k.toPNat k_pos) ≥ (Φ) ((k.toPNat k_pos) + 1) := by
+          apply Φ_is_monotone
+        have h' : Φ (k.toPNat k_pos) < C := by simpa using h
+        show Φ ((k.toPNat k_pos) + 1) < C
+        linarith
 
 lemma Φ_isBounded' [Setting E₁ E₂ F admm admm_kkt] : ∃ (r : ℝ), (range Φ) ⊆ ball 0 r := by
    rcases Φ_bd_above with ⟨C,bd⟩
@@ -317,9 +319,7 @@ lemma A₂e₂_isBounded' [Setting E₁ E₂ F admm admm_kkt]: ∃ (r : ℝ), (r
             exact h3; simp
 
    have h6: dist (A₂ (e₂ n)) 0 < √ (r_Φ / ρ) := by
-      rw[← sub_zero (A₂ (e₂ n))] at h5
-      rw[SeminormedAddGroup.dist_eq (A₂ (e₂ n)) 0]
-      exact h5
+      simpa [dist_eq_norm] using h5
 
    rw [← hr] at h6
    rw [← Metric.mem_ball] at h6
@@ -434,9 +434,7 @@ lemma A₁e₁_A₂e₂_isBounded'[Setting E₁ E₂ F admm admm_kkt] : ∃ (r :
 
    have h6: dist (A₁ (e₁ n) + A₂ (e₂ n)) 0 < r := by
       have h_n' := h_n n
-      rw[← sub_zero (A₁ (e₁ n) + A₂ (e₂ n))] at h_n'
-      rw[SeminormedAddGroup.dist_eq (A₁ (e₁ n) + A₂ (e₂ n)) 0]
-      exact h_n'
+      simpa [dist_eq_norm] using h_n'
 
    rw [← Metric.mem_ball] at h6; simp; simp at h6
    exact h6
@@ -481,9 +479,7 @@ lemma A₁e₁_isBounded' [Setting E₁ E₂ F admm admm_kkt]: ∃ (r : ℝ), ra
          _ = r := hr
 
    have h_dist : dist (A₁ (e₁ n)) 0 < r := by
-      rw[← sub_zero (A₁ (e₁ n))] at h_norm
-      rw[SeminormedAddGroup.dist_eq (A₁ (e₁ n)) 0]
-      exact h_norm
+      simpa [dist_eq_norm] using h_norm
 
    rw [← Metric.mem_ball] at h_dist
    apply h_dist
@@ -679,7 +675,8 @@ lemma Φ_Summable₁' [Setting E₁ E₂ F admm admm_kkt] :
    intro n
    let φ₀ := (fun i : ℕ => Φ i.succ)
    have : ∀ i ∈ Finset.range n , (φ₀ i)-(φ₀ (i+1)) = (Φ i.succ ) - (Φ (i.succ + 1)) := by
-      simp only [Finset.mem_range, Nat.succ_eq_add_one, implies_true]
+      intro i hi
+      rfl
    have h : Finset.range n =Finset.range n := rfl
    rw[← Finset.sum_congr h this , Finset.sum_range_sub']
    simp only [φ₀]
@@ -701,16 +698,7 @@ lemma Φ_isSummable [Setting E₁ E₂ F admm admm_kkt] : Summable (fun n : ℕ 
 theorem summable_of_nonneg_of_le {β : Type*} {f : β → ℝ} {g : β → ℝ}
 (hg : ∀ (n : β), 0 ≤ g n) (hgf : ∀ (n : β), g n ≤ f n) (hf : Summable f) :
 Summable g:=by
-  rw[← NNReal.summable_mk]
-  have f_ge_zero :∀ (n : β), 0 ≤ f n := by
-   intro n
-   apply le_trans (hg n) (hgf n)
-  have :∀ (n : β), (⟨g n, hg n⟩ : NNReal) ≤ ⟨f n , f_ge_zero n⟩ := by
-   simp only [Subtype.mk_le_mk]
-   apply hgf
-  apply NNReal.summable_of_le this
-  rw[← NNReal.summable_coe]
-  exact hf
+  exact Summable.of_nonneg_of_le hg hgf hf
 
 lemma Φ_inequ₁ [Setting E₁ E₂ F admm admm_kkt] (m : ℕ+):
       (min 1 (1 + 1 / τ - τ )) * ρ * ‖A₁ (e₁ (m+1)) + A₂ (e₂ (m+1))‖ ^ 2 ≤ Φ m - Φ (m + 1) := by

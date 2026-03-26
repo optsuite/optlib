@@ -6,7 +6,7 @@ Authors: Wanyi He
 import Mathlib.Analysis.Convex.Basic
 import Mathlib.Topology.MetricSpace.Basic
 import Mathlib.Topology.MetricSpace.Bounded
-import Mathlib.Topology.Semicontinuous
+import Mathlib.Topology.Semicontinuity.Basic
 import Mathlib.Topology.Sequences
 
 /-!
@@ -15,6 +15,8 @@ import Mathlib.Topology.Sequences
 variable {E F : Type*}
 
 open Set Bornology Topology Filter TopologicalSpace
+
+class LinearOrderedRing (R : Type*) extends Ring R, LinearOrder R, IsStrictOrderedRing R
 
 section preparation
 
@@ -33,15 +35,11 @@ private lemma l0 {f : E → F}(y : F) (h : (f ⁻¹' Set.Iic y).Nonempty) :
       · exact Exists.intro x xeq
       · exact Exists.intro x xeq
   have h₁ : sInf {f x | x ∈ f ⁻¹' Set.Iic y} ≤ sInf {f x | x ∈ (f ⁻¹' Set.Iic y)ᶜ} := by
-    apply sInf_le_sInf_of_forall_exists_le
-    intro y' ynsub
-    rcases h with ⟨x', xsub⟩; use f x'
-    constructor
-    · exact ⟨x', xsub, rfl⟩
-    rcases ynsub with ⟨x, xnsub, xeq⟩
-    apply le_trans xsub (Eq.trans_ge xeq (le_of_lt _))
-    simp only [← Set.preimage_setOf_eq, ← Set.preimage_compl, Set.compl_Iic, Set.Ioi_def] at xnsub
-    assumption
+    rcases h with ⟨x', xsub⟩
+    refine le_sInf ?_
+    rintro y' ⟨x, xnsub, rfl⟩
+    exact le_trans (sInf_le ⟨x', xsub, rfl⟩)
+      (le_trans (show f x' ≤ y from xsub) (le_of_lt (lt_of_not_ge xnsub)))
   calc
     sInf {f x | x ∈ f ⁻¹' Set.Iic y} =
       sInf {f x | x ∈ f ⁻¹' Set.Iic y} ⊓ sInf {f x | x ∈ (f ⁻¹' Set.Iic y)ᶜ} :=
@@ -65,32 +63,24 @@ variable [FirstCountableTopology E] [FirstCountableTopology F]
 
 /- If a premiage of `f` is nonempty and compact,
   then its minimum point set `{x | IsMinOn f univ x}` is nonempty -/
+omit [DenselyOrdered F] [TopologicalSpace F] [OrderTopology F] [FirstCountableTopology E]
+  [FirstCountableTopology F] in
 theorem IsMinOn.of_isCompact_preimage (hf : LowerSemicontinuous f) {y : F}
     (h1 : (f ⁻¹' Set.Iic y).Nonempty) (h2 : IsCompact (f ⁻¹' Set.Iic y)) :
     ∃ x, IsMinOn f univ x := by
-  have hs : Set.Nonempty {f x | x ∈ (f ⁻¹' Set.Iic y)} := by
-    rcases h1 with ⟨x, xsub⟩
-    exact Exists.intro (f x) (Exists.intro x ⟨xsub, rfl⟩)
-  have hs' : BddBelow {f x | x ∈ (f ⁻¹' Set.Iic y)} :=
-    OrderBot.bddBelow {x | ∃ x_1 ∈ f ⁻¹' Iic y, f x_1 = x}
-  rcases exists_seq_tendsto_sInf hs hs' with ⟨fx, _, cfx, fxs⟩
-  choose x xsub xeq using fxs
-  rcases IsCompact.tendsto_subseq h2 xsub with ⟨x', xsub', k, mono, cxk⟩
-  have cfxk : Tendsto (f ∘ x ∘ k) atTop (𝓝 (sInf {f x | x ∈ (f ⁻¹' Set.Iic y)})) := by
-    have xkeq : ∀ (n : ℕ), (f ∘ x ∘ k) n = (fx ∘ k) n := fun n => xeq <| k n
-    rw [tendsto_congr xkeq]
-    apply Tendsto.comp cfx (StrictMono.tendsto_atTop mono)
-  have inepi : (x', sInf {f x | x ∈ (f ⁻¹' Set.Iic y)}) ∈ {p : E × F | f p.1 ≤ p.2} :=
-    (IsClosed.isSeqClosed (LowerSemicontinuous.isClosed_epigraph hf))
-      (fun n => Eq.le (by rfl)) (Tendsto.prod_mk_nhds cxk cfxk)
-  use x'; intro xx _
-  apply le_of_eq_of_le
-  · apply le_antisymm inepi (sInf_le (Exists.intro x' ⟨xsub', rfl⟩))
-  · apply le_of_eq_of_le (l0 y h1) (sInf_le (by use xx))
+  obtain ⟨x, hx, hxmin⟩ :=
+    LowerSemicontinuousOn.exists_isMinOn h1 h2 (hf.lowerSemicontinuousOn _)
+  have hxmin' : ∀ z ∈ f ⁻¹' Set.Iic y, f x ≤ f z := by simpa [isMinOn_iff] using hxmin
+  refine ⟨x, fun z _ => ?_⟩
+  by_cases hz : z ∈ f ⁻¹' Set.Iic y
+  · exact hxmin' z hz
+  · exact le_trans hx (le_of_lt (lt_of_not_ge hz))
 
 /- If a premiage of `f` is nonempty and compact,
   then its minimum point set `{x | IsMinOn f univ x}` is compact -/
 
+omit [DenselyOrdered F] [TopologicalSpace F] [OrderTopology F] [FirstCountableTopology E]
+  [FirstCountableTopology F] in
 theorem IsCompact_isMinOn_of_isCompact_preimage (hf : LowerSemicontinuous f) {y : F}
     (h1 : (f ⁻¹' Set.Iic y).Nonempty) (h2 : IsCompact (f ⁻¹' Set.Iic y)) :
     IsCompact {x | IsMinOn f univ x} := by
@@ -129,10 +119,9 @@ theorem isMinOn_unique {x y : E} (hf' : strong_quasi f 𝕜)
   have eqone : a + (1 - a) = 1 := add_sub_cancel a 1
   have lta' : 0 < 1 - a := sub_pos_of_lt alt
   have h : f (a • x + (1 - a) • y) < f y := by
-    apply Eq.trans_gt (max_eq_right (hx trivial))
-    apply hf' neq lta lta' eqone
+    simpa [max_eq_right (hx trivial)] using hf' neq lta lta' eqone
   simp only [isMinOn_iff] at hy
   specialize hy (a • x + (1 - a) • y) trivial
-  apply not_le_of_lt h hy
+  exact (not_le_of_gt h) hy
 
 end

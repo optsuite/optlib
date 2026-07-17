@@ -219,8 +219,9 @@ We mainly follow the book [High-Dimensional Probability (Roman Vershynin)](https
 
 ## Publications
 
-### Formalization of Optimization
+### Formalization of Optimization, Numerical Linear Algebra
 
+- Wanli Ma, Zichen Wang,  Zaiwen Wen, *A Unified Framework for Formalizing Matrix Decomposition Proofs*. [(Paper)](https://arxiv.org/abs/2607.05874)
 - Chenyi Li, Ziyu Wang, Wanyi He, Yuxuan Wu, Shengyang Xu, Zaiwen Wen. Formalization of Complexity Analysis of the First-order Optimization Algorithms, Journal of Automated Reasoning [(Paper)](https://arxiv.org/abs/2403.11437)
 - Chenyi Li, Zichen Wang, Yifan Bai, Yunxi Duan, Yuqing Gao, Pengfei Hao, Zaiwen Wen, Formalization of Algorithms for Optimization with Block Structures, Science in China Series A: Mathematics [(Paper)](http://arxiv.org/abs/2503.18806)
 - Chenyi Li, Shengyang Xu, Chumin Sun, Li Zhou, Zaiwen Wen, Formalization of Optimality Conditions for Smooth Constrained Optimization Problems [(Paper)](https://arxiv.org/abs/2503.18821)

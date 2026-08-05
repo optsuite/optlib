@@ -191,7 +191,7 @@ We mainly follow the book [High-Dimensional Probability (Roman Vershynin)](https
 
 ### Formalization Platform
 
-- [ReasLab](https://prove.reaslab.io)
+- [ReasLab](https://reaslab.io)
   - An online Lean formalization platform for collaborative theorem development and verification.
 
 ### Formalization Projects

@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+title: optlib
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - alias: Blackfeather007
+  - given-names: Chenyi
+    family-names: Li
+    affiliation: Peking University
+  - given-names: Alissa
+    family-names: Tung
+    affiliation: 'Chinese University of Hong Kong, Shenzhen'
+  - given-names: Zaiwen
+    family-names: Wen
+    affiliation: Peking University
+    email: wenzw@pku.edu.cn
+identifiers:
+  - type: url
+    value: 'https://github.com/optsuite/optlib'
+repository-code: 'https://github.com/optsuite/optlib'
+url: 'https://optsuite.github.io/optlib/'
+abstract: >-
+  We aim to formalize the broad area of mathematical
+  optimization including convex analysis, convex
+  optimization, nonlinear programming, integer programming
+  and etc in Lean4. Related topics include but are not
+  limited to the definition and properties of convex and
+  nonconvex functions, optimality conditions, convergence of
+  various algorithms.
